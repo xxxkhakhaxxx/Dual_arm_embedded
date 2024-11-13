@@ -103,7 +103,7 @@ int main(void)
 
 //	U08 u8ToggleFlag = FALSE;
 	u08MotorCmdFlag = 1;
-//	AppCommCAN_SendMotorMessage(&hcan, MOTOR_1_ID, MOTOR_CMD_SET_ON);
+//	AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_SET_ON);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -328,54 +328,54 @@ PRIVATE void Motor_test()
 //	case MOTOR_CMD_READ_MECHANICAL_STATE:
 //	case MOTOR_CMD_READ_ELECTRIC_STATE:
 	case 1:
-		AppCommCAN_SendMotorMessage(&hcan, MOTOR_1_ID, MOTOR_CMD_SET_ON);
+		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_SET_ON);
 		break;
 	case 2:
-		AppCommCAN_SendMotorMessage(&hcan, MOTOR_1_ID, MOTOR_CMD_SET_OFF);
+		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_SET_OFF);
 		break;
 	case 3:
-		AppCommCAN_SendMotorMessage(&hcan, MOTOR_1_ID, MOTOR_CMD_SET_STOP);
+		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_SET_STOP);
 		break;
 	case 4:
-		AppCommCAN_SendMotorMessage(&hcan, MOTOR_1_ID, MOTOR_CMD_READ_PID);
+		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_READ_PID);
 		break;
 	case 5:
-		AppCommCAN_SendMotorMessage(&hcan, MOTOR_1_ID, MOTOR_CMD_READ_ACCEL);
+		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_READ_ACCEL);
 		break;
 	case 6:
-		AppCommCAN_SendMotorMessage(&hcan, MOTOR_1_ID, MOTOR_CMD_READ_ENCODER);
+		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_READ_ENCODER);
 		break;
 	case 7:
-//		AppCommCAN_SendMotorMessage(&hcan, MOTOR_1_ID, MOTOR_CMD_WRITE_ENCODER_ZERO_ROM);
+//		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_WRITE_ENCODER_ZERO_ROM);
 		break;
 	case 8:
-		AppCommCAN_SendMotorMessage(&hcan, MOTOR_1_ID, MOTOR_CMD_READ_POSITION_MULTILOOP);
+		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_READ_POSITION_MULTILOOP);
 		break;
 	case 9:
-		AppCommCAN_SendMotorMessage(&hcan, MOTOR_1_ID, MOTOR_CMD_READ_POSITION_SINGLELOOP);
+		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_READ_POSITION_SINGLELOOP);
 		break;
 	case 10:
-		AppCommCAN_SendMotorMessage(&hcan, MOTOR_1_ID, MOTOR_CMD_READ_ERROR);
+		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_READ_ERROR);
 		break;
 	case 11:
-		AppCommCAN_SendMotorMessage(&hcan, MOTOR_1_ID, MOTOR_CMD_CLEAR_ERROR);
+		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_CLEAR_ERROR);
 		break;
 	case 12:
-		AppCommCAN_SendMotorMessage(&hcan, MOTOR_1_ID, MOTOR_CMD_READ_MECHANICAL_STATE);
+		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_READ_MECHANICAL_STATE);
 		break;
 	case 13:
-		AppCommCAN_SendMotorMessage(&hcan, MOTOR_1_ID, MOTOR_CMD_READ_ELECTRIC_STATE);
+		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_READ_ELECTRIC_STATE);
 		break;
 	case 14:
-		AppCommCAN_SendMotorMessage(&hcan, MOTOR_1_ID, MOTOR_CMD_CONTROL_POSITION_MULTILOOP_2);
+		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_CONTROL_POSITION_MULTILOOP_2);
 		break;
 	case 15:
-		AppCommCAN_SendMotorMessage(&hcan, MOTOR_1_ID, MOTOR_CMD_CONTROL_POSITION_SINGLELOOP_2);
+		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_CONTROL_POSITION_SINGLELOOP_2);
 		break;
 	case 16:
 		strRobotArmMotorCmd[MOTOR_1_ID].Control.i32JogAngle = 180*100*MOTOR_1_GEARBOX;
 		strRobotArmMotorCmd[MOTOR_1_ID].Control.u16JogSpeed = 90*MOTOR_1_GEARBOX;
-		AppCommCAN_SendMotorMessage(&hcan, MOTOR_1_ID, MOTOR_CMD_CONTROL_POSITION_JOG_2);
+		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_CONTROL_POSITION_JOG_2);
 		break;
 	default:
 		break;

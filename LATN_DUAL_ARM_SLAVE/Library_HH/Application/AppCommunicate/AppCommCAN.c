@@ -30,7 +30,8 @@
 /********************************************************************************
  * PRIVATE VARIABLES
  ********************************************************************************/
-//PRIVATE CAN_HandleTypeDef strCanUse = NULL;
+PRIVATE CAN_HandleTypeDef* strCanUse;
+
 PRIVATE CAN_TxHeaderTypeDef strCanTxMsgId;		// Tx message ID - header
 PRIVATE CAN_RxHeaderTypeDef strCanRxMsgId;		// Rx message ID - header
 
@@ -46,8 +47,8 @@ PRIVATE U32 u32CanTxMsgMailBox = 0;				// Tx header and data
 /********************************************************************************
  * PRIVATE FUNCTION DECLARATION
  ********************************************************************************/
-PRIVATE void AppCommCAN_SetupFilter(CAN_HandleTypeDef *hcan);
-PRIVATE void AppCommCAN_SetupRxInterrupt(CAN_HandleTypeDef *hcan);
+PRIVATE void AppCommCAN_SetupFilter();
+PRIVATE void AppCommCAN_SetupRxInterrupt();
 PRIVATE void AppCommCAN_SetupTxFrame();
 
 /********************************************************************************
@@ -73,7 +74,7 @@ PRIVATE void AppCommCAN_SetupTxFrame();
 //	}
 //}
 
-PRIVATE void AppCommCAN_SetupFilter(CAN_HandleTypeDef *hcan)
+PRIVATE void AppCommCAN_SetupFilter()
 {
     CAN_FilterTypeDef canFilterIdConfig;					// User CAN filter ID - header filter
 
@@ -89,7 +90,7 @@ PRIVATE void AppCommCAN_SetupFilter(CAN_HandleTypeDef *hcan)
     canFilterIdConfig.FilterActivation = CAN_FILTER_ENABLE;
     canFilterIdConfig.SlaveStartFilterBank = 1;
 
-    if (HAL_CAN_ConfigFilter(hcan, &canFilterIdConfig) != HAL_OK)
+    if (HAL_CAN_ConfigFilter(strCanUse, &canFilterIdConfig) != HAL_OK)
     {
         // Error_Handler();
     }
@@ -106,16 +107,16 @@ PRIVATE void AppCommCAN_SetupFilter(CAN_HandleTypeDef *hcan)
     canFilterIdConfig.FilterActivation = CAN_FILTER_ENABLE;
     canFilterIdConfig.SlaveStartFilterBank = 1;
 
-    if (HAL_CAN_ConfigFilter(hcan, &canFilterIdConfig) != HAL_OK)
+    if (HAL_CAN_ConfigFilter(strCanUse, &canFilterIdConfig) != HAL_OK)
     {
         // Error_Handler();
     }
 }
 
 
-PRIVATE void AppCommCAN_SetupRxInterrupt(CAN_HandleTypeDef *hcan)
+PRIVATE void AppCommCAN_SetupRxInterrupt()
 {
-	if (HAL_OK != HAL_CAN_ActivateNotification(hcan, CAN_IT_RX_FIFO0_MSG_PENDING))	// Active Rx cho FIFO0
+	if (HAL_OK != HAL_CAN_ActivateNotification(strCanUse, CAN_IT_RX_FIFO0_MSG_PENDING))	// Active Rx cho FIFO0
 	{
 //		Error_Handler();
 	}
@@ -150,11 +151,10 @@ PRIVATE void AppCommCAN_SetupTxFrame()
   */
 GLOBAL void AppCommCAN_UserSetup(CAN_HandleTypeDef *hcan)
 {
-	AppCommCAN_SetupFilter(hcan);
-	AppCommCAN_SetupRxInterrupt(hcan);	// Enable interrupt
-
-	AppCommCAN_SetupTxFrame();			// Setting for Tx message ID
-
+	strCanUse = hcan;				// Save this for private function can be use
+	AppCommCAN_SetupFilter();
+	AppCommCAN_SetupRxInterrupt();	// Enable interrupt
+	AppCommCAN_SetupTxFrame();		// Setting for Tx message ID
 }
 
 GLOBAL void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)	// When Rx interrupt occur
@@ -169,7 +169,7 @@ GLOBAL void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)	// When R
 	}
 }
 
-GLOBAL void AppCommCAN_SendMotorMessage(CAN_HandleTypeDef *hcan, U08 _u8MotorMsgId, U08 _u8MsgDataCmd)
+GLOBAL void AppCommCAN_SendMotorMessage(U08 _u8MotorMsgId, U08 _u8MsgDataCmd)
 {
 	// Set Tx identifier
 	strCanTxMsgId.StdId = (U32)(MOTOR_PROTOCOL_GET_HEADER(_u8MotorMsgId));
@@ -178,7 +178,7 @@ GLOBAL void AppCommCAN_SendMotorMessage(CAN_HandleTypeDef *hcan, U08 _u8MotorMsg
 	ApiProtocolMotorMG_TxHandler(_u8MotorMsgId, _u8MsgDataCmd, arrCanTxMsgData);
 
 	// Send Tx data
-	HAL_CAN_AddTxMessage(hcan, &strCanTxMsgId, arrCanTxMsgData, &u32CanTxMsgMailBox);
+	HAL_CAN_AddTxMessage(strCanUse, &strCanTxMsgId, arrCanTxMsgData, &u32CanTxMsgMailBox);
 }
 
 GLOBAL void AppCommCAN_GetMotorMessage()	// Process data in "strCanRxMsgId" and "arrCanRxMsgData"

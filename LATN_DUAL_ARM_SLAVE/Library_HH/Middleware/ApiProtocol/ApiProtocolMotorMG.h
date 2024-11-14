@@ -24,7 +24,6 @@
 
 #define MOTOR_PROTOCOL_DATA_FRAME_LENGTH	(8)
 
-
 // Protocol communicate command
 #define	MOTOR_CMD_SET_OFF						0x80	// 2.1
 #define	MOTOR_CMD_SET_ON						0x88	// 2.2
@@ -59,6 +58,20 @@
 
 #define	MOTOR_CMD_MULTI_FORCE					0xFE	// 3.1
 
+#define MOTOR_MG_5010_TORQUE_CONSTRAINT_LOW		(-430)	// ~-7A
+#define MOTOR_MG_5010_TORQUE_CONSTRAINT_HIGH	(430)	// ~ 7A
+#define MOTOR_MG_4010_TORQUE_CONSTRAINT_LOW		(-279)	// ~-4.5A
+#define MOTOR_MG_4010_TORQUE_CONSTRAINT_HIGH	(279)	// ~ 4.5A
+#define MOTOR_MG_SPEED_CONSTRAINT				(24000)
+#define MOTOR_MG_MULTI_ANGLE_CONSTRAINT			(35999999)
+#define MOTOR_MG_SINGLE_ANGLE_CONSTRAINT		(35999)
+#define MOTOR_MG_JOG_ANGLE_CONSTRAINT			(35999999)
+#define MOTOR_MG_ENCODER_14BIT_OFFSET			(16383)
+
+#define MOTOR_MG_xx10_GEAR						(10)
+
+#define MOTOR_MOVE_CW							(1)
+#define MOTOR_MOVE_CCW							(0)
 /********************************************************************************
  * TYPEDEFS AND ENUMS
  ********************************************************************************/
@@ -196,5 +209,16 @@ extern strMotorMsgTx strRobotArmMotorCmd[3];
 GLOBAL void ApiProtocolMotorMG_RxHandler(U32 _u32MotorIdentifier, U08* _b8RxDataBuffer);
 GLOBAL void ApiProtocolMotorMG_TxHandler(enMotorId _u8MotorId, U08 _u8MessageID, U08* _b8TxDataBuffer);
 
+GLOBAL void ApiProtocolMotorMG_SetTorque(enMotorId _u8MotorId, I16 _i16Torque);
+GLOBAL void ApiProtocolMotorMG_SetSpeed(enMotorId _u8MotorId, I32 _i32Speed);
+GLOBAL void ApiProtocolMotorMG_SetAngleMulti(enMotorId _u8MotorId, I32 _i32Angle, U16 _u16Speed);
+GLOBAL void ApiProtocolMotorMG_SetAngleSingle(enMotorId _u8MotorId, U32 _u32Angle, U16 _u16Speed, BOOL _bDirection);
+GLOBAL void ApiProtocolMotorMG_SetAngleJog(enMotorId _u8MotorId, I32 _i32Angle, U16 _u16Speed);
+GLOBAL void ApiProtocolMotorMG_SetPID(enMotorId _u8MotorId, U08 _u8AngleKp, U08 _u8AngleKi, U08 _u8SpeedKp, U08 _u8SpeedKi, U08 _u8TorqueKp, U08 _u8TorqueKi);
+GLOBAL void ApiProtocolMotorMG_SetAccel(enMotorId _u8MotorId, I32 _i32Accel);
+GLOBAL void ApiProtocolMotorMG_SetEncodeOffset(enMotorId _u8MotorId, U16 _u16Offset);
+
+extern GLOBAL U08 u8MotorCmdFlag;
+GLOBAL void ApiProtocolMotorMG_TestComm();
 
 #endif /* MIDDLEWARE_APIPROTOCOL_APIPROTOCOLMOTORMG_H_ */

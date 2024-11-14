@@ -399,6 +399,8 @@ GLOBAL void ApiProtocolMotorMG_RxHandler(U32 _u32MotorIdentifier, U08* _b8RxData
 		// Invalid message ID
 		break;
 	}
+
+	return;
 };
 
 GLOBAL void ApiProtocolMotorMG_TxHandler(enMotorId _u8MotorId, U08 _u8MessageID, U08* _b8TxDataBuffer)
@@ -452,5 +454,245 @@ GLOBAL void ApiProtocolMotorMG_TxHandler(enMotorId _u8MotorId, U08 _u8MessageID,
 		// Do nothing
 		break;
 
+	}
+
+	return;
+}
+
+
+
+GLOBAL void ApiProtocolMotorMG_SetTorque(enMotorId _u8MotorId, I16 _i16Torque)
+{
+	switch (_u8MotorId)
+	{
+	case MOTOR_1_ID:
+		strRobotArmMotorCmd[_u8MotorId].Control.i16TorqueCurrent = CONSTRAIN(_i16Torque, MOTOR_MG_5010_TORQUE_CONSTRAINT_LOW, MOTOR_MG_5010_TORQUE_CONSTRAINT_HIGH);
+		break;
+	case MOTOR_2_ID:
+	case MOTOR_3_ID:
+		strRobotArmMotorCmd[_u8MotorId].Control.i16TorqueCurrent = CONSTRAIN(_i16Torque, MOTOR_MG_4010_TORQUE_CONSTRAINT_LOW, MOTOR_MG_4010_TORQUE_CONSTRAINT_HIGH);
+		break;
+	default:
+		// Do nothing
+		break;
+	}
+
+	return;
+}
+
+GLOBAL void ApiProtocolMotorMG_SetSpeed(enMotorId _u8MotorId, I32 _i32Speed)
+{
+	// 1°/s/bit  ➔ (0.01°/s/bit after gear)
+	switch (_u8MotorId)
+	{
+	case MOTOR_1_ID:
+	case MOTOR_2_ID:
+	case MOTOR_3_ID:
+		strRobotArmMotorCmd[_u8MotorId].Control.i32Speed = CONSTRAIN(_i32Speed*100*MOTOR_MG_xx10_GEAR, -MOTOR_MG_SPEED_CONSTRAINT, MOTOR_MG_SPEED_CONSTRAINT);
+		break;
+	default:
+		// Do nothing
+		break;
+	}
+
+	return;
+}
+
+GLOBAL void ApiProtocolMotorMG_SetAngleMulti(enMotorId _u8MotorId, I32 _i32Angle, U16 _u16Speed)
+{
+	// Angle: 0.01°/bit ➔ 0.01°/bit after gear
+	// Speed: 1°/s/bit  ➔  1°/s/bit after gear
+	switch (_u8MotorId)
+	{
+	case MOTOR_1_ID:
+	case MOTOR_2_ID:
+	case MOTOR_3_ID:
+		strRobotArmMotorCmd[_u8MotorId].Control.i32MultiAngle = CONSTRAIN(_i32Angle*MOTOR_MG_xx10_GEAR, -MOTOR_MG_MULTI_ANGLE_CONSTRAINT, MOTOR_MG_MULTI_ANGLE_CONSTRAINT);
+		strRobotArmMotorCmd[_u8MotorId].Control.u16MultiSpeed = _u16Speed*MOTOR_MG_xx10_GEAR;
+
+		break;
+	default:
+		// Do nothing
+		break;
+	}
+	return;
+}
+
+GLOBAL void ApiProtocolMotorMG_SetAngleSingle(enMotorId _u8MotorId, U32 _u32Angle, U16 _u16Speed, BOOL _bDirection)
+{
+	// Angle: 0.01°/bit ➔ 0.01°/bit after gear
+	// Speed: 1°/s/bit  ➔  1°/s/bit after gear
+	switch (_u8MotorId)
+	{
+	case MOTOR_1_ID:
+	case MOTOR_2_ID:
+	case MOTOR_3_ID:
+		strRobotArmMotorCmd[_u8MotorId].Control.bDirection     = _bDirection;
+		strRobotArmMotorCmd[_u8MotorId].Control.u32SingleAngle = CONSTRAIN(_u32Angle*MOTOR_MG_xx10_GEAR, 0, MOTOR_MG_SINGLE_ANGLE_CONSTRAINT);
+		strRobotArmMotorCmd[_u8MotorId].Control.u16SingleSpeed = _u16Speed*MOTOR_MG_xx10_GEAR;
+
+		break;
+	default:
+		// Do nothing
+		break;
+	}
+	return;
+}
+
+GLOBAL void ApiProtocolMotorMG_SetAngleJog(enMotorId _u8MotorId, I32 _i32Angle, U16 _u16Speed)
+{
+	// Angle: 0.01°/bit ➔ 0.01°/bit after gear
+	// Speed: 1°/s/bit  ➔  1°/s/bit after gear
+	switch (_u8MotorId)
+	{
+	case MOTOR_1_ID:
+	case MOTOR_2_ID:
+	case MOTOR_3_ID:
+		strRobotArmMotorCmd[_u8MotorId].Control.i32JogAngle = CONSTRAIN(_i32Angle*MOTOR_MG_xx10_GEAR, -MOTOR_MG_JOG_ANGLE_CONSTRAINT, MOTOR_MG_JOG_ANGLE_CONSTRAINT);
+		strRobotArmMotorCmd[_u8MotorId].Control.u16JogSpeed = _u16Speed*MOTOR_MG_xx10_GEAR;
+		break;
+	default:
+		// Do nothing
+		break;
+	}
+
+	return;
+}
+
+GLOBAL void ApiProtocolMotorMG_SetPID(enMotorId _u8MotorId, U08 _u8AngleKp, U08 _u8AngleKi, U08 _u8SpeedKp, U08 _u8SpeedKi, U08 _u8TorqueKp, U08 _u8TorqueKi)
+{
+	switch (_u8MotorId)
+	{
+	case MOTOR_1_ID:
+	case MOTOR_2_ID:
+	case MOTOR_3_ID:
+		strRobotArmMotorCmd[_u8MotorId].Setting.u8AngleKp = _u8AngleKp;
+		strRobotArmMotorCmd[_u8MotorId].Setting.u8AngleKi = _u8AngleKi;
+		strRobotArmMotorCmd[_u8MotorId].Setting.u8SpeedKp = _u8SpeedKp;
+		strRobotArmMotorCmd[_u8MotorId].Setting.u8SpeedKi = _u8SpeedKi;
+		strRobotArmMotorCmd[_u8MotorId].Setting.u8TorqueKp = _u8TorqueKp;
+		strRobotArmMotorCmd[_u8MotorId].Setting.u8TorqueKi = _u8TorqueKi;
+		break;
+	default:
+		// Do nothing
+		break;
+	}
+
+	return;
+}
+
+GLOBAL void ApiProtocolMotorMG_SetAccel(enMotorId _u8MotorId, I32 _i32Accel)
+{
+	// Accel: 1dps/s
+	switch (_u8MotorId)
+	{
+	case MOTOR_1_ID:
+	case MOTOR_2_ID:
+	case MOTOR_3_ID:
+		strRobotArmMotorCmd[_u8MotorId].Setting.i32Accel = _i32Accel;
+		break;
+	default:
+		// Do nothing
+		break;
+	}
+
+	return;
+}
+
+GLOBAL void ApiProtocolMotorMG_SetEncodeOffset(enMotorId _u8MotorId, U16 _u16Offset)
+{
+	// Offset: 0~360 = 0~16383
+	switch (_u8MotorId)
+	{
+	case MOTOR_1_ID:
+	case MOTOR_2_ID:
+	case MOTOR_3_ID:
+		strRobotArmMotorCmd[_u8MotorId].Setting.u16Encoder14BitOffset = CONSTRAIN(_u16Offset, 0, MOTOR_MG_ENCODER_14BIT_OFFSET);
+		break;
+	default:
+		// Do nothing
+		break;
+	}
+	return;
+}
+
+
+
+GLOBAL U08 u8MotorCmdFlag = 1;
+GLOBAL U16 u16MotorCmdCnt = 0;
+GLOBAL void ApiProtocolMotorMG_TestComm()
+{
+	switch (u8MotorCmdFlag)
+	{
+
+//	case MOTOR_CMD_READ_POSITION_SINGLELOOP:
+//	case MOTOR_CMD_READ_ERROR:
+//	case MOTOR_CMD_CLEAR_ERROR:
+//	case MOTOR_CMD_READ_MECHANICAL_STATE:
+//	case MOTOR_CMD_READ_ELECTRIC_STATE:
+	case 1:
+		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_SET_ON);
+		break;
+	case 2:
+		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_SET_OFF);
+		break;
+	case 3:
+		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_SET_STOP);
+		break;
+	case 4:
+		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_READ_PID);
+		break;
+	case 5:
+		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_READ_ACCEL);
+		break;
+	case 6:
+		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_READ_ENCODER);
+		break;
+	case 7:
+//		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_WRITE_ENCODER_ZERO_ROM);
+		break;
+	case 8:
+		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_READ_POSITION_MULTILOOP);
+		break;
+	case 9:
+		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_READ_POSITION_SINGLELOOP);
+		break;
+	case 10:
+		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_READ_ERROR);
+		break;
+	case 11:
+		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_CLEAR_ERROR);
+		break;
+	case 12:
+		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_READ_MECHANICAL_STATE);
+		break;
+	case 13:
+		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_READ_ELECTRIC_STATE);
+		break;
+	case 14:
+		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_CONTROL_POSITION_MULTILOOP_2);
+		break;
+	case 15:
+		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_CONTROL_POSITION_SINGLELOOP_2);
+		break;
+	case 16:
+		strRobotArmMotorCmd[MOTOR_1_ID].Control.i32JogAngle = 180*100*MOTOR_1_GEARBOX;
+		strRobotArmMotorCmd[MOTOR_1_ID].Control.u16JogSpeed = 90*MOTOR_1_GEARBOX;
+		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_CONTROL_POSITION_JOG_2);
+		break;
+	default:
+		break;
+	}
+
+	if (100 > u16MotorCmdCnt)		// Send 100 cmd
+	{
+		u16MotorCmdCnt++;
+	}
+	else
+	{
+		if (0 != u8MotorCmdFlag)	// Not send anymore
+		{
+			u8MotorCmdFlag = 0;
+		}
 	}
 }

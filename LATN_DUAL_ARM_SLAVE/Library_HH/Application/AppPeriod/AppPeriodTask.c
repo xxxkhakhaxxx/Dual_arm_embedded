@@ -21,10 +21,6 @@
  * PRIVATE MACROS AND DEFINES
  ********************************************************************************/
 #define TASK_TIMER_CNT_ELAPSED	(10000)
-#define TASK_100US				(1)		// Note: only for timer step 100us
-#define TASK_1MS				(10)
-#define TASK_10MS				(100)
-#define TASK_100MS				(1000)
 
 /********************************************************************************
  * PRIVATE TYPEDEFS AND ENUMS
@@ -32,22 +28,18 @@
 typedef enum ENUM_TASK_LIST
 {
 	TASK_NONE = 0,
-	TASK_1_1MS_MOTOR_INIT,
-	TASK_2_1MS,
-	TASK_3_10MS,
-	TASK_4_10MS,
-	TASK_5_100MS,
-	TASK_6_100MS
+	TASK_1_10MS_MOTOR_1_COMM,
+	TASK_2_10MS_MOTOR_2_COMM,
+	TASK_3_10MS_MOTOR_3_COMM,
 
 } enTaskList;
 
 /********************************************************************************
  * PRIVATE VARIABLES
  ********************************************************************************/
-PRIVATE volatile U32 u32TaskTimerCnt_100us = 0;
+PRIVATE volatile U32 u32TaskTimerCnt_1ms = 0;
 
 PRIVATE enTaskList enTaskId = TASK_NONE;
-PRIVATE BOOL u8MotorInitDone = FALSE;
 /********************************************************************************
  * GLOBAL VARIABLES
  ********************************************************************************/
@@ -58,10 +50,9 @@ PRIVATE BOOL u8MotorInitDone = FALSE;
  ********************************************************************************/
 PRIVATE void AppPeriodTask_SetTaskFlag(enTaskList _TaskName);
 PRIVATE void AppPeriodTask_Scheduler(void);
-PRIVATE void AppPeriodTask_MotorInit(void);
 
 PRIVATE void AppPeriodTask_1ms_RobotKinematics();
-PRIVATE void AppPeriodTask_1ms_MotorComm();
+PRIVATE void AppPeriodTask_1ms_Motor1Comm();
 /* Kiểm tra quỹ đạo đặt -*/
 /********************************************************************************
  * PRIVATE FUNCTION IMPLEMENTATION
@@ -78,37 +69,30 @@ PRIVATE void AppPeriodTask_SetTaskFlag(enTaskList _TaskName)
 
 PRIVATE void AppPeriodTask_Scheduler(void)
 {
+	/* At a time, only 1 task is set to do */
 
-	/* 1ms Task */
-	switch ((u32TaskTimerCnt_100us)%(TASK_1MS))
-	{
-	case 1:			// 0.1ms - 1.1ms - 2.1ms - ...
-		AppPeriodTask_SetTaskFlag(TASK_1_1MS_MOTOR_INIT);
-		break;
-	case 6:			// 0.6ms - 1.6ms - 2.6ms - ...
-		AppPeriodTask_SetTaskFlag(TASK_2_1MS);
-		break;
-	default:
-		break;
-	}
 
 	/* 10ms Task */
-	switch ((u32TaskTimerCnt_100us)%(TASK_10MS))
+	switch ((u32TaskTimerCnt_1ms)%10)
 	{
-	case 5:			// 0.5ms - 10.5ms - 20.5ms - ...
+	case 1:			// 1ms - 11ms - 21ms - ...
+		AppPeriodTask_SetTaskFlag(TASK_1_10MS_MOTOR_1_COMM);
 		break;
-	case 33:		// 3.3ms - 13.3ms - 23.3ms - ...
+	case 2:			// 2ms - 12ms - 22ms - ...
+		AppPeriodTask_SetTaskFlag(TASK_2_10MS_MOTOR_2_COMM);
 		break;
+	case 3:			// 3ms - 13ms - 23ms - ...
+		AppPeriodTask_SetTaskFlag(TASK_3_10MS_MOTOR_3_COMM);
 	default:
 		break;
 	}
 
 	/* 100ms Task */
-	switch ((u32TaskTimerCnt_100us)%(TASK_100MS))
+	switch ((u32TaskTimerCnt_1ms)%100)
 	{
-	case 99:		// 9.9ms - 109.9ms - 209.9ms - ...
+	case 5:			// 5ms - 105ms - 205ms - ...
 		break;
-	case 456:		// 45.6ms - 145.6ms - 245.6ms - ...
+	case 33:		// 33ms - 133ms - 233ms - ...
 		break;
 	default:
 		break;
@@ -120,8 +104,9 @@ PRIVATE void AppPeriodTask_1ms_RobotKinematics()
 	return;
 }
 
-PRIVATE void AppPeriodTask_1ms_MotorComm()
+PRIVATE void AppPeriodTask_1ms_Motor1Comm()
 {
+	ApiProtocolMotorMG_TestComm();
 	return;
 }
 /********************************************************************************
@@ -129,16 +114,16 @@ PRIVATE void AppPeriodTask_1ms_MotorComm()
  ********************************************************************************/
 GLOBAL void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
-	if (htim->Instance == TIM2)		// time step TIM 2 = 100us
+	if (htim->Instance == TIM2)
 	{
-//		u32TimerCnt100us = __HAL_TIM_GET_COUNTER(htim);			// Directly read from register can take more time
-		u32TaskTimerCnt_100us++;
+//		u32TaskTimerCnt_1ms = __HAL_TIM_GET_COUNTER(htim);			// Directly read from register can take more time
+		u32TaskTimerCnt_1ms++;
 
 		AppPeriodTask_Scheduler();		// Check time for which task to perform
 
-		if (TASK_TIMER_CNT_ELAPSED <= u32TaskTimerCnt_100us)	// Cycle 1s
+		if (TASK_TIMER_CNT_ELAPSED <= u32TaskTimerCnt_1ms)	// Cycle 1s
 		{
-			u32TaskTimerCnt_100us = 0;
+			u32TaskTimerCnt_1ms = 0;
 		}
 	}
 
@@ -148,36 +133,18 @@ GLOBAL void AppPeriodTask_TaskCall(void)	/* Performing the corresponding task */
 {
 	switch(enTaskId)
 	{
-	case TASK_1_1MS_MOTOR_INIT:
-		AppPeriodTask_MotorInit();
+	case TASK_1_10MS_MOTOR_1_COMM:
+		AppPeriodTask_1ms_Motor1Comm();
 		break;
-	case TASK_2_1MS:
+	case TASK_2_10MS_MOTOR_2_COMM:
 
 		break;
+	case TASK_3_10MS_MOTOR_3_COMM:
 	default:
 		// None task
 		break;
 	}
+
+	enTaskId = TASK_NONE;	// Clear task flag
 }
 
-PRIVATE void AppPeriodTask_MotorInit(void)
-{
-	if (TRUE ==  u8MotorInitDone)
-		return;
-
-//	switch (_MotorInitId)
-//	{
-//	case MOTOR_1_ID:
-//
-//		break;
-//	case MOTOR_2_ID:
-//
-//		break;
-//	case MOTOR_3_ID:
-//
-//		break;
-//	default:
-//
-//		break;
-//	}
-}

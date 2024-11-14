@@ -57,12 +57,12 @@ static void MX_CAN_Init(void);
 static void MX_SPI1_Init(void);
 static void MX_TIM2_Init(void);
 /* USER CODE BEGIN PFP */
-PRIVATE void Motor_test();
+
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-PRIVATE U08 u08MotorCmdFlag = 0;
+
 /* USER CODE END 0 */
 
 /**
@@ -101,13 +101,11 @@ int main(void)
 	AppCommCAN_UserSetup(&hcan);
 	HAL_CAN_Start(&hcan);
 
-//	U08 u8ToggleFlag = FALSE;
-	u08MotorCmdFlag = 1;
-//	AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_SET_ON);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+	 HAL_TIM_Base_Start_IT(&htim2);		// Start scheduling task
   while (1)
   {
 
@@ -118,9 +116,9 @@ int main(void)
 		AppDataSet_CanRxMsgFlag(FALSE);
 	}
 
-	AppPeriodTask_TaskCall();
-
-	Motor_test();
+//	AppPeriodTask_TaskCall();
+	AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_READ_ELECTRIC_STATE);
+	HAL_Delay(1);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -260,9 +258,9 @@ static void MX_TIM2_Init(void)
 
   /* USER CODE END TIM2_Init 1 */
   htim2.Instance = TIM2;
-  htim2.Init.Prescaler = 7200-1;				// f_timer = 10kHz -> T_step = 100us
+  htim2.Init.Prescaler = 72-1;					// f = 1 Mhz -> ΔT = 1us
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim2.Init.Period = 10000-1;					// T_reset = 1s;
+  htim2.Init.Period = 1000-1;					// T = 1ms
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
@@ -281,7 +279,7 @@ static void MX_TIM2_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN TIM2_Init 2 */
-  HAL_TIM_Base_Start_IT(&htim2);
+
   /* USER CODE END TIM2_Init 2 */
 
 }
@@ -317,74 +315,7 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
-PRIVATE void Motor_test()
-{
-	switch (u08MotorCmdFlag)
-	{
 
-//	case MOTOR_CMD_READ_POSITION_SINGLELOOP:
-//	case MOTOR_CMD_READ_ERROR:
-//	case MOTOR_CMD_CLEAR_ERROR:
-//	case MOTOR_CMD_READ_MECHANICAL_STATE:
-//	case MOTOR_CMD_READ_ELECTRIC_STATE:
-	case 1:
-		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_SET_ON);
-		break;
-	case 2:
-		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_SET_OFF);
-		break;
-	case 3:
-		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_SET_STOP);
-		break;
-	case 4:
-		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_READ_PID);
-		break;
-	case 5:
-		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_READ_ACCEL);
-		break;
-	case 6:
-		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_READ_ENCODER);
-		break;
-	case 7:
-//		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_WRITE_ENCODER_ZERO_ROM);
-		break;
-	case 8:
-		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_READ_POSITION_MULTILOOP);
-		break;
-	case 9:
-		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_READ_POSITION_SINGLELOOP);
-		break;
-	case 10:
-		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_READ_ERROR);
-		break;
-	case 11:
-		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_CLEAR_ERROR);
-		break;
-	case 12:
-		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_READ_MECHANICAL_STATE);
-		break;
-	case 13:
-		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_READ_ELECTRIC_STATE);
-		break;
-	case 14:
-		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_CONTROL_POSITION_MULTILOOP_2);
-		break;
-	case 15:
-		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_CONTROL_POSITION_SINGLELOOP_2);
-		break;
-	case 16:
-		strRobotArmMotorCmd[MOTOR_1_ID].Control.i32JogAngle = 180*100*MOTOR_1_GEARBOX;
-		strRobotArmMotorCmd[MOTOR_1_ID].Control.u16JogSpeed = 90*MOTOR_1_GEARBOX;
-		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_CONTROL_POSITION_JOG_2);
-		break;
-	default:
-		break;
-	}
-	if (0 != u08MotorCmdFlag)
-	{
-		u08MotorCmdFlag = 0;
-	}
-}
 /* USER CODE END 4 */
 
 /**

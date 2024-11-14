@@ -156,16 +156,23 @@ GLOBAL void AppCommCAN_UserSetup(CAN_HandleTypeDef *hcan)
 	AppCommCAN_SetupRxInterrupt();	// Enable interrupt
 	AppCommCAN_SetupTxFrame();		// Setting for Tx message ID
 }
-
+volatile static U32 debug_cnt_Rx_Ok = 0;
+volatile static U32 debug_cnt_Rx_Error = 0;
+volatile static U32 debug_cnt_Tx_Ok = 0;
+volatile static U32 debug_cnt_Tx_Error = 0;
+volatile static U32 debug_cnt_Tx_ErrorParam = 0;
+volatile static U32 debug_cnt_Tx_ErrorInit = 0;
 GLOBAL void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)	// When Rx interrupt occur
 {
 	if (HAL_OK != HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &strCanRxMsgId, arrCanRxMsgData))	// Get MsgId and Data
 	{
 //		Error_Handler();
+		debug_cnt_Rx_Ok++;
 	}
 	else	// No error
 	{
 		AppDataSet_CanRxMsgFlag(TRUE);
+		debug_cnt_Rx_Error++;
 	}
 }
 
@@ -178,7 +185,22 @@ GLOBAL void AppCommCAN_SendMotorMessage(U08 _u8MotorMsgId, U08 _u8MsgDataCmd)
 	ApiProtocolMotorMG_TxHandler(_u8MotorMsgId, _u8MsgDataCmd, arrCanTxMsgData);
 
 	// Send Tx data
-	HAL_CAN_AddTxMessage(strCanUse, &strCanTxMsgId, arrCanTxMsgData, &u32CanTxMsgMailBox);
+	if (HAL_OK == HAL_CAN_AddTxMessage(strCanUse, &strCanTxMsgId, arrCanTxMsgData, &u32CanTxMsgMailBox))
+	{
+		debug_cnt_Tx_Ok++;
+	}
+	else	// HAL_ERROR
+	{
+		debug_cnt_Tx_Error++;
+		if (HAL_CAN_ERROR_PARAM == (strCanUse->ErrorCode & HAL_CAN_ERROR_PARAM))
+		{
+			debug_cnt_Tx_ErrorParam++;
+		}
+		else	// HAL_CAN_ERROR_NOT_INITIALIZED
+		{
+			debug_cnt_Tx_ErrorInit++;
+		}
+	}
 }
 
 GLOBAL void AppCommCAN_GetMotorMessage()	// Process data in "strCanRxMsgId" and "arrCanRxMsgData"

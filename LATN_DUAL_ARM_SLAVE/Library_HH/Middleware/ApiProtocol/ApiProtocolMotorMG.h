@@ -24,6 +24,7 @@
 
 #define MOTOR_PROTOCOL_DATA_FRAME_LENGTH	(8)
 
+/* Communicate command */
 // Protocol communicate command
 #define	MOTOR_CMD_SET_OFF						0x80	// 2.1
 #define	MOTOR_CMD_SET_ON						0x88	// 2.2
@@ -56,8 +57,9 @@
 #define	MOTOR_CMD_READ_MECHANICAL_STATE			0x9C	// 2.26
 #define	MOTOR_CMD_READ_ELECTRIC_STATE			0x9D	// 2.27
 
-#define	MOTOR_CMD_MULTI_FORCE					0xFE	// 3.1
+#define	MOTOR_CMD_MULTI_FORCE					0xFE	// 3.1		Only support on CAN Tool
 
+/* Motor constraints */
 #define MOTOR_MG_5010_TORQUE_CONSTRAINT_LOW		(-430)	// ~-7A
 #define MOTOR_MG_5010_TORQUE_CONSTRAINT_HIGH	(430)	// ~ 7A
 #define MOTOR_MG_4010_TORQUE_CONSTRAINT_LOW		(-279)	// ~-4.5A
@@ -70,6 +72,7 @@
 
 #define MOTOR_MG_xx10_GEAR						(10)
 
+/* Motor move direction */
 #define MOTOR_MOVE_CW							(1)
 #define MOTOR_MOVE_CCW							(0)
 /********************************************************************************

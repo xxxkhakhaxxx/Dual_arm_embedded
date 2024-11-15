@@ -167,12 +167,12 @@ GLOBAL void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)	// When R
 	if (HAL_OK != HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &strCanRxMsgId, arrCanRxMsgData))	// Get MsgId and Data
 	{
 //		Error_Handler();
-		debug_cnt_Rx_Ok++;
+		debug_cnt_Rx_Error++;
 	}
 	else	// No error
 	{
 		AppDataSet_CanRxMsgFlag(TRUE);
-		debug_cnt_Rx_Error++;
+		debug_cnt_Rx_Ok++;
 	}
 }
 

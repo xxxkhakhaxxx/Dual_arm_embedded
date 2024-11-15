@@ -40,5 +40,6 @@ GLOBAL BOOL AppDataGet_IsMotorHighTemp(U08 _u8MotorId);
 GLOBAL BOOL AppDataGet_CanRxMsgFlag(void);
 GLOBAL void AppDataSet_CanRxMsgFlag(BOOL _bFlag);
 
-
+GLOBAL BOOL AppDataGet_Flag3s(void);
+GLOBAL void AppDataSet_Flag3s(BOOL _bFlag);
 #endif /* APPLICATION_APPDATA_APPDATA_H_ */

@@ -116,9 +116,8 @@ int main(void)
 		AppDataSet_CanRxMsgFlag(FALSE);
 	}
 
-//	AppPeriodTask_TaskCall();
-	AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_READ_ELECTRIC_STATE);
-	HAL_Delay(1);
+	AppPeriodTask_TaskCall();
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */

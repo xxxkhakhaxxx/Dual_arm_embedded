@@ -73,19 +73,4 @@ GLOBAL void AppDataSet_CanRxMsgFlag(BOOL _bFlag)
 	}
 }
 
-static BOOL bFlag3s = FALSE;
-GLOBAL BOOL AppDataGet_Flag3s(void)
-{
-	return bFlag3s;
-}
-GLOBAL void AppDataSet_Flag3s(BOOL _bFlag)
-{
-	if (_bFlag != bFlag3s)
-	{
-		bFlag3s = _bFlag;
-	}
-
-	return;
-}
-
 

@@ -28,9 +28,11 @@
 typedef enum ENUM_TASK_LIST
 {
 	TASK_NONE = 0,
-	TASK_1_10MS_MOTOR_1_COMM,
-	TASK_2_10MS_MOTOR_2_COMM,
-	TASK_3_10MS_MOTOR_3_COMM,
+	TASK_10MS_MASTER_COMM_RX,
+	TASK_10MS_MOTOR_1_COMM,
+	TASK_10MS_MOTOR_2_COMM,
+	TASK_10MS_MOTOR_3_COMM,
+	TASK_10MS_MASTER_COMM_TX
 
 } enTaskList;
 
@@ -51,9 +53,11 @@ PRIVATE enTaskList enTaskId = TASK_NONE;
 PRIVATE void AppPeriodTask_SetTaskFlag(enTaskList _TaskName);
 PRIVATE void AppPeriodTask_Scheduler(void);
 
-PRIVATE void AppPeriodTask_1ms_RobotKinematics(void);
 PRIVATE void AppPeriodTask_10ms_Motor1Comm(void);
-/* Kiểm tra quỹ đạo đặt -*/
+PRIVATE void AppPeriodTask_10ms_Motor2Comm(void);
+PRIVATE void AppPeriodTask_10ms_Motor3Comm(void);
+PRIVATE void AppPeriodTask_10ms_MasterCmdHandle(void);
+PRIVATE void AppPeriodTask_10ms_MasterFeedback(void);
 /********************************************************************************
  * PRIVATE FUNCTION IMPLEMENTATION
  ********************************************************************************/
@@ -85,41 +89,25 @@ PRIVATE void AppPeriodTask_Scheduler(void)
 	/* 10ms Task */
 	switch ((u32TaskTimerCnt_1ms)%10)
 	{
-	case 1:			// 1ms - 11ms - 21ms - ...
-		AppPeriodTask_SetTaskFlag(TASK_1_10MS_MOTOR_1_COMM);
+	case 1:
+		AppPeriodTask_SetTaskFlag(TASK_10MS_MASTER_COMM_RX);
 		break;
-	case 2:			// 2ms - 12ms - 22ms - ...
-		AppPeriodTask_SetTaskFlag(TASK_2_10MS_MOTOR_2_COMM);
+	case 3:			// 1ms - 11ms - 21ms - ...
+		AppPeriodTask_SetTaskFlag(TASK_10MS_MOTOR_1_COMM);
 		break;
-	case 3:			// 3ms - 13ms - 23ms - ...
-		AppPeriodTask_SetTaskFlag(TASK_3_10MS_MOTOR_3_COMM);
-	default:
+	case 5:			// 2ms - 12ms - 22ms - ...
+		AppPeriodTask_SetTaskFlag(TASK_10MS_MOTOR_2_COMM);
 		break;
-	}
-
-	/* 100ms Task */
-	switch ((u32TaskTimerCnt_1ms)%100)
-	{
-	case 5:			// 5ms - 105ms - 205ms - ...
-		break;
-	case 33:		// 33ms - 133ms - 233ms - ...
+	case 7:			// 3ms - 13ms - 23ms - ...
+		AppPeriodTask_SetTaskFlag(TASK_10MS_MOTOR_3_COMM);
+	case 9:
+		AppPeriodTask_SetTaskFlag(TASK_10MS_MASTER_COMM_TX);
 		break;
 	default:
 		break;
 	}
-
-	if ((u32TaskTimerCnt_1ms%3000)==0)
-	{
-		AppDataSet_Flag3s(TRUE);
-	}
 }
 
-PRIVATE void AppPeriodTask_1ms_RobotKinematics(void)
-{
-	return;
-}
-
-BOOL bDirection = 0;
 PRIVATE void AppPeriodTask_10ms_Motor1Comm(void)
 {
 //	ApiProtocolMotorMG_TestComm();
@@ -221,24 +209,8 @@ PRIVATE void AppPeriodTask_10ms_Motor1Comm(void)
 		_periodCmdSquence = MOTOR_CMD_READ_ERROR;
 		break;
 	case MOTOR_CMD_CONTROL_POSITION_JOG_2:
-//		ApiProtocolMotorMG_SetAngleJog(MOTOR_1_ID, 36000, 180);						// This param can be change somewhere else
-
-		if (TRUE == AppDataGet_Flag3s())
-		{
-			if (0 == bDirection)
-			{
-				ApiProtocolMotorMG_SetAngleJog(MOTOR_1_ID, 36000, 180);						// This param can be change somewhere else
-				bDirection = 1;
-			}
-			else
-			{
-				ApiProtocolMotorMG_SetAngleJog(MOTOR_1_ID, -36000, 180);						// This param can be change somewhere else
-				bDirection = 0;
-			}
-
-			AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_CONTROL_POSITION_JOG_2);
-			AppDataSet_Flag3s(FALSE);
-		}
+		ApiProtocolMotorMG_SetAngleJog(MOTOR_1_ID, 36000, 180);						// This param can be change somewhere else
+		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_CONTROL_POSITION_JOG_2);
 		_periodCmdSquence = MOTOR_CMD_READ_ERROR;
 		break;
 	default:
@@ -249,6 +221,245 @@ PRIVATE void AppPeriodTask_10ms_Motor1Comm(void)
 
 	return;
 }
+
+PRIVATE void AppPeriodTask_10ms_Motor2Comm(void)
+{
+//	ApiProtocolMotorMG_TestComm();
+	static BOOL _initFlag = FALSE;
+	static U08 _initCmdSquence = MOTOR_CMD_SET_ON;
+	static U08 _periodCmdSquence = MOTOR_CMD_READ_ERROR;
+
+
+	// Cmd sequence when init - Read parameter
+	if (FALSE == _initFlag)
+	{
+		// Send cmd
+		AppCommCAN_SendMotorMessage(MOTOR_2_ID, _initCmdSquence);
+
+		// Change cmd
+		switch (_initCmdSquence)
+		{
+		case MOTOR_CMD_SET_ON:						_initCmdSquence = MOTOR_CMD_READ_PID;					break;
+		case MOTOR_CMD_READ_PID:					_initCmdSquence = MOTOR_CMD_READ_ACCEL;					break;
+		case MOTOR_CMD_READ_ACCEL:					_initCmdSquence = MOTOR_CMD_READ_ENCODER;				break;
+		case MOTOR_CMD_READ_ENCODER:				_initCmdSquence = MOTOR_CMD_READ_POSITION_MULTILOOP;	break;
+		case MOTOR_CMD_READ_POSITION_MULTILOOP:		_initCmdSquence = MOTOR_CMD_READ_POSITION_SINGLELOOP;	break;
+		case MOTOR_CMD_READ_POSITION_SINGLELOOP:	_initCmdSquence = MOTOR_CMD_READ_ERROR;					break;
+		case MOTOR_CMD_READ_ERROR:					_initCmdSquence = MOTOR_CMD_READ_MECHANICAL_STATE;		break;
+		case MOTOR_CMD_READ_MECHANICAL_STATE:		_initCmdSquence = MOTOR_CMD_READ_ELECTRIC_STATE;		break;
+		case MOTOR_CMD_READ_ELECTRIC_STATE:
+			// End of init
+			_initFlag = TRUE;
+			break;
+		default:
+			// Do nothing
+			break;
+		}
+
+		return;		// No control if not done init
+	}
+
+	// Before control, check error
+	if ((TRUE == AppDataGet_IsMotorLowVoltage(MOTOR_2_ID)) || \
+		(TRUE == AppDataGet_IsMotorHighTemp(MOTOR_2_ID)))
+	{
+		switch (_periodCmdSquence)
+		{
+		case MOTOR_CMD_SET_STOP:
+			AppCommCAN_SendMotorMessage(MOTOR_2_ID, MOTOR_CMD_SET_STOP); // Send stop again
+			_periodCmdSquence = MOTOR_CMD_SET_OFF;
+			break;
+		case MOTOR_CMD_SET_OFF:
+			AppCommCAN_SendMotorMessage(MOTOR_2_ID, MOTOR_CMD_SET_OFF); // Off motor - continuously
+			break;
+		default:
+			AppCommCAN_SendMotorMessage(MOTOR_2_ID, MOTOR_CMD_SET_STOP);
+			_periodCmdSquence = MOTOR_CMD_SET_STOP;
+			break;
+		}
+
+		return;		// No control if error
+	}
+
+	/** Cmd sequence after init:
+	 * 	1/ Control: torque / speed / position (multi/single/jog)
+	 *  2/ Read error
+	 *  3/ Read eletric state
+	**/
+	switch (_periodCmdSquence)
+	{
+	case MOTOR_CMD_READ_ERROR:
+		AppCommCAN_SendMotorMessage(MOTOR_2_ID, MOTOR_CMD_READ_ERROR);
+		_periodCmdSquence = MOTOR_CMD_READ_ELECTRIC_STATE;
+		break;
+	case MOTOR_CMD_READ_ELECTRIC_STATE:
+		AppCommCAN_SendMotorMessage(MOTOR_2_ID, MOTOR_CMD_READ_ELECTRIC_STATE);
+
+		// Choose which to control here
+//		_periodCmdSquence = MOTOR_CMD_CONTROL_TORQUE;
+//		_periodCmdSquence = MOTOR_CMD_CONTROL_SPEED;
+//		_periodCmdSquence = MOTOR_CMD_CONTROL_POSITION_MULTILOOP_2;
+//		_periodCmdSquence = MOTOR_CMD_CONTROL_POSITION_SINGLELOOP_2;
+		_periodCmdSquence = MOTOR_CMD_CONTROL_POSITION_JOG_2;
+		break;
+	case MOTOR_CMD_CONTROL_TORQUE:
+//		ApiProtocolMotorMG_SetTorque(MOTOR_2_ID, 50);								// This param can be change somewhere else
+		AppCommCAN_SendMotorMessage(MOTOR_2_ID, MOTOR_CMD_CONTROL_TORQUE);
+		_periodCmdSquence = MOTOR_CMD_READ_ERROR;
+		break;
+	case MOTOR_CMD_CONTROL_SPEED:
+//		ApiProtocolMotorMG_SetSpeed(MOTOR_2_ID, 180);								// This param can be change somewhere else
+		AppCommCAN_SendMotorMessage(MOTOR_2_ID, MOTOR_CMD_CONTROL_SPEED);
+		_periodCmdSquence = MOTOR_CMD_READ_ERROR;
+		break;
+	case MOTOR_CMD_CONTROL_POSITION_MULTILOOP_2:
+//		ApiProtocolMotorMG_SetAngleMulti(MOTOR_2_ID, 36000, 180);					// This param can be change somewhere else
+		AppCommCAN_SendMotorMessage(MOTOR_2_ID, MOTOR_CMD_CONTROL_POSITION_MULTILOOP_2);
+		_periodCmdSquence = MOTOR_CMD_READ_ERROR;
+		break;
+	case MOTOR_CMD_CONTROL_POSITION_SINGLELOOP_2:
+//		ApiProtocolMotorMG_SetAngleSingle(MOTOR_2_ID, 36000, 180, MOTOR_MOVE_CW);	// This param can be change somewhere else
+		AppCommCAN_SendMotorMessage(MOTOR_2_ID, MOTOR_CMD_CONTROL_POSITION_SINGLELOOP_2);
+		_periodCmdSquence = MOTOR_CMD_READ_ERROR;
+		break;
+	case MOTOR_CMD_CONTROL_POSITION_JOG_2:
+//		ApiProtocolMotorMG_SetAngleJog(MOTOR_2_ID, 36000, 180);						// This param can be change somewhere else
+		AppCommCAN_SendMotorMessage(MOTOR_2_ID, MOTOR_CMD_CONTROL_POSITION_JOG_2);
+		_periodCmdSquence = MOTOR_CMD_READ_ERROR;
+		break;
+	default:
+		// Do nothing
+		break;
+	}
+
+
+	return;
+}
+
+PRIVATE void AppPeriodTask_10ms_Motor3Comm(void)
+{
+//	ApiProtocolMotorMG_TestComm();
+	static BOOL _initFlag = FALSE;
+	static U08 _initCmdSquence = MOTOR_CMD_SET_ON;
+	static U08 _periodCmdSquence = MOTOR_CMD_READ_ERROR;
+
+
+	// Cmd sequence when init - Read parameter
+	if (FALSE == _initFlag)
+	{
+		// Send cmd
+		AppCommCAN_SendMotorMessage(MOTOR_3_ID, _initCmdSquence);
+
+		// Change cmd
+		switch (_initCmdSquence)
+		{
+		case MOTOR_CMD_SET_ON:						_initCmdSquence = MOTOR_CMD_READ_PID;					break;
+		case MOTOR_CMD_READ_PID:					_initCmdSquence = MOTOR_CMD_READ_ACCEL;					break;
+		case MOTOR_CMD_READ_ACCEL:					_initCmdSquence = MOTOR_CMD_READ_ENCODER;				break;
+		case MOTOR_CMD_READ_ENCODER:				_initCmdSquence = MOTOR_CMD_READ_POSITION_MULTILOOP;	break;
+		case MOTOR_CMD_READ_POSITION_MULTILOOP:		_initCmdSquence = MOTOR_CMD_READ_POSITION_SINGLELOOP;	break;
+		case MOTOR_CMD_READ_POSITION_SINGLELOOP:	_initCmdSquence = MOTOR_CMD_READ_ERROR;					break;
+		case MOTOR_CMD_READ_ERROR:					_initCmdSquence = MOTOR_CMD_READ_MECHANICAL_STATE;		break;
+		case MOTOR_CMD_READ_MECHANICAL_STATE:		_initCmdSquence = MOTOR_CMD_READ_ELECTRIC_STATE;		break;
+		case MOTOR_CMD_READ_ELECTRIC_STATE:
+			// End of init
+			_initFlag = TRUE;
+			break;
+		default:
+			// Do nothing
+			break;
+		}
+
+		return;		// No control if not done init
+	}
+
+	// Before control, check error
+	if ((TRUE == AppDataGet_IsMotorLowVoltage(MOTOR_3_ID)) || \
+		(TRUE == AppDataGet_IsMotorHighTemp(MOTOR_3_ID)))
+	{
+		switch (_periodCmdSquence)
+		{
+		case MOTOR_CMD_SET_STOP:
+			AppCommCAN_SendMotorMessage(MOTOR_3_ID, MOTOR_CMD_SET_STOP); // Send stop again
+			_periodCmdSquence = MOTOR_CMD_SET_OFF;
+			break;
+		case MOTOR_CMD_SET_OFF:
+			AppCommCAN_SendMotorMessage(MOTOR_3_ID, MOTOR_CMD_SET_OFF); // Off motor - continuously
+			break;
+		default:
+			AppCommCAN_SendMotorMessage(MOTOR_3_ID, MOTOR_CMD_SET_STOP);
+			_periodCmdSquence = MOTOR_CMD_SET_STOP;
+			break;
+		}
+
+		return;		// No control if error
+	}
+
+	/** Cmd sequence after init:
+	 * 	1/ Control: torque / speed / position (multi/single/jog)
+	 *  2/ Read error
+	 *  3/ Read eletric state
+	**/
+	switch (_periodCmdSquence)
+	{
+	case MOTOR_CMD_READ_ERROR:
+		AppCommCAN_SendMotorMessage(MOTOR_3_ID, MOTOR_CMD_READ_ERROR);
+		_periodCmdSquence = MOTOR_CMD_READ_ELECTRIC_STATE;
+		break;
+	case MOTOR_CMD_READ_ELECTRIC_STATE:
+		AppCommCAN_SendMotorMessage(MOTOR_3_ID, MOTOR_CMD_READ_ELECTRIC_STATE);
+
+		// Choose which to control here
+//		_periodCmdSquence = MOTOR_CMD_CONTROL_TORQUE;
+//		_periodCmdSquence = MOTOR_CMD_CONTROL_SPEED;
+//		_periodCmdSquence = MOTOR_CMD_CONTROL_POSITION_MULTILOOP_2;
+//		_periodCmdSquence = MOTOR_CMD_CONTROL_POSITION_SINGLELOOP_2;
+		_periodCmdSquence = MOTOR_CMD_CONTROL_POSITION_JOG_2;
+		break;
+	case MOTOR_CMD_CONTROL_TORQUE:
+//		ApiProtocolMotorMG_SetTorque(MOTOR_3_ID, 50);								// This param can be change somewhere else
+		AppCommCAN_SendMotorMessage(MOTOR_3_ID, MOTOR_CMD_CONTROL_TORQUE);
+		_periodCmdSquence = MOTOR_CMD_READ_ERROR;
+		break;
+	case MOTOR_CMD_CONTROL_SPEED:
+//		ApiProtocolMotorMG_SetSpeed(MOTOR_3_ID, 180);								// This param can be change somewhere else
+		AppCommCAN_SendMotorMessage(MOTOR_3_ID, MOTOR_CMD_CONTROL_SPEED);
+		_periodCmdSquence = MOTOR_CMD_READ_ERROR;
+		break;
+	case MOTOR_CMD_CONTROL_POSITION_MULTILOOP_2:
+//		ApiProtocolMotorMG_SetAngleMulti(MOTOR_3_ID, 36000, 180);					// This param can be change somewhere else
+		AppCommCAN_SendMotorMessage(MOTOR_3_ID, MOTOR_CMD_CONTROL_POSITION_MULTILOOP_2);
+		_periodCmdSquence = MOTOR_CMD_READ_ERROR;
+		break;
+	case MOTOR_CMD_CONTROL_POSITION_SINGLELOOP_2:
+//		ApiProtocolMotorMG_SetAngleSingle(MOTOR_3_ID, 36000, 180, MOTOR_MOVE_CW);	// This param can be change somewhere else
+		AppCommCAN_SendMotorMessage(MOTOR_3_ID, MOTOR_CMD_CONTROL_POSITION_SINGLELOOP_2);
+		_periodCmdSquence = MOTOR_CMD_READ_ERROR;
+		break;
+	case MOTOR_CMD_CONTROL_POSITION_JOG_2:
+//		ApiProtocolMotorMG_SetAngleJog(MOTOR_3_ID, 36000, 180);						// This param can be change somewhere else
+		AppCommCAN_SendMotorMessage(MOTOR_3_ID, MOTOR_CMD_CONTROL_POSITION_JOG_2);
+		_periodCmdSquence = MOTOR_CMD_READ_ERROR;
+		break;
+	default:
+		// Do nothing
+		break;
+	}
+
+
+	return;
+}
+
+PRIVATE void AppPeriodTask_10ms_MasterCmdHandle(void)
+{
+	return;
+}
+
+PRIVATE void AppPeriodTask_10ms_MasterFeedback(void)
+{
+	return;
+}
+
 /********************************************************************************
  * GLOBAL FUNCTION IMPLEMENTATION
  ********************************************************************************/
@@ -273,13 +484,21 @@ GLOBAL void AppPeriodTask_TaskCall(void)	/* Performing the corresponding task */
 {
 	switch(enTaskId)
 	{
-	case TASK_1_10MS_MOTOR_1_COMM:
+	case TASK_10MS_MOTOR_1_COMM:
 		AppPeriodTask_10ms_Motor1Comm();
 		break;
-	case TASK_2_10MS_MOTOR_2_COMM:
-
+	case TASK_10MS_MOTOR_2_COMM:
+		AppPeriodTask_10ms_Motor2Comm();
 		break;
-	case TASK_3_10MS_MOTOR_3_COMM:
+	case TASK_10MS_MOTOR_3_COMM:
+		AppPeriodTask_10ms_Motor3Comm();
+		break;
+	case TASK_10MS_MASTER_COMM_TX:
+		AppPeriodTask_10ms_MasterFeedback();
+		break;
+	case TASK_10MS_MASTER_COMM_RX:
+		AppPeriodTask_10ms_MasterCmdHandle();
+		break;
 	default:
 		// None task
 		break;

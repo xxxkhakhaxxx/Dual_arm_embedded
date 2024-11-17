@@ -117,7 +117,7 @@ typedef struct
 		I08 i8Temp;					// Unit : 1°C/bit
 
 	} Data;
-} strMotorMgRx;
+} strMotorMsgRx;
 
 typedef struct
 {
@@ -204,8 +204,8 @@ typedef enum ENUM_MOTOR_HEADER
 /********************************************************************************
  * GLOBAL VARIABLES
  ********************************************************************************/
-extern  strMotorMgRx strRobotArmMotor[3];
-extern strMotorMsgTx strRobotArmMotorCmd[3];
+extern strMotorMsgRx strRobotArmMotorRx[3];		// Data buffer send to motor
+extern strMotorMsgTx strRobotArmMotorTx[3];		// Data buffer from motor respond
 /********************************************************************************
  * GLOBAL FUNCTION DECLARATION
  ********************************************************************************/

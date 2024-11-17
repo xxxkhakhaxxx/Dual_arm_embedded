@@ -35,8 +35,8 @@
 /********************************************************************************
  * GLOBAL VARIABLES
  ********************************************************************************/
-GLOBAL strMotorMgRx strRobotArmMotor[3] = {0, };
-GLOBAL strMotorMsgTx strRobotArmMotorCmd[3] = {0, };
+GLOBAL strMotorMsgRx strRobotArmMotorRx[3] = {0, };
+GLOBAL strMotorMsgTx strRobotArmMotorTx[3] = {0, };
 
 
 /********************************************************************************
@@ -75,9 +75,9 @@ PRIVATE void _RxFncHandlerSameMsg(U08 _u8MotorId, U08* _b8Buffer)
 {
 	switch(_b8Buffer[0])
 	{
-	case MOTOR_CMD_SET_OFF:		strRobotArmMotor[_u8MotorId].State.bOnOff = FALSE;	break;
-	case MOTOR_CMD_SET_ON:		strRobotArmMotor[_u8MotorId].State.bOnOff = TRUE;	break;
-	case MOTOR_CMD_SET_STOP:	strRobotArmMotor[_u8MotorId].State.bStop = TRUE;	break;
+	case MOTOR_CMD_SET_OFF:		strRobotArmMotorRx[_u8MotorId].State.bOnOff = FALSE;	break;
+	case MOTOR_CMD_SET_ON:		strRobotArmMotorRx[_u8MotorId].State.bOnOff = TRUE;	break;
+	case MOTOR_CMD_SET_STOP:	strRobotArmMotorRx[_u8MotorId].State.bStop = TRUE;	break;
 	default:
 		break;
 	}
@@ -87,19 +87,19 @@ PRIVATE void _RxFncHandlerSameMsg(U08 _u8MotorId, U08* _b8Buffer)
 
 PRIVATE void _RxFncHandlerState1(U08 _u8MotorId, U08* _b8Buffer)	// Temperature-Voltage-Error
 {	// _b8Buffer[1] = *((U08*)(_b8Buffer+1))
-	strRobotArmMotor[_u8MotorId].Data.i8Temp = _b8Buffer[1];
-	strRobotArmMotor[_u8MotorId].Data.u16Voltage = (((U16)_b8Buffer[3])<<8) | ((U16)_b8Buffer[4]);
-	strRobotArmMotor[_u8MotorId].State.u8Error = _b8Buffer[7];
+	strRobotArmMotorRx[_u8MotorId].Data.i8Temp = _b8Buffer[1];
+	strRobotArmMotorRx[_u8MotorId].Data.u16Voltage = (((U16)_b8Buffer[3])<<8) | ((U16)_b8Buffer[4]);
+	strRobotArmMotorRx[_u8MotorId].State.u8Error = _b8Buffer[7];
 
 	return;
 }
 
 PRIVATE void _RxFncHandlerState2(U08 _u8MotorId, U08* _b8Buffer)	// Temperature-Torque-Speed-Encoder
 {
-	strRobotArmMotor[_u8MotorId].Data.i8Temp = _b8Buffer[1];
-	strRobotArmMotor[_u8MotorId].Data.i16TorqueCurrent	= (((I16)_b8Buffer[3])<<8) | ((I16)_b8Buffer[2]);
-	strRobotArmMotor[_u8MotorId].Data.i16Speed			= (((I16)_b8Buffer[5])<<8) | ((I16)_b8Buffer[4]);
-	strRobotArmMotor[_u8MotorId].Data.u16Encoder14Bit	= (((U16)_b8Buffer[7])<<8) | ((U16)_b8Buffer[6]);
+	strRobotArmMotorRx[_u8MotorId].Data.i8Temp = _b8Buffer[1];
+	strRobotArmMotorRx[_u8MotorId].Data.i16TorqueCurrent	= (((I16)_b8Buffer[3])<<8) | ((I16)_b8Buffer[2]);
+	strRobotArmMotorRx[_u8MotorId].Data.i16Speed			= (((I16)_b8Buffer[5])<<8) | ((I16)_b8Buffer[4]);
+	strRobotArmMotorRx[_u8MotorId].Data.u16Encoder14Bit	= (((U16)_b8Buffer[7])<<8) | ((U16)_b8Buffer[6]);
 
 	return;
 }
@@ -107,28 +107,28 @@ PRIVATE void _RxFncHandlerState2(U08 _u8MotorId, U08* _b8Buffer)	// Temperature-
 
 PRIVATE void _RxFncHandlerState3(U08 _u8MotorId, U08* _b8Buffer)	// Temperature-PhaseCurrent
 {
-	strRobotArmMotor[_u8MotorId].Data.i16CurrPhaseA	= (((I16)_b8Buffer[3])<<8) | ((I16)_b8Buffer[2]);
-	strRobotArmMotor[_u8MotorId].Data.i16CurrPhaseB	= (((I16)_b8Buffer[5])<<8) | ((I16)_b8Buffer[4]);
-	strRobotArmMotor[_u8MotorId].Data.i16CurrPhaseC	= (((I16)_b8Buffer[7])<<8) | ((I16)_b8Buffer[6]);
+	strRobotArmMotorRx[_u8MotorId].Data.i16CurrPhaseA	= (((I16)_b8Buffer[3])<<8) | ((I16)_b8Buffer[2]);
+	strRobotArmMotorRx[_u8MotorId].Data.i16CurrPhaseB	= (((I16)_b8Buffer[5])<<8) | ((I16)_b8Buffer[4]);
+	strRobotArmMotorRx[_u8MotorId].Data.i16CurrPhaseC	= (((I16)_b8Buffer[7])<<8) | ((I16)_b8Buffer[6]);
 
 	return;
 }
 
 PRIVATE void _RxFncHandlerPID(U08 _u8MotorId, U08* _b8Buffer)
 {
-	strRobotArmMotor[_u8MotorId].Setting.u8AngleKp  = _b8Buffer[2];
-	strRobotArmMotor[_u8MotorId].Setting.u8AngleKi  = _b8Buffer[3];
-	strRobotArmMotor[_u8MotorId].Setting.u8SpeedKp  = _b8Buffer[4];
-	strRobotArmMotor[_u8MotorId].Setting.u8SpeedKi  = _b8Buffer[5];
-	strRobotArmMotor[_u8MotorId].Setting.u8TorqueKp = _b8Buffer[6];
-	strRobotArmMotor[_u8MotorId].Setting.u8TorqueKi = _b8Buffer[7];
+	strRobotArmMotorRx[_u8MotorId].Setting.u8AngleKp  = _b8Buffer[2];
+	strRobotArmMotorRx[_u8MotorId].Setting.u8AngleKi  = _b8Buffer[3];
+	strRobotArmMotorRx[_u8MotorId].Setting.u8SpeedKp  = _b8Buffer[4];
+	strRobotArmMotorRx[_u8MotorId].Setting.u8SpeedKi  = _b8Buffer[5];
+	strRobotArmMotorRx[_u8MotorId].Setting.u8TorqueKp = _b8Buffer[6];
+	strRobotArmMotorRx[_u8MotorId].Setting.u8TorqueKi = _b8Buffer[7];
 
 	return;
 }
 
 PRIVATE void _RxFncHandlerAccel(U08 _u8MotorId, U08* _b8Buffer)
 {
-	strRobotArmMotor[_u8MotorId].Setting.i32Accel =	(((I32)_b8Buffer[7])<<24) | (((I32)_b8Buffer[6])<<16) | \
+	strRobotArmMotorRx[_u8MotorId].Setting.i32Accel =	(((I32)_b8Buffer[7])<<24) | (((I32)_b8Buffer[6])<<16) | \
 													(((I32)_b8Buffer[5])<< 8) |  ((I32)_b8Buffer[4]);
 
 	return;
@@ -136,23 +136,23 @@ PRIVATE void _RxFncHandlerAccel(U08 _u8MotorId, U08* _b8Buffer)
 
 PRIVATE void _RxFncHandlerEncoder(U08 _u8MotorId, U08* _b8Buffer)
 {
-	strRobotArmMotor[_u8MotorId].Data.u16Encoder14Bit		= (((U16)_b8Buffer[3])<<8) | ((U16)_b8Buffer[2]);
-	strRobotArmMotor[_u8MotorId].Data.u16Encoder14BitRaw	= (((U16)_b8Buffer[5])<<8) | ((U16)_b8Buffer[4]);
-	strRobotArmMotor[_u8MotorId].Data.u16Encoder14BitOffset = (((U16)_b8Buffer[7])<<8) | ((U16)_b8Buffer[6]);
+	strRobotArmMotorRx[_u8MotorId].Data.u16Encoder14Bit		= (((U16)_b8Buffer[3])<<8) | ((U16)_b8Buffer[2]);
+	strRobotArmMotorRx[_u8MotorId].Data.u16Encoder14BitRaw	= (((U16)_b8Buffer[5])<<8) | ((U16)_b8Buffer[4]);
+	strRobotArmMotorRx[_u8MotorId].Data.u16Encoder14BitOffset = (((U16)_b8Buffer[7])<<8) | ((U16)_b8Buffer[6]);
 
 	return;
 }
 
 PRIVATE void _RxFncHandlerEncoderOffset(U08 _u8MotorId, U08* _b8Buffer)
 {
-	strRobotArmMotor[_u8MotorId].Data.u16Encoder14BitOffset = (((U16)_b8Buffer[7])<<8) | ((U16)_b8Buffer[6]);
+	strRobotArmMotorRx[_u8MotorId].Data.u16Encoder14BitOffset = (((U16)_b8Buffer[7])<<8) | ((U16)_b8Buffer[6]);
 
 	return;
 }
 
 PRIVATE void _RxFncHandlerMultiAngle(U08 _u8MotorId, U08* _b8Buffer)
 {
-	strRobotArmMotor[_u8MotorId].Data.i64AngleMulti =	(((I64)_b8Buffer[7])<<48) | (((I64)_b8Buffer[6])<<40) | \
+	strRobotArmMotorRx[_u8MotorId].Data.i64AngleMulti =	(((I64)_b8Buffer[7])<<48) | (((I64)_b8Buffer[6])<<40) | \
 														(((I64)_b8Buffer[5])<<32) | (((I64)_b8Buffer[4])<<24) | \
 														(((I64)_b8Buffer[3])<<16) | (((I64)_b8Buffer[2])<< 8) | \
 														(((I64)_b8Buffer[1]));
@@ -162,7 +162,7 @@ PRIVATE void _RxFncHandlerMultiAngle(U08 _u8MotorId, U08* _b8Buffer)
 
 PRIVATE void _RxFncHandlerSingleAngle(U08 _u8MotorId, U08* _b8Buffer)
 {
-	strRobotArmMotor[_u8MotorId].Data.u32AngleSingle =	(((U32)_b8Buffer[7])<<24) | (((U32)_b8Buffer[6])<<16) | \
+	strRobotArmMotorRx[_u8MotorId].Data.u32AngleSingle =	(((U32)_b8Buffer[7])<<24) | (((U32)_b8Buffer[6])<<16) | \
 														(((U32)_b8Buffer[5])<< 8) |  ((U32)_b8Buffer[4]);
 
 	return;
@@ -172,7 +172,7 @@ PRIVATE void _RxFncHandlerSingleAngle(U08 _u8MotorId, U08* _b8Buffer)
 /* Tx function */
 PRIVATE void _TxFncHandlerControlTorque(U08 _u8MotorId, U08* _b8Buffer)
 {
-	I16 _TxData = strRobotArmMotorCmd[_u8MotorId].Control.i16TorqueCurrent;
+	I16 _TxData = strRobotArmMotorTx[_u8MotorId].Control.i16TorqueCurrent;
 
 	_b8Buffer[1] = 0x00;
 	_b8Buffer[2] = 0x00;
@@ -187,7 +187,7 @@ PRIVATE void _TxFncHandlerControlTorque(U08 _u8MotorId, U08* _b8Buffer)
 
 PRIVATE void _TxFncHandlerControlSpeed(U08 _u8MotorId, U08* _b8Buffer)
 {
-	I32 _TxData = strRobotArmMotorCmd[_u8MotorId].Control.i32Speed;
+	I32 _TxData = strRobotArmMotorTx[_u8MotorId].Control.i32Speed;
 
 	_b8Buffer[1] = 0x00;
 	_b8Buffer[2] = 0x00;
@@ -202,7 +202,7 @@ PRIVATE void _TxFncHandlerControlSpeed(U08 _u8MotorId, U08* _b8Buffer)
 
 PRIVATE void _TxFncHandlerControlPositionMulti1(U08 _u8MotorId, U08* _b8Buffer)
 {
-	I32 _TxData = strRobotArmMotorCmd[_u8MotorId].Control.i32MultiAngle;
+	I32 _TxData = strRobotArmMotorTx[_u8MotorId].Control.i32MultiAngle;
 
 	_b8Buffer[1] = 0x00;
 	_b8Buffer[2] = 0x00;
@@ -217,8 +217,8 @@ PRIVATE void _TxFncHandlerControlPositionMulti1(U08 _u8MotorId, U08* _b8Buffer)
 
 PRIVATE void _TxFncHandlerControlPositionMulti2(U08 _u8MotorId, U08* _b8Buffer)
 {
-	U16 _TxData1 = strRobotArmMotorCmd[_u8MotorId].Control.u16MultiSpeed;
-	I32 _TxData2 = strRobotArmMotorCmd[_u8MotorId].Control.i32MultiAngle;
+	U16 _TxData1 = strRobotArmMotorTx[_u8MotorId].Control.u16MultiSpeed;
+	I32 _TxData2 = strRobotArmMotorTx[_u8MotorId].Control.i32MultiAngle;
 
 	_b8Buffer[1] = 0x00;
 	_b8Buffer[2] = (U08)((_TxData1 & 0x00FF)>>0);
@@ -233,8 +233,8 @@ PRIVATE void _TxFncHandlerControlPositionMulti2(U08 _u8MotorId, U08* _b8Buffer)
 
 PRIVATE void _TxFncHandlerControlPositionSingle1(U08 _u8MotorId, U08* _b8Buffer)
 {
-	BOOL _TxData1 = strRobotArmMotorCmd[_u8MotorId].Control.bDirection;
-	U32  _TxData2 = strRobotArmMotorCmd[_u8MotorId].Control.u32SingleAngle;
+	BOOL _TxData1 = strRobotArmMotorTx[_u8MotorId].Control.bDirection;
+	U32  _TxData2 = strRobotArmMotorTx[_u8MotorId].Control.u32SingleAngle;
 
 	_b8Buffer[1] = _TxData1;
 	_b8Buffer[2] = 0x00;
@@ -249,9 +249,9 @@ PRIVATE void _TxFncHandlerControlPositionSingle1(U08 _u8MotorId, U08* _b8Buffer)
 
 PRIVATE void _TxFncHandlerControlPositionSingle2(U08 _u8MotorId, U08* _b8Buffer)
 {
-	BOOL _TxData1 = strRobotArmMotorCmd[_u8MotorId].Control.bDirection;
-	U16  _TxData2 = strRobotArmMotorCmd[_u8MotorId].Control.u16SingleSpeed;
-	U32  _TxData3 = strRobotArmMotorCmd[_u8MotorId].Control.u32SingleAngle;
+	BOOL _TxData1 = strRobotArmMotorTx[_u8MotorId].Control.bDirection;
+	U16  _TxData2 = strRobotArmMotorTx[_u8MotorId].Control.u16SingleSpeed;
+	U32  _TxData3 = strRobotArmMotorTx[_u8MotorId].Control.u32SingleAngle;
 
 	_b8Buffer[1] = _TxData1;
 	_b8Buffer[2] = (U08)((_TxData2 & 0x00FF)>>0);
@@ -266,7 +266,7 @@ PRIVATE void _TxFncHandlerControlPositionSingle2(U08 _u8MotorId, U08* _b8Buffer)
 
 PRIVATE void _TxFncHandlerControlPositionJog1(U08 _u8MotorId, U08* _b8Buffer)
 {
-	I32 _TxData = strRobotArmMotorCmd[_u8MotorId].Control.i32JogAngle;
+	I32 _TxData = strRobotArmMotorTx[_u8MotorId].Control.i32JogAngle;
 
 	_b8Buffer[1] = 0x00;
 	_b8Buffer[2] = 0x00;
@@ -281,8 +281,8 @@ PRIVATE void _TxFncHandlerControlPositionJog1(U08 _u8MotorId, U08* _b8Buffer)
 
 PRIVATE void _TxFncHandlerControlPositionJog2(U08 _u8MotorId, U08* _b8Buffer)
 {
-	U16 _TxData1 = strRobotArmMotorCmd[_u8MotorId].Control.u16JogSpeed;
-	I32 _TxData2 = strRobotArmMotorCmd[_u8MotorId].Control.i32JogAngle;
+	U16 _TxData1 = strRobotArmMotorTx[_u8MotorId].Control.u16JogSpeed;
+	I32 _TxData2 = strRobotArmMotorTx[_u8MotorId].Control.i32JogAngle;
 
 	_b8Buffer[1] = 0x00;
 	_b8Buffer[2] = (U08)(((_TxData1 & 0x00FF)>>0));
@@ -298,19 +298,19 @@ PRIVATE void _TxFncHandlerControlPositionJog2(U08 _u8MotorId, U08* _b8Buffer)
 PRIVATE void _TxFncHandlerWritePID(U08 _u8MotorId, U08* _b8Buffer)
 {
 	_b8Buffer[1] = 0x00;
-	_b8Buffer[2] = strRobotArmMotorCmd[_u8MotorId].Setting.u8AngleKp;
-	_b8Buffer[3] = strRobotArmMotorCmd[_u8MotorId].Setting.u8AngleKi;
-	_b8Buffer[4] = strRobotArmMotorCmd[_u8MotorId].Setting.u8SpeedKp;
-	_b8Buffer[5] = strRobotArmMotorCmd[_u8MotorId].Setting.u8SpeedKi;
-	_b8Buffer[6] = strRobotArmMotorCmd[_u8MotorId].Setting.u8TorqueKp;
-	_b8Buffer[7] = strRobotArmMotorCmd[_u8MotorId].Setting.u8TorqueKi;
+	_b8Buffer[2] = strRobotArmMotorTx[_u8MotorId].Setting.u8AngleKp;
+	_b8Buffer[3] = strRobotArmMotorTx[_u8MotorId].Setting.u8AngleKi;
+	_b8Buffer[4] = strRobotArmMotorTx[_u8MotorId].Setting.u8SpeedKp;
+	_b8Buffer[5] = strRobotArmMotorTx[_u8MotorId].Setting.u8SpeedKi;
+	_b8Buffer[6] = strRobotArmMotorTx[_u8MotorId].Setting.u8TorqueKp;
+	_b8Buffer[7] = strRobotArmMotorTx[_u8MotorId].Setting.u8TorqueKi;
 
 	return;
 }
 
 PRIVATE void _TxFncHandlerWriteAccel(U08 _u8MotorId, U08* _b8Buffer)
 {
-	I32 _TxData = strRobotArmMotorCmd[_u8MotorId].Setting.i32Accel;
+	I32 _TxData = strRobotArmMotorTx[_u8MotorId].Setting.i32Accel;
 
 	_b8Buffer[1] = 0x00;
 	_b8Buffer[2] = 0x00;
@@ -325,7 +325,7 @@ PRIVATE void _TxFncHandlerWriteAccel(U08 _u8MotorId, U08* _b8Buffer)
 
 PRIVATE void _TxFncHandlerWriteEncoderOffset(U08 _u8MotorId, U08* _b8Buffer)
 {
-	U16 _TxData = strRobotArmMotorCmd[_u8MotorId].Setting.u16Encoder14BitOffset;
+	U16 _TxData = strRobotArmMotorTx[_u8MotorId].Setting.u16Encoder14BitOffset;
 
 	_b8Buffer[1] = 0x00;
 	_b8Buffer[2] = 0x00;
@@ -466,11 +466,11 @@ GLOBAL void ApiProtocolMotorMG_SetTorque(enMotorId _u8MotorId, I16 _i16Torque)
 	switch (_u8MotorId)
 	{
 	case MOTOR_1_ID:
-		strRobotArmMotorCmd[_u8MotorId].Control.i16TorqueCurrent = CONSTRAIN(_i16Torque, MOTOR_MG_5010_TORQUE_CONSTRAINT_LOW, MOTOR_MG_5010_TORQUE_CONSTRAINT_HIGH);
+		strRobotArmMotorTx[_u8MotorId].Control.i16TorqueCurrent = CONSTRAIN(_i16Torque, MOTOR_MG_5010_TORQUE_CONSTRAINT_LOW, MOTOR_MG_5010_TORQUE_CONSTRAINT_HIGH);
 		break;
 	case MOTOR_2_ID:
 	case MOTOR_3_ID:
-		strRobotArmMotorCmd[_u8MotorId].Control.i16TorqueCurrent = CONSTRAIN(_i16Torque, MOTOR_MG_4010_TORQUE_CONSTRAINT_LOW, MOTOR_MG_4010_TORQUE_CONSTRAINT_HIGH);
+		strRobotArmMotorTx[_u8MotorId].Control.i16TorqueCurrent = CONSTRAIN(_i16Torque, MOTOR_MG_4010_TORQUE_CONSTRAINT_LOW, MOTOR_MG_4010_TORQUE_CONSTRAINT_HIGH);
 		break;
 	default:
 		// Do nothing
@@ -488,7 +488,7 @@ GLOBAL void ApiProtocolMotorMG_SetSpeed(enMotorId _u8MotorId, I32 _i32Speed)
 	case MOTOR_1_ID:
 	case MOTOR_2_ID:
 	case MOTOR_3_ID:
-		strRobotArmMotorCmd[_u8MotorId].Control.i32Speed = CONSTRAIN(_i32Speed*100*MOTOR_MG_xx10_GEAR, -MOTOR_MG_SPEED_CONSTRAINT, MOTOR_MG_SPEED_CONSTRAINT);
+		strRobotArmMotorTx[_u8MotorId].Control.i32Speed = CONSTRAIN(_i32Speed*100*MOTOR_MG_xx10_GEAR, -MOTOR_MG_SPEED_CONSTRAINT, MOTOR_MG_SPEED_CONSTRAINT);
 		break;
 	default:
 		// Do nothing
@@ -507,8 +507,8 @@ GLOBAL void ApiProtocolMotorMG_SetAngleMulti(enMotorId _u8MotorId, I32 _i32Angle
 	case MOTOR_1_ID:
 	case MOTOR_2_ID:
 	case MOTOR_3_ID:
-		strRobotArmMotorCmd[_u8MotorId].Control.i32MultiAngle = CONSTRAIN(_i32Angle*MOTOR_MG_xx10_GEAR, -MOTOR_MG_MULTI_ANGLE_CONSTRAINT, MOTOR_MG_MULTI_ANGLE_CONSTRAINT);
-		strRobotArmMotorCmd[_u8MotorId].Control.u16MultiSpeed = _u16Speed*MOTOR_MG_xx10_GEAR;
+		strRobotArmMotorTx[_u8MotorId].Control.i32MultiAngle = CONSTRAIN(_i32Angle*MOTOR_MG_xx10_GEAR, -MOTOR_MG_MULTI_ANGLE_CONSTRAINT, MOTOR_MG_MULTI_ANGLE_CONSTRAINT);
+		strRobotArmMotorTx[_u8MotorId].Control.u16MultiSpeed = _u16Speed*MOTOR_MG_xx10_GEAR;
 
 		break;
 	default:
@@ -527,9 +527,9 @@ GLOBAL void ApiProtocolMotorMG_SetAngleSingle(enMotorId _u8MotorId, U32 _u32Angl
 	case MOTOR_1_ID:
 	case MOTOR_2_ID:
 	case MOTOR_3_ID:
-		strRobotArmMotorCmd[_u8MotorId].Control.bDirection     = _bDirection;
-		strRobotArmMotorCmd[_u8MotorId].Control.u32SingleAngle = CONSTRAIN(_u32Angle*MOTOR_MG_xx10_GEAR, 0, MOTOR_MG_SINGLE_ANGLE_CONSTRAINT);
-		strRobotArmMotorCmd[_u8MotorId].Control.u16SingleSpeed = _u16Speed*MOTOR_MG_xx10_GEAR;
+		strRobotArmMotorTx[_u8MotorId].Control.bDirection     = _bDirection;
+		strRobotArmMotorTx[_u8MotorId].Control.u32SingleAngle = CONSTRAIN(_u32Angle*MOTOR_MG_xx10_GEAR, 0, MOTOR_MG_SINGLE_ANGLE_CONSTRAINT);
+		strRobotArmMotorTx[_u8MotorId].Control.u16SingleSpeed = _u16Speed*MOTOR_MG_xx10_GEAR;
 
 		break;
 	default:
@@ -548,8 +548,8 @@ GLOBAL void ApiProtocolMotorMG_SetAngleJog(enMotorId _u8MotorId, I32 _i32Angle, 
 	case MOTOR_1_ID:
 	case MOTOR_2_ID:
 	case MOTOR_3_ID:
-		strRobotArmMotorCmd[_u8MotorId].Control.i32JogAngle = CONSTRAIN(_i32Angle*MOTOR_MG_xx10_GEAR, -MOTOR_MG_JOG_ANGLE_CONSTRAINT, MOTOR_MG_JOG_ANGLE_CONSTRAINT);
-		strRobotArmMotorCmd[_u8MotorId].Control.u16JogSpeed = _u16Speed*MOTOR_MG_xx10_GEAR;
+		strRobotArmMotorTx[_u8MotorId].Control.i32JogAngle = CONSTRAIN(_i32Angle*MOTOR_MG_xx10_GEAR, -MOTOR_MG_JOG_ANGLE_CONSTRAINT, MOTOR_MG_JOG_ANGLE_CONSTRAINT);
+		strRobotArmMotorTx[_u8MotorId].Control.u16JogSpeed = _u16Speed*MOTOR_MG_xx10_GEAR;
 		break;
 	default:
 		// Do nothing
@@ -566,12 +566,12 @@ GLOBAL void ApiProtocolMotorMG_SetPID(enMotorId _u8MotorId, U08 _u8AngleKp, U08 
 	case MOTOR_1_ID:
 	case MOTOR_2_ID:
 	case MOTOR_3_ID:
-		strRobotArmMotorCmd[_u8MotorId].Setting.u8AngleKp = _u8AngleKp;
-		strRobotArmMotorCmd[_u8MotorId].Setting.u8AngleKi = _u8AngleKi;
-		strRobotArmMotorCmd[_u8MotorId].Setting.u8SpeedKp = _u8SpeedKp;
-		strRobotArmMotorCmd[_u8MotorId].Setting.u8SpeedKi = _u8SpeedKi;
-		strRobotArmMotorCmd[_u8MotorId].Setting.u8TorqueKp = _u8TorqueKp;
-		strRobotArmMotorCmd[_u8MotorId].Setting.u8TorqueKi = _u8TorqueKi;
+		strRobotArmMotorTx[_u8MotorId].Setting.u8AngleKp = _u8AngleKp;
+		strRobotArmMotorTx[_u8MotorId].Setting.u8AngleKi = _u8AngleKi;
+		strRobotArmMotorTx[_u8MotorId].Setting.u8SpeedKp = _u8SpeedKp;
+		strRobotArmMotorTx[_u8MotorId].Setting.u8SpeedKi = _u8SpeedKi;
+		strRobotArmMotorTx[_u8MotorId].Setting.u8TorqueKp = _u8TorqueKp;
+		strRobotArmMotorTx[_u8MotorId].Setting.u8TorqueKi = _u8TorqueKi;
 		break;
 	default:
 		// Do nothing
@@ -589,7 +589,7 @@ GLOBAL void ApiProtocolMotorMG_SetAccel(enMotorId _u8MotorId, I32 _i32Accel)
 	case MOTOR_1_ID:
 	case MOTOR_2_ID:
 	case MOTOR_3_ID:
-		strRobotArmMotorCmd[_u8MotorId].Setting.i32Accel = _i32Accel;
+		strRobotArmMotorTx[_u8MotorId].Setting.i32Accel = _i32Accel;
 		break;
 	default:
 		// Do nothing
@@ -607,7 +607,7 @@ GLOBAL void ApiProtocolMotorMG_SetEncodeOffset(enMotorId _u8MotorId, U16 _u16Off
 	case MOTOR_1_ID:
 	case MOTOR_2_ID:
 	case MOTOR_3_ID:
-		strRobotArmMotorCmd[_u8MotorId].Setting.u16Encoder14BitOffset = CONSTRAIN(_u16Offset, 0, MOTOR_MG_ENCODER_14BIT_OFFSET);
+		strRobotArmMotorTx[_u8MotorId].Setting.u16Encoder14BitOffset = CONSTRAIN(_u16Offset, 0, MOTOR_MG_ENCODER_14BIT_OFFSET);
 		break;
 	default:
 		// Do nothing
@@ -676,8 +676,8 @@ GLOBAL void ApiProtocolMotorMG_TestComm()
 		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_CONTROL_POSITION_SINGLELOOP_2);
 		break;
 	case 16:
-		strRobotArmMotorCmd[MOTOR_1_ID].Control.i32JogAngle = 180*100*MOTOR_1_GEARBOX;
-		strRobotArmMotorCmd[MOTOR_1_ID].Control.u16JogSpeed = 90*MOTOR_1_GEARBOX;
+		strRobotArmMotorTx[MOTOR_1_ID].Control.i32JogAngle = 180*100*MOTOR_1_GEARBOX;
+		strRobotArmMotorTx[MOTOR_1_ID].Control.u16JogSpeed = 90*MOTOR_1_GEARBOX;
 		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_CONTROL_POSITION_JOG_2);
 		break;
 	default:

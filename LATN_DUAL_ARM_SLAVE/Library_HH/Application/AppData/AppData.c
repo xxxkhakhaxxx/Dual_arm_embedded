@@ -52,12 +52,12 @@
 /** ###################### **/
 GLOBAL BOOL AppDataGet_IsMotorLowVoltage(U08 _u8MotorId)
 {	// 1 is TRUE, 0 is FALSE
-	return GETBIT(strRobotArmMotor[_u8MotorId].State.u8Error,0);	// 1st bit
+	return GETBIT(strRobotArmMotorRx[_u8MotorId].State.u8Error,0);	// 1st bit
 }
 
 GLOBAL BOOL AppDataGet_IsMotorHighTemp(U08 _u8MotorId)
 {	// 1 is TRUE, 0 is FALSE
-	return GETBIT(strRobotArmMotor[_u8MotorId].State.u8Error,3);	// 4th bit
+	return GETBIT(strRobotArmMotorRx[_u8MotorId].State.u8Error,3);	// 4th bit
 }
 
 PRIVATE BOOL bCanRxMsgFlag = FALSE;			// Any data in CAN Rx or not

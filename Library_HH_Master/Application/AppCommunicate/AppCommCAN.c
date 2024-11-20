@@ -206,7 +206,7 @@ GLOBAL void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)	// When R
 		debug_cnt_Rx_Ok++;
 	}
 }
-
+/*
 GLOBAL void AppCommCAN_SendMotorMessage(U08 _u8MotorMsgId, U08 _u8MsgDataCmd)
 {
 	// Set Tx identifier
@@ -235,8 +235,13 @@ GLOBAL void AppCommCAN_SendMotorMessage(U08 _u8MotorMsgId, U08 _u8MsgDataCmd)
 	}
 }
 
-GLOBAL void AppCommCAN_GetMotorMessage()	// Process data in "strCanRxMsgId" and "arrCanRxMsgData"
+GLOBAL void AppCommCAN_GetMotorMessage(void)	// Process data in "strCanRxMsgId" and "arrCanRxMsgData"
 {
 	ApiProtocolMotorMG_RxHandler(strCanRxMsgId.StdId, arrCanRxMsgData);
 	// Here, you can call any other function to handle the message ID and DATA
+}
+*/
+GLOBAL void AppCommCAN_GetGUIMessage(void)
+{
+	return;
 }

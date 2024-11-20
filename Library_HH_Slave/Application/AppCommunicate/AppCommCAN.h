@@ -46,11 +46,11 @@ typedef enum ENUM_MOTOR_COMM_SEQUENCE
 /********************************************************************************
  * GLOBAL FUNCTION DECLARATION
  ********************************************************************************/
-GLOBAL void AppCommCAN_UserSetup();
+GLOBAL void AppCommCAN_UserSetup(CAN_HandleTypeDef *hcan);
 GLOBAL void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan);		// Stm32 function handling Rx interrupt
 
 GLOBAL void AppCommCAN_SendMotorMessage(U08 _u8MotorMsgId, U08 _u8MsgDataCmd);
-GLOBAL void AppCommCAN_GetMotorMessage();
+GLOBAL void AppCommCAN_GetMotorMessage(void);
 
 
 #endif /* APPLICATION_APPCOMMUNICATE_APPCOMMCAN_H_ */

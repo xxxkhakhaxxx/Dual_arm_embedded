@@ -102,7 +102,8 @@ int main(void)
   MX_SPI1_Init();
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
-
+  AppCommCAN_UserSetup(&hcan1);
+  HAL_CAN_Start(&hcan1);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -110,7 +111,11 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
-
+	if (TRUE == AppDataGet_CanRxMsgFlag())
+	{
+		AppCommCAN_GetGUIMessage();
+		AppDataSet_CanRxMsgFlag(FALSE);
+	}
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */

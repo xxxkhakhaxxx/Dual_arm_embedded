@@ -39,6 +39,14 @@ PRIVATE U08 arrCanTxMsgData[MOTOR_PROTOCOL_DATA_FRAME_LENGTH] = {0, };	// Tx dat
 PRIVATE U08 arrCanRxMsgData[MOTOR_PROTOCOL_DATA_FRAME_LENGTH] = {0, };	// Rx data
 
 PRIVATE U32 u32CanTxMsgMailBox = 0;				// Tx header and data
+
+/* Debug view variable */
+volatile static U32 debug_cnt_Rx_Ok = 0;
+volatile static U32 debug_cnt_Rx_Error = 0;
+volatile static U32 debug_cnt_Tx_Ok = 0;
+volatile static U32 debug_cnt_Tx_Error = 0;
+volatile static U32 debug_cnt_Tx_ErrorParam = 0;
+volatile static U32 debug_cnt_Tx_ErrorInit = 0;
 /********************************************************************************
  * GLOBAL VARIABLES
  ********************************************************************************/
@@ -47,10 +55,10 @@ PRIVATE U32 u32CanTxMsgMailBox = 0;				// Tx header and data
 /********************************************************************************
  * PRIVATE FUNCTION DECLARATION
  ********************************************************************************/
-PRIVATE void AppCommCAN_SetupFilter();
-PRIVATE void AppCommCAN_SetupRxInterrupt();
-PRIVATE void AppCommCAN_SetupTxFrame();
-
+PRIVATE void AppCommCAN_SetupFilter(void);
+PRIVATE void AppCommCAN_SetupRxInterrupt(void);
+PRIVATE void AppCommCAN_SetupTxFrame(void);
+PRIVATE void AppCommCAN_ClearTxMailBox(void);
 /********************************************************************************
  * PRIVATE FUNCTION IMPLEMENTATION
  ********************************************************************************/
@@ -74,7 +82,7 @@ PRIVATE void AppCommCAN_SetupTxFrame();
 //	}
 //}
 
-PRIVATE void AppCommCAN_SetupFilter()
+PRIVATE void AppCommCAN_SetupFilter(void)
 {
     CAN_FilterTypeDef canFilterIdConfig;					// User CAN filter ID - header filter
 
@@ -114,15 +122,15 @@ PRIVATE void AppCommCAN_SetupFilter()
 }
 
 
-PRIVATE void AppCommCAN_SetupRxInterrupt()
+PRIVATE void AppCommCAN_SetupRxInterrupt(void)
 {
-	if (HAL_OK != HAL_CAN_ActivateNotification(strCanUse, CAN_IT_RX_FIFO0_MSG_PENDING))	// Active Rx cho FIFO0
+	if (HAL_OK != HAL_CAN_ActivateNotification(strCanUse, CAN_IT_RX_FIFO0_MSG_PENDING))	// Active Rx for FIFO0
 	{
 //		Error_Handler();
 	}
 }
 
-PRIVATE void AppCommCAN_SetupTxFrame()
+PRIVATE void AppCommCAN_SetupTxFrame(void)
 {
 	/* Not change value */
 	strCanTxMsgId.IDE = CAN_ID_STD;		// Use CAN A - ID frame 11 bits
@@ -133,6 +141,34 @@ PRIVATE void AppCommCAN_SetupTxFrame()
 //	strCanTxMsgId.StdId = MOTOR_1_ID;	// Not here, set in send function
 }
 
+PRIVATE void AppCommCAN_ClearTxMailBox(void)
+{
+	uint32_t freeLevel = HAL_CAN_GetTxMailboxesFreeLevel(strCanUse);
+
+	// Check if all mailboxes are full
+	if (freeLevel == 0)
+	{
+		// Abort all pending transmissions
+		HAL_CAN_AbortTxRequest(strCanUse, CAN_TX_MAILBOX0);
+		HAL_CAN_AbortTxRequest(strCanUse, CAN_TX_MAILBOX1);
+		HAL_CAN_AbortTxRequest(strCanUse, CAN_TX_MAILBOX2);
+
+		// Clear data registers
+		strCanUse->Instance->sTxMailBox[CAN_TX_MAILBOX0].TIR = 0;
+		strCanUse->Instance->sTxMailBox[CAN_TX_MAILBOX0].TDTR = 0;
+		strCanUse->Instance->sTxMailBox[CAN_TX_MAILBOX0].TDLR = 0;
+		strCanUse->Instance->sTxMailBox[CAN_TX_MAILBOX0].TDHR = 0;
+		strCanUse->Instance->sTxMailBox[CAN_TX_MAILBOX1].TIR = 0;
+		strCanUse->Instance->sTxMailBox[CAN_TX_MAILBOX1].TDTR = 0;
+		strCanUse->Instance->sTxMailBox[CAN_TX_MAILBOX1].TDLR = 0;
+		strCanUse->Instance->sTxMailBox[CAN_TX_MAILBOX1].TDHR = 0;
+		strCanUse->Instance->sTxMailBox[CAN_TX_MAILBOX2].TIR = 0;
+		strCanUse->Instance->sTxMailBox[CAN_TX_MAILBOX2].TDTR = 0;
+		strCanUse->Instance->sTxMailBox[CAN_TX_MAILBOX2].TDLR = 0;
+		strCanUse->Instance->sTxMailBox[CAN_TX_MAILBOX2].TDHR = 0;
+
+	}
+}
 
 /********************************************************************************
  * GLOBAL FUNCTION IMPLEMENTATION
@@ -156,12 +192,7 @@ GLOBAL void AppCommCAN_UserSetup(CAN_HandleTypeDef *hcan)
 	AppCommCAN_SetupRxInterrupt();	// Enable interrupt
 	AppCommCAN_SetupTxFrame();		// Setting for Tx message ID
 }
-volatile static U32 debug_cnt_Rx_Ok = 0;
-volatile static U32 debug_cnt_Rx_Error = 0;
-volatile static U32 debug_cnt_Tx_Ok = 0;
-volatile static U32 debug_cnt_Tx_Error = 0;
-volatile static U32 debug_cnt_Tx_ErrorParam = 0;
-volatile static U32 debug_cnt_Tx_ErrorInit = 0;
+
 GLOBAL void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)	// When Rx interrupt occur
 {
 	if (HAL_OK != HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &strCanRxMsgId, arrCanRxMsgData))	// Get MsgId and Data
@@ -193,8 +224,9 @@ GLOBAL void AppCommCAN_SendMotorMessage(U08 _u8MotorMsgId, U08 _u8MsgDataCmd)
 	{
 		debug_cnt_Tx_Error++;
 		if (HAL_CAN_ERROR_PARAM == (strCanUse->ErrorCode & HAL_CAN_ERROR_PARAM))
-		{
+		{	// Tx Mailbox full
 			debug_cnt_Tx_ErrorParam++;
+			AppCommCAN_ClearTxMailBox();
 		}
 		else	// HAL_CAN_ERROR_NOT_INITIALIZED
 		{

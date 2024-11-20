@@ -87,19 +87,19 @@ PRIVATE void _RxFncHandlerSameMsg(U08 _u8MotorId, U08* _b8Buffer)
 
 PRIVATE void _RxFncHandlerState1(U08 _u8MotorId, U08* _b8Buffer)	// Temperature-Voltage-Error
 {	// _b8Buffer[1] = *((U08*)(_b8Buffer+1))
-	strRobotArmMotorRx[_u8MotorId].Data.i8Temp = _b8Buffer[1];
-	strRobotArmMotorRx[_u8MotorId].Data.u16Voltage = (((U16)_b8Buffer[3])<<8) | ((U16)_b8Buffer[4]);
-	strRobotArmMotorRx[_u8MotorId].State.u8Error = _b8Buffer[7];
+	strRobotArmMotorRx[_u8MotorId].Data.i8Temp		= _b8Buffer[1];
+	strRobotArmMotorRx[_u8MotorId].Data.u16Voltage	= (((U16)_b8Buffer[3])<<8) | ((U16)_b8Buffer[4]);
+	strRobotArmMotorRx[_u8MotorId].State.u8Error	= _b8Buffer[7];
 
 	return;
 }
 
 PRIVATE void _RxFncHandlerState2(U08 _u8MotorId, U08* _b8Buffer)	// Temperature-Torque-Speed-Encoder
 {
-	strRobotArmMotorRx[_u8MotorId].Data.i8Temp = _b8Buffer[1];
+	strRobotArmMotorRx[_u8MotorId].Data.i8Temp 				= _b8Buffer[1];
 	strRobotArmMotorRx[_u8MotorId].Data.i16TorqueCurrent	= (((I16)_b8Buffer[3])<<8) | ((I16)_b8Buffer[2]);
 	strRobotArmMotorRx[_u8MotorId].Data.i16Speed			= (((I16)_b8Buffer[5])<<8) | ((I16)_b8Buffer[4]);
-	strRobotArmMotorRx[_u8MotorId].Data.u16Encoder14Bit	= (((U16)_b8Buffer[7])<<8) | ((U16)_b8Buffer[6]);
+	strRobotArmMotorRx[_u8MotorId].Data.u16Encoder14Bit		= (((U16)_b8Buffer[7])<<8) | ((U16)_b8Buffer[6]);
 
 	return;
 }
@@ -129,23 +129,23 @@ PRIVATE void _RxFncHandlerPID(U08 _u8MotorId, U08* _b8Buffer)
 PRIVATE void _RxFncHandlerAccel(U08 _u8MotorId, U08* _b8Buffer)
 {
 	strRobotArmMotorRx[_u8MotorId].Setting.i32Accel =	(((I32)_b8Buffer[7])<<24) | (((I32)_b8Buffer[6])<<16) | \
-													(((I32)_b8Buffer[5])<< 8) |  ((I32)_b8Buffer[4]);
+														(((I32)_b8Buffer[5])<< 8) |  ((I32)_b8Buffer[4]);
 
 	return;
 }
 
 PRIVATE void _RxFncHandlerEncoder(U08 _u8MotorId, U08* _b8Buffer)
 {
-	strRobotArmMotorRx[_u8MotorId].Data.u16Encoder14Bit		= (((U16)_b8Buffer[3])<<8) | ((U16)_b8Buffer[2]);
-	strRobotArmMotorRx[_u8MotorId].Data.u16Encoder14BitRaw	= (((U16)_b8Buffer[5])<<8) | ((U16)_b8Buffer[4]);
-	strRobotArmMotorRx[_u8MotorId].Data.u16Encoder14BitOffset = (((U16)_b8Buffer[7])<<8) | ((U16)_b8Buffer[6]);
+	strRobotArmMotorRx[_u8MotorId].Data.u16Encoder14Bit			= (((U16)_b8Buffer[3])<<8) | ((U16)_b8Buffer[2]);
+	strRobotArmMotorRx[_u8MotorId].Data.u16Encoder14BitRaw		= (((U16)_b8Buffer[5])<<8) | ((U16)_b8Buffer[4]);
+	strRobotArmMotorRx[_u8MotorId].Data.u16Encoder14BitOffset	= (((U16)_b8Buffer[7])<<8) | ((U16)_b8Buffer[6]);
 
 	return;
 }
 
 PRIVATE void _RxFncHandlerEncoderOffset(U08 _u8MotorId, U08* _b8Buffer)
 {
-	strRobotArmMotorRx[_u8MotorId].Data.u16Encoder14BitOffset = (((U16)_b8Buffer[7])<<8) | ((U16)_b8Buffer[6]);
+	strRobotArmMotorRx[_u8MotorId].Data.u16Encoder14BitOffset	= (((U16)_b8Buffer[7])<<8) | ((U16)_b8Buffer[6]);
 
 	return;
 }
@@ -163,7 +163,7 @@ PRIVATE void _RxFncHandlerMultiAngle(U08 _u8MotorId, U08* _b8Buffer)
 PRIVATE void _RxFncHandlerSingleAngle(U08 _u8MotorId, U08* _b8Buffer)
 {
 	strRobotArmMotorRx[_u8MotorId].Data.u32AngleSingle =	(((U32)_b8Buffer[7])<<24) | (((U32)_b8Buffer[6])<<16) | \
-														(((U32)_b8Buffer[5])<< 8) |  ((U32)_b8Buffer[4]);
+															(((U32)_b8Buffer[5])<< 8) |  ((U32)_b8Buffer[4]);
 
 	return;
 }
@@ -618,81 +618,81 @@ GLOBAL void ApiProtocolMotorMG_SetEncodeOffset(enMotorId _u8MotorId, U16 _u16Off
 
 
 
-GLOBAL U08 u8MotorCmdFlag = 1;
-GLOBAL U16 u16MotorCmdCnt = 0;
-GLOBAL void ApiProtocolMotorMG_TestComm()
-{
-	switch (u8MotorCmdFlag)
-	{
-
-//	case MOTOR_CMD_READ_POSITION_SINGLELOOP:
-//	case MOTOR_CMD_READ_ERROR:
-//	case MOTOR_CMD_CLEAR_ERROR:
-//	case MOTOR_CMD_READ_MECHANICAL_STATE:
-//	case MOTOR_CMD_READ_ELECTRIC_STATE:
-	case 1:
-		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_SET_ON);
-		break;
-	case 2:
-		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_SET_OFF);
-		break;
-	case 3:
-		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_SET_STOP);
-		break;
-	case 4:
-		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_READ_PID);
-		break;
-	case 5:
-		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_READ_ACCEL);
-		break;
-	case 6:
-		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_READ_ENCODER);
-		break;
-	case 7:
-//		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_WRITE_ENCODER_ZERO_ROM);
-		break;
-	case 8:
-		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_READ_POSITION_MULTILOOP);
-		break;
-	case 9:
-		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_READ_POSITION_SINGLELOOP);
-		break;
-	case 10:
-		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_READ_ERROR);
-		break;
-	case 11:
-		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_CLEAR_ERROR);
-		break;
-	case 12:
-		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_READ_MECHANICAL_STATE);
-		break;
-	case 13:
-		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_READ_ELECTRIC_STATE);
-		break;
-	case 14:
-		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_CONTROL_POSITION_MULTILOOP_2);
-		break;
-	case 15:
-		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_CONTROL_POSITION_SINGLELOOP_2);
-		break;
-	case 16:
-		strRobotArmMotorTx[MOTOR_1_ID].Control.i32JogAngle = 180*100*MOTOR_1_GEARBOX;
-		strRobotArmMotorTx[MOTOR_1_ID].Control.u16JogSpeed = 90*MOTOR_1_GEARBOX;
-		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_CONTROL_POSITION_JOG_2);
-		break;
-	default:
-		break;
-	}
-
-	if (100 > u16MotorCmdCnt)		// Send 100 cmd
-	{
-		u16MotorCmdCnt++;
-	}
-	else
-	{
-		if (0 != u8MotorCmdFlag)	// Not send anymore
-		{
-			u8MotorCmdFlag = 0;
-		}
-	}
-}
+//GLOBAL U08 u8MotorCmdFlag = 1;
+//GLOBAL U16 u16MotorCmdCnt = 0;
+//GLOBAL void ApiProtocolMotorMG_TestComm()
+//{
+//	switch (u8MotorCmdFlag)
+//	{
+//
+////	case MOTOR_CMD_READ_POSITION_SINGLELOOP:
+////	case MOTOR_CMD_READ_ERROR:
+////	case MOTOR_CMD_CLEAR_ERROR:
+////	case MOTOR_CMD_READ_MECHANICAL_STATE:
+////	case MOTOR_CMD_READ_ELECTRIC_STATE:
+//	case 1:
+//		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_SET_ON);
+//		break;
+//	case 2:
+//		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_SET_OFF);
+//		break;
+//	case 3:
+//		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_SET_STOP);
+//		break;
+//	case 4:
+//		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_READ_PID);
+//		break;
+//	case 5:
+//		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_READ_ACCEL);
+//		break;
+//	case 6:
+//		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_READ_ENCODER);
+//		break;
+//	case 7:
+////		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_WRITE_ENCODER_ZERO_ROM);
+//		break;
+//	case 8:
+//		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_READ_POSITION_MULTILOOP);
+//		break;
+//	case 9:
+//		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_READ_POSITION_SINGLELOOP);
+//		break;
+//	case 10:
+//		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_READ_ERROR);
+//		break;
+//	case 11:
+//		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_CLEAR_ERROR);
+//		break;
+//	case 12:
+//		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_READ_MECHANICAL_STATE);
+//		break;
+//	case 13:
+//		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_READ_ELECTRIC_STATE);
+//		break;
+//	case 14:
+//		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_CONTROL_POSITION_MULTILOOP_2);
+//		break;
+//	case 15:
+//		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_CONTROL_POSITION_SINGLELOOP_2);
+//		break;
+//	case 16:
+//		strRobotArmMotorTx[MOTOR_1_ID].Control.i32JogAngle = 180*100*MOTOR_1_GEARBOX;
+//		strRobotArmMotorTx[MOTOR_1_ID].Control.u16JogSpeed = 90*MOTOR_1_GEARBOX;
+//		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_CONTROL_POSITION_JOG_2);
+//		break;
+//	default:
+//		break;
+//	}
+//
+//	if (100 > u16MotorCmdCnt)		// Send 100 cmd
+//	{
+//		u16MotorCmdCnt++;
+//	}
+//	else
+//	{
+//		if (0 != u8MotorCmdFlag)	// Not send anymore
+//		{
+//			u8MotorCmdFlag = 0;
+//		}
+//	}
+//}

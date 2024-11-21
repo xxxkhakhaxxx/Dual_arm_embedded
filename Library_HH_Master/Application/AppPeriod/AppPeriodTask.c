@@ -28,9 +28,11 @@
 typedef enum ENUM_TASK_LIST
 {
 	TASK_NONE = 0,
-	TASK_10MS_MASTER_COMM_RX,
-	TASK_10MS_MOTOR_COMM,
-	TASK_10MS_MASTER_COMM_TX
+	TASK_10MS_GUI_COMM,
+	TASK_10MS_ROBOT_IK,
+	TASK_10MS_ROBOT_CONTROLLER,
+	TASK_10MS_SLAVE_1_COMM,	// Send and return
+	TASK_10MS_SLAVE_2_COMM,	// Send and return
 
 } enTaskList;
 
@@ -41,7 +43,6 @@ PRIVATE volatile U32 u32TaskTimerCnt_1ms = 0;
 
 PRIVATE enTaskList enTaskId = TASK_NONE;
 
-PRIVATE U32 debug_cnt_task_Motor = 0;
 volatile static U32 debug_cnt_task_duplicate = 0;
 volatile static U32 debug_cnt_task_override = 0;
 /********************************************************************************
@@ -52,105 +53,26 @@ volatile static U32 debug_cnt_task_override = 0;
 /********************************************************************************
  * PRIVATE FUNCTION DECLARATION
  ********************************************************************************/
-PRIVATE void AppPeriodTask_10ms_MotorComm(void);
-PRIVATE void AppPeriodTask_10ms_MasterCmdHandle(void);
-PRIVATE void AppPeriodTask_10ms_MasterFeedback(void);
+PRIVATE void AppPeriodTask_RobotCalIK(void);
+PRIVATE void AppPeriodTask_SlaveCmdKinematics(void);
 
 PRIVATE void AppPeriodTask_SetTaskFlag(enTaskList _TaskName);
 PRIVATE void AppPeriodTask_Scheduler(void);
+
 /********************************************************************************
  * PRIVATE FUNCTION IMPLEMENTATION
  ********************************************************************************/
-PRIVATE void AppPeriodTask_10ms_MotorComm(void)
+PRIVATE void AppPeriodTask_RobotCalIK(void)
 {
-//	ApiProtocolMotorMG_TestComm();
-	static BOOL _initFlag = FALSE;
-	static U08 _motorId = MOTOR_1_ID;
-	static U08 _cmdChange = FALSE;
-	static U08 _cmdSend = MOTOR_CMD_SET_ON;
 
-	debug_cnt_task_Motor++;
-
-
-	// 1. Set cmd if start new sequence
-	if (TRUE == _cmdChange)		// when motorId = motor1
-	{
-		_cmdChange = FALSE;
-
-		if (FALSE == _initFlag)	// Initial process
-		{
-			// Change initial cmd
-			switch (_cmdSend)
-			{
-			case MOTOR_CMD_SET_ON:						_cmdSend = MOTOR_CMD_READ_PID;					break;
-			case MOTOR_CMD_READ_PID:					_cmdSend = MOTOR_CMD_READ_ACCEL;				break;
-			case MOTOR_CMD_READ_ACCEL:					_cmdSend = MOTOR_CMD_READ_ENCODER;				break;
-			case MOTOR_CMD_READ_ENCODER:				_cmdSend = MOTOR_CMD_READ_POSITION_MULTILOOP;	break;
-			case MOTOR_CMD_READ_POSITION_MULTILOOP:		_cmdSend = MOTOR_CMD_READ_POSITION_SINGLELOOP;	break;
-			case MOTOR_CMD_READ_POSITION_SINGLELOOP:	_cmdSend = MOTOR_CMD_READ_ERROR;				break;
-			case MOTOR_CMD_READ_ERROR:					_cmdSend = MOTOR_CMD_READ_MECHANICAL_STATE;		break;
-			case MOTOR_CMD_READ_MECHANICAL_STATE:		_cmdSend = MOTOR_CMD_READ_ELECTRIC_STATE;		break;
-			case MOTOR_CMD_READ_ELECTRIC_STATE:
-				_cmdSend = MOTOR_CMD_READ_ERROR;
-				_initFlag = TRUE;
-				break;	// End of initial
-			default:									_cmdSend = MOTOR_CMD_SET_ON;					break;
-			}
-		}
-		else	// Normal process
-		{
-			// Check safety
-			if ((TRUE == AppDataGet_IsMotorLowVoltage(_motorId)) || \
-				(TRUE == AppDataGet_IsMotorHighTemp(_motorId)))
-			{
-				switch (_cmdSend)
-				{
-				case MOTOR_CMD_SET_STOP:				_cmdSend = MOTOR_CMD_SET_OFF;					break;
-				case MOTOR_CMD_SET_OFF:					_cmdSend = MOTOR_CMD_SET_OFF;					break;	// Keep off
-				default:								_cmdSend = MOTOR_CMD_SET_STOP;					break;	// Change to send stop right away
-				}
-			}
-			else	// Normal process sequence
-			{
-				switch (_cmdSend)
-				{
-				case MOTOR_CMD_READ_ERROR:				_cmdSend = MOTOR_CMD_READ_ELECTRIC_STATE;		break;
-				case MOTOR_CMD_READ_ELECTRIC_STATE:		_cmdSend = MOTOR_CMD_READ_MECHANICAL_STATE;		break;
-				case MOTOR_CMD_READ_MECHANICAL_STATE:	_cmdSend = MOTOR_CMD_READ_POSITION_MULTILOOP;	break;
-				case MOTOR_CMD_READ_POSITION_MULTILOOP: _cmdSend = MOTOR_CMD_READ_ERROR;				break;
-				default:								_cmdSend = MOTOR_CMD_READ_ERROR;				break;
-				}
-			}
-		}
-	}
-
-	// 2. Send msg to motor
-	AppCommCAN_SendMotorMessage(_motorId, _cmdSend);
-
-	// 3. Update new MotorId for sending msg next time
-	switch (_motorId)
-	{
-	case MOTOR_1_ID:	_motorId = MOTOR_2_ID;		break;
-	case MOTOR_2_ID:	_motorId = MOTOR_3_ID;		break;
-	case MOTOR_3_ID:
-		_motorId = MOTOR_1_ID;
-		_cmdChange = TRUE;
-		break;
-	default:			_motorId = MOTOR_1_ID;		break;
-	}
-
-	return;
 }
 
-PRIVATE void AppPeriodTask_10ms_MasterCmdHandle(void)
+PRIVATE void AppPeriodTask_SlaveCmdKinematics(void)
 {
 	return;
 }
 
-PRIVATE void AppPeriodTask_10ms_MasterFeedback(void)
-{
-	return;
-}
+
 
 PRIVATE void AppPeriodTask_SetTaskFlag(enTaskList _TaskName)
 {
@@ -178,17 +100,12 @@ PRIVATE void AppPeriodTask_Scheduler(void)
 	/* 10ms Task */
 	switch ((u32TaskTimerCnt_1ms)%10)
 	{
-	case 1:
-		AppPeriodTask_SetTaskFlag(TASK_10MS_MASTER_COMM_RX);
-		break;
-	case 3:			// 1ms - 11ms - 21ms - ...
-	case 4:
-	case 5:
-		AppPeriodTask_SetTaskFlag(TASK_10MS_MOTOR_COMM);
-		break;
-//	case 7:
-//		AppPeriodTask_SetTaskFlag(TASK_10MS_MASTER_COMM_TX);
-		break;
+//	case 1:
+//		AppPeriodTask_SetTaskFlag(TASK_10MS_ROBOT_IK);
+//		break;
+//	case 5:
+//		AppPeriodTask_SetTaskFlag(TASK_10MS_SLAVE_1_COMM);
+//		break;
 	default:
 		break;
 	}
@@ -219,14 +136,11 @@ GLOBAL void AppPeriodTask_TaskCall(void)	/* Performing the corresponding task */
 {
 	switch(enTaskId)
 	{
-	case TASK_10MS_MOTOR_COMM:
-		AppPeriodTask_10ms_MotorComm();
+	case TASK_10MS_ROBOT_IK:
+		AppPeriodTask_RobotCalIK();
 		break;
-	case TASK_10MS_MASTER_COMM_TX:
-		AppPeriodTask_10ms_MasterFeedback();
-		break;
-	case TASK_10MS_MASTER_COMM_RX:
-		AppPeriodTask_10ms_MasterCmdHandle();
+	case TASK_10MS_SLAVE_1_COMM:
+		AppPeriodTask_SlaveCmdKinematics();
 		break;
 	default:
 		// None task

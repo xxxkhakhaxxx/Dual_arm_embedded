@@ -65,7 +65,7 @@ static void MX_TIM2_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
+static U08 spiTxDataTest[8] = {0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88 };
 /* USER CODE END 0 */
 
 /**
@@ -103,11 +103,13 @@ int main(void)
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
   AppCommCAN_UserSetup(&hcan1);
+  AppCommSPI_UserSetup(&hspi1);
   HAL_CAN_Start(&hcan1);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+  HAL_TIM_Base_Start_IT(&htim2);
   while (1)
   {
     /* USER CODE END WHILE */
@@ -116,6 +118,10 @@ int main(void)
 		AppCommCAN_GetGUIMessage();
 		AppDataSet_CanRxMsgFlag(FALSE);
 	}
+
+	AppPeriodTask_TaskCall();
+	HAL_SPI_Transmit_DMA(&hspi1, spiTxDataTest, sizeof(spiTxDataTest));
+	HAL_Delay(500);
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */

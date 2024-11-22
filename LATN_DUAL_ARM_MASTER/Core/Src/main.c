@@ -121,7 +121,6 @@ int main(void)
   HAL_TIM_Base_Start_IT(&htim2);
   while (1)
   {
-    /* USER CODE END WHILE */
 	if (TRUE == AppDataGet_CanRxMsgFlag())
 	{
 		AppCommCAN_GetGUIMessage();
@@ -135,6 +134,7 @@ int main(void)
 	}
 
 	AppPeriodTask_TaskCall();
+    /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
   }
@@ -280,7 +280,7 @@ static void MX_TIM2_Init(void)
 
   /* USER CODE END TIM2_Init 1 */
   htim2.Instance = TIM2;
-  htim2.Init.Prescaler = 168-1;
+  htim2.Init.Prescaler = 84-1;
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim2.Init.Period = 1000-1;
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;

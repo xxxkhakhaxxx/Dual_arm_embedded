@@ -76,7 +76,16 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-
+	/* Enable floating point unit (FPU) for speeding up float value calculation
+	 * Note:
+	 * 	1/ FPU in Stm32F407 support only Float type, not Double type
+	 * 	2/ Enable FPU at compile-time: Properties -> C/C++ Build -> Settings -> MCU/MPU Settings:
+	 * 		- Floating-point unit: FPv4-SP-D16
+	 * 		- Floating-point ABI:  Hardware Implementation (-mfloat-api=hard)
+	 * 	3/ Enable FPU enable in code:
+	 * 		- SCB->CPACR |= (0xF << 20);
+	 * */
+	SCB->CPACR |= (0xF << 20);
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/

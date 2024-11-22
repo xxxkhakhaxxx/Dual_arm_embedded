@@ -18,7 +18,7 @@
 //#include "stdio.h"
 //#include "stdlib.h"
 //#include "stdint.h"
-//#include "math.h"
+#include "math.h"
 
 #include "stm32f4xx_hal.h"
 

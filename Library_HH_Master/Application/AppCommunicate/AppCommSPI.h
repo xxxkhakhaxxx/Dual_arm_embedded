@@ -19,7 +19,18 @@
 /********************************************************************************
  * MACROS AND DEFINES
  ********************************************************************************/
+typedef enum ENUM_SLAVE_ID
+{
+	SLAVE_1_ID = 0x00,
+	SLAVE_2_ID = 0x01
+} enSlaveId;
 
+typedef enum ENUM_SLAVE_MSG_ID
+{
+	SLAVE_MSG_ANGLE_KINEMATICS,
+	SLAVE_MSG_ANGLE_DIRECT,
+	SLAVE_MSG_FORCE
+} enSlaveMsgId;
 
 /********************************************************************************
  * TYPEDEFS AND ENUMS
@@ -35,6 +46,8 @@
  * GLOBAL FUNCTION DECLARATION
  ********************************************************************************/
 GLOBAL void AppCommSPI_UserSetup(SPI_HandleTypeDef* hspi);
+GLOBAL void AppCommSPI_SendSlaveMessage(enSlaveId _SlaveId, enSlaveMsgId _SlaveMsgId);
+GLOBAL void AppCommSPI_GetSlaveMessage(void);
 
 
 #endif /* APPLICATION_APPCOMMUNICATE_APPCOMMSPI_H_ */

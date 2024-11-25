@@ -25,13 +25,19 @@ typedef enum ENUM_SLAVE_ID
 	SLAVE_2_ID = 0x01
 } enSlaveId;
 
-typedef enum ENUM_SLAVE_MSG_ID
+typedef enum ENUM_MASTER_SEND_MSG_ID
 {
-	SLAVE_MSG_ANGLE_KINEMATICS,
-	SLAVE_MSG_ANGLE_DIRECT,
-	SLAVE_MSG_FORCE
-} enSlaveMsgId;
+	MASTER_MSG_ANGLE_KINEMATICS = 0x00,
+	MASTER_MSG_ANGLE_DIRECT,
+	MASTER_MSG_FORCE
+} enMasterSendMsgId;
 
+typedef enum ENUM_SLAVE_SEND_MSG_ID
+{
+	SLAVE_MSG_POSITION = 0x00,
+	SLAVE_MSG_POSITION_SPEED,
+	SLAVE_MSG_POSITION_SPEED_TORQUE
+} enSlaveSendMsgId;
 /********************************************************************************
  * TYPEDEFS AND ENUMS
  ********************************************************************************/
@@ -46,7 +52,7 @@ typedef enum ENUM_SLAVE_MSG_ID
  * GLOBAL FUNCTION DECLARATION
  ********************************************************************************/
 GLOBAL void AppCommSPI_UserSetup(SPI_HandleTypeDef* hspi);
-GLOBAL void AppCommSPI_SendSlaveMessage(enSlaveId _SlaveId, enSlaveMsgId _SlaveMsgId);
+GLOBAL void AppCommSPI_SendSlaveMessage(enSlaveId _SlaveId, enMasterSendMsgId _SlaveTxMsgId);
 GLOBAL void AppCommSPI_GetSlaveMessage(void);
 
 

@@ -115,13 +115,13 @@ PRIVATE void AppPeriodTask_RobotCalIK(void)
 
 PRIVATE void AppPeriodTask_SlaveCmdKinematics(void)
 {
-	AppCommSPI_SendSlaveMessage(SLAVE_1_ID, SLAVE_MSG_ANGLE_KINEMATICS);
+	AppCommSPI_SendSlaveMessage(SLAVE_1_ID, MASTER_MSG_ANGLE_KINEMATICS);
 	return;
 }
 
 PRIVATE void AppPeriodTask_SlaveCmdDirectAngle(void)
 {
-	AppCommSPI_SendSlaveMessage(SLAVE_1_ID, SLAVE_MSG_ANGLE_DIRECT);
+	AppCommSPI_SendSlaveMessage(SLAVE_1_ID, MASTER_MSG_ANGLE_DIRECT);
 }
 
 

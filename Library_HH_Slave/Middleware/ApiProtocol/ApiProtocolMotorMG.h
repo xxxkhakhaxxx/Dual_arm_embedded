@@ -102,19 +102,19 @@ typedef struct
 
 	struct
 	{
-		I64 i64AngleMulti;			 // Unit : 0.01°/bit
-		U32 u32AngleSingle;			 // Range: 0~35999, Unit : 0.01°/bit
-		U16 u16Encoder14BitOffset;	 // Range: 0-16383
-		U16 u16Encoder14BitRaw;		 // Range: 0~16383
-		U16 u16Encoder14Bit;		 // Range: 0~16383 (raw - offset)
+		I64 i64AngleMulti;			// Unit : 0.01°/bit
+		U32 u32AngleSingle;			// Range: 0~35999, Unit : 0.01°/bit
+		U16 u16Encoder14BitOffset;	// Range: 0-16383
+		U16 u16Encoder14BitRaw;		// Range: 0~16383
+		U16 u16Encoder14Bit;		// Range: 0~16383 (raw - offset)
 //		U16 u16Encoder18Bit;		// Range: 0~65535 (16 high bits)
-		U16 u16Voltage;				 // Unit : 0.1V/bit
-		I16 i16TorqueCurrent;		 // Range: -33A~33A (-2048 to 2048)
-		I16 i16Speed;				 // Unit : 1dps/bit
-		I16 i16CurrPhaseA;			 // Unit : 1A/64bit
-		I16 i16CurrPhaseB;			 // Unit : 1A/64bit
-		I16 i16CurrPhaseC;			 // Unit : 1A/64bit
-		I08 i8Temp;					 // Unit : 1°C/bit
+		U16 u16Voltage;				// Unit : 0.1V/bit
+		I16 i16TorqueCurrent;		// Range: -33A~33A (-2048 to 2048)
+		I16 i16Speed;				// Unit : 1dps/bit
+		I16 i16CurrPhaseA;			// Unit : 1A/64bit
+		I16 i16CurrPhaseB;			// Unit : 1A/64bit
+		I16 i16CurrPhaseC;			// Unit : 1A/64bit
+		I08 i8Temp;					// Unit : 1°C/bit
 
 	} Data;
 } strMotorMsgRx;

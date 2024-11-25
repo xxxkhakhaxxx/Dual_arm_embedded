@@ -49,7 +49,7 @@ PRIVATE U08 arrSpiRxBuffer[SPI_RX_BUFFER_SIZE] = {0, };		// Data to be store dat
 /* Kinematics Control variable*/
 PRIVATE strKinematicsData strRobotAngleFkData = {0, };						// Set value somewhere else, Ex) GUI comm
 PRIVATE strKinematicsData strRobotAngleDirectData = { 9000 , -9000 , 0 };	// Set value here
-PRIVATE U08 u8SpiSendDirectControl = 0x00;
+PRIVATE U08 u8SpiSendDirectControl = 0x02;
 
 /* Slave data saved variables */
 PRIVATE strSlaveDataPosition strSlavePos = {0 , };
@@ -73,7 +73,7 @@ PRIVATE void AppCommSPI_SetSlaveComm(enSlaveId _SlaveId);
  ********************************************************************************/
 PRIVATE void AppCommSPI_SetupRxBuffer(void)
 {
-	HAL_SPI_Receive_DMA(strSpiUse, arrSpiRxBuffer, SPI_RX_BUFFER_SIZE);		// Rx is using circle mode
+	HAL_SPI_Receive_IT(strSpiUse, arrSpiRxBuffer, SPI_RX_BUFFER_SIZE);		// Rx is using circle mode
 
 	return;
 }

@@ -73,4 +73,17 @@ GLOBAL void AppDataSet_CanRxMsgFlag(BOOL _bFlag)
 	}
 }
 
+PRIVATE BOOL bSpiRxMsgFlag = FALSE;			// Any data in CAN Rx or not
+GLOBAL BOOL AppDataGet_SpiRxMsgFlag(void)
+{
+	return bSpiRxMsgFlag;
+}
+GLOBAL void AppDataSet_SpiRxMsgFlag(BOOL _bFlag)
+{
+	if (_bFlag != bSpiRxMsgFlag)
+	{
+		bSpiRxMsgFlag = _bFlag;
+	}
+}
+
 

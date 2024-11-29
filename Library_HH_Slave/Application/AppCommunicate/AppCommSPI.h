@@ -14,13 +14,24 @@
 /********************************************************************************
  * INCLUDES
  ********************************************************************************/
-
+#include "LibraryHHInterface_Slave.h"
 
 /********************************************************************************
  * MACROS AND DEFINES
  ********************************************************************************/
+typedef enum ENUM_MASTER_SEND_MSG_ID
+{
+	MASTER_MSG_ANGLE_KINEMATICS = 0x00,
+	MASTER_MSG_ANGLE_DIRECT,
+	MASTER_MSG_FORCE
+} enMasterSendMsgId;
 
-
+typedef enum ENUM_SLAVE_SEND_MSG_ID
+{
+	SLAVE_MSG_POSITION = 0x00,
+	SLAVE_MSG_POSITION_SPEED,
+	SLAVE_MSG_POSITION_SPEED_TORQUE
+} enSlaveSendMsgId;
 /********************************************************************************
  * TYPEDEFS AND ENUMS
  ********************************************************************************/
@@ -34,7 +45,12 @@
 /********************************************************************************
  * GLOBAL FUNCTION DECLARATION
  ********************************************************************************/
+GLOBAL void AppCommSPI_UserSetup(SPI_HandleTypeDef* hspi);
+GLOBAL void AppCommSPI_SendMasterMessage(enSlaveSendMsgId _TxMsgId);
+GLOBAL void AppCommSPI_GetMasterMessage(void);
 
-
+/* HAL function implement */
+GLOBAL void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi);
+GLOBAL void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi);
 
 #endif /* APPLICATION_APPCOMMUNICATE_APPCOMMSPI_H_ */

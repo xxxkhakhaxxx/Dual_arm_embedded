@@ -122,6 +122,7 @@ PRIVATE void AppPeriodTask_SlaveCmdKinematics(void)
 PRIVATE void AppPeriodTask_SlaveCmdDirectAngle(void)
 {
 	AppCommSPI_SendSlaveMessage(SLAVE_1_ID, MASTER_MSG_ANGLE_DIRECT);
+	return;
 }
 
 

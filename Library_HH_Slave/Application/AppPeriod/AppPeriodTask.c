@@ -149,6 +149,7 @@ PRIVATE void AppPeriodTask_10ms_MasterCmdHandle(void)
 
 PRIVATE void AppPeriodTask_10ms_MasterFeedback(void)
 {
+	AppCommSPI_SendMasterMessage(SLAVE_MSG_POSITION);
 	return;
 }
 
@@ -186,8 +187,8 @@ PRIVATE void AppPeriodTask_Scheduler(void)
 	case 5:
 		AppPeriodTask_SetTaskFlag(TASK_10MS_MOTOR_COMM);
 		break;
-//	case 7:
-//		AppPeriodTask_SetTaskFlag(TASK_10MS_MASTER_COMM_TX);
+	case 7:
+		AppPeriodTask_SetTaskFlag(TASK_10MS_MASTER_COMM_TX);
 		break;
 	default:
 		break;

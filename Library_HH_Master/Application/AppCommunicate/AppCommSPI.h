@@ -52,8 +52,10 @@ typedef enum ENUM_SLAVE_SEND_MSG_ID
  * GLOBAL FUNCTION DECLARATION
  ********************************************************************************/
 GLOBAL void AppCommSPI_UserSetup(SPI_HandleTypeDef* hspi);
-GLOBAL void AppCommSPI_SendSlaveMessage(enSlaveId _SlaveId, enMasterSendMsgId _SlaveTxMsgId);
+GLOBAL void AppCommSPI_SendSlaveMessage(enSlaveId _SlaveId, enMasterSendMsgId _TxMsgId);
 GLOBAL void AppCommSPI_GetSlaveMessage(void);
 
-
+/* HAL function implement */
+GLOBAL void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi);
+GLOBAL void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi);
 #endif /* APPLICATION_APPCOMMUNICATE_APPCOMMSPI_H_ */

@@ -115,13 +115,13 @@ PRIVATE void AppPeriodTask_RobotCalIK(void)
 
 PRIVATE void AppPeriodTask_SlaveCmdKinematics(void)
 {
-	AppCommSPI_SendSlaveMessage(SLAVE_1_ID, MASTER_MSG_ANGLE_KINEMATICS);
+//	AppCommSPI_SendSlaveMessage(SLAVE_1_ID, MASTER_MSG_ANGLE_KINEMATICS);
 	return;
 }
 
 PRIVATE void AppPeriodTask_SlaveCmdDirectAngle(void)
 {
-	AppCommSPI_SendSlaveMessage(SLAVE_1_ID, MASTER_MSG_ANGLE_DIRECT);
+//	AppCommSPI_SendSlaveMessage(SLAVE_1_ID, MASTER_MSG_ANGLE_DIRECT);
 	return;
 }
 
@@ -192,8 +192,7 @@ GLOBAL void AppPeriodTask_TaskCall(void)	/* Performing the corresponding task */
 		AppPeriodTask_RobotCalIK();
 		break;
 	case TASK_10MS_SLAVE_1_COMM:
-//		AppPeriodTask_SlaveCmdKinematics();
-		AppPeriodTask_SlaveCmdDirectAngle();
+
 		break;
 	default:
 		// None task

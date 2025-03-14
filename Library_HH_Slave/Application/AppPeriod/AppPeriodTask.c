@@ -53,8 +53,6 @@ volatile static U32 debug_cnt_task_override = 0;
  * PRIVATE FUNCTION DECLARATION
  ********************************************************************************/
 PRIVATE void AppPeriodTask_10ms_MotorComm(void);
-PRIVATE void AppPeriodTask_10ms_MasterCmdHandle(void);
-PRIVATE void AppPeriodTask_10ms_MasterFeedback(void);
 
 PRIVATE void AppPeriodTask_SetTaskFlag(enTaskList _TaskName);
 PRIVATE void AppPeriodTask_Scheduler(void);
@@ -142,17 +140,6 @@ PRIVATE void AppPeriodTask_10ms_MotorComm(void)
 	return;
 }
 
-PRIVATE void AppPeriodTask_10ms_MasterCmdHandle(void)
-{
-	return;
-}
-
-PRIVATE void AppPeriodTask_10ms_MasterFeedback(void)
-{
-	AppCommSPI_SendMasterMessage(SLAVE_MSG_POSITION);
-	return;
-}
-
 PRIVATE void AppPeriodTask_SetTaskFlag(enTaskList _TaskName)
 {
 	if (_TaskName != enTaskId)
@@ -224,10 +211,10 @@ GLOBAL void AppPeriodTask_TaskCall(void)	/* Performing the corresponding task */
 		AppPeriodTask_10ms_MotorComm();
 		break;
 	case TASK_10MS_MASTER_COMM_TX:
-		AppPeriodTask_10ms_MasterFeedback();
+
 		break;
 	case TASK_10MS_MASTER_COMM_RX:
-		AppPeriodTask_10ms_MasterCmdHandle();
+
 		break;
 	default:
 		// None task

@@ -180,12 +180,12 @@ PRIVATE void AppPeriodTask_Scheduler(void)
 	switch ((u32TaskTimerCnt_1ms)%10)
 	{
 	case 1:
-		AppPeriodTask_SetTaskFlag(TASK_10MS_MASTER_COMM_RX);
+//		AppPeriodTask_SetTaskFlag(TASK_10MS_MASTER_COMM_RX);
 		break;
 	case 3:			// 1ms - 11ms - 21ms - ...
 	case 4:
 	case 5:
-		AppPeriodTask_SetTaskFlag(TASK_10MS_MOTOR_COMM);
+//		AppPeriodTask_SetTaskFlag(TASK_10MS_MOTOR_COMM);
 		break;
 	case 7:
 		AppPeriodTask_SetTaskFlag(TASK_10MS_MASTER_COMM_TX);

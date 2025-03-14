@@ -33,7 +33,7 @@
 		<link>
 			<name>Library_HH_Slave</name>
 			<type>2</type>
-			<location>C:/Users/HH/OneDrive/3_Research/02_Dual_arm/Code/Dual_arm_embedded/Library_HH_Slave</location>
+			<location>D:/OneDrive/3_Research/02_Dual_arm/Code/Dual_arm_embedded/Library_HH_Slave</location>
 		</link>
 		<link>
 			<name>Drivers/STM32F1xx_HAL_Driver/stm32f1xx_hal.c</name>

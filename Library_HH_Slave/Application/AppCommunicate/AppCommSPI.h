@@ -52,5 +52,6 @@ GLOBAL void AppCommSPI_GetMasterMessage(void);
 /* HAL function implement */
 GLOBAL void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi);
 GLOBAL void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi);
+GLOBAL void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi);
 
 #endif /* APPLICATION_APPCOMMUNICATE_APPCOMMSPI_H_ */

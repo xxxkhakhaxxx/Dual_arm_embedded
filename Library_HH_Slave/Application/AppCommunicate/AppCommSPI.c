@@ -80,8 +80,10 @@ GLOBAL void AppCommSPI_UserSetup(SPI_HandleTypeDef* hspi)
  ** @brief   User sending function
  ************************************************************/
 static U16 test1 = 0x0103;
-static U16 test2 = 0x0107;
+//static U16 test2 = 0x0107;
+static U16 test2 = 0;
 static U16 test3 = 0x010F;
+static U16 test4 = 0;
 
 GLOBAL void AppCommSPI_SendMasterMessage(enSlaveSendMsgId _TxMsgId)
 {
@@ -97,11 +99,19 @@ GLOBAL void AppCommSPI_SendMasterMessage(enSlaveSendMsgId _TxMsgId)
 //		memcpy(&arrSpiTxBuffer[3], &strRobotArmMotorRx[MOTOR_2_ID].Data.u16Encoder14Bit, sizeof(U16));
 //		memcpy(&arrSpiTxBuffer[5], &strRobotArmMotorRx[MOTOR_3_ID].Data.u16Encoder14Bit, sizeof(U16));
 //		HAL_SPI_Transmit_DMA(strSpiUse, arrSpiTxBuffer, SPI_BUFFER_SIZE);
-
+		test2++;
 		memcpy(&arrSpiTxBuffer[1], &test1, sizeof(U16));
 		memcpy(&arrSpiTxBuffer[3], &test2, sizeof(U16));
 		memcpy(&arrSpiTxBuffer[5], &test3, sizeof(U16));
-
+		memcpy(&arrSpiTxBuffer[7], &test4, sizeof(U16));
+		if (0xFFFF == test2)
+		{
+			test2 = 0;
+		}
+		if (0xFFFF == test4)
+		{
+			test4 = 0;
+		}
 		break;
 	case SLAVE_MSG_POSITION_SPEED:
 
@@ -136,6 +146,7 @@ GLOBAL void AppCommSPI_GetMasterMessage(void)
 	{
 	case MASTER_MSG_ANGLE_KINEMATICS:
 	case MASTER_MSG_ANGLE_DIRECT:
+		test4++;
 		memcpy(&strRobotAngleData, &arrSpiRxBuffer[1], sizeof(strKinematicsData));
 		break;
 
@@ -178,4 +189,13 @@ GLOBAL void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi)
 		memset(arrSpiTxBuffer, 0x00, SPI_BUFFER_SIZE);	// Clear Tx buffer
 	}
 	return;
+}
+
+GLOBAL void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
+{
+	if (hspi->Instance == strSpiUse->Instance)		// Check if it's the spi we're using
+	{
+		AppDataSet_SpiRxMsgFlag(TRUE);
+		memset(arrSpiTxBuffer, 0x00, SPI_BUFFER_SIZE);	// Clear Tx buffer
+	}
 }

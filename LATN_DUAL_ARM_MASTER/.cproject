@@ -78,7 +78,7 @@
 					<sourceEntries>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Core"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Drivers"/>
-						<entry excluding="Application/AppCommunicate/AppCommSPI.c" flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="Library_HH_Master"/>
+						<entry excluding="Application/AppCommunicate/AppCommCAN.c|Application/AppCommunicate/AppCommSPI.c" flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="Library_HH_Master"/>
 					</sourceEntries>
 				</configuration>
 			</storageModule>

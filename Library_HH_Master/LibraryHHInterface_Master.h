@@ -31,7 +31,7 @@
 
 #include "./Application/AppConfig/AppConfig.h"
 #include "./Application/AppData/AppData.h"
-#include "./Application/AppCommunicate/AppCommCAN.h"
+//#include "./Application/AppCommunicate/AppCommCAN.h"
 //#include "./Application/AppCommunicate/AppCommSPI.h"
 #include "./Application/AppLoad/AppLoadLed.h"
 #include "./Application/AppLoad/AppLoadMotor.h"

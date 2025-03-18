@@ -10,18 +10,24 @@
  **            - Stop bit: 1 Bit
  **
  **          [MASTER UART CHANNEL]
- **            - UART 1 = SLAVE 1:
- **                + Pins: Tx-PA9 , Rx-PA10
- **                + DMA : Enable Tx Channel 2 Stream 7, normal mode, 1 byte
- **                + IT  : Enable
+ **            - UART 6 = SLAVE 1:
+ **                + Pins: Tx-PC6 , Rx-PC7
+ **                + DMA : Normal mode, 1 byte
+ **                        DMA Tx Channel 2 Stream 6
+ **                        DMA Rx Channel 2 Stream 1
+ **                + IT  : Disable
  **            - UART 2 = GUI :
  **                + Pins: Tx-PD5 , Rx-PD6
- **                + DMA : Enable Tx Channel 1 Stream 6, normal mode, 1 byte
- **                + IT  : Enable
+ **                + DMA : Normal mode, 1 byte
+ **                        DMA Tx Channel 1 Stream 6
+ **                        DMA Rx Channel 1 Stream 5
+ **                + IT  : Disable
  **            - UART 3 = SLAVE 2:
  **                + Pins: Tx-PB10, Rx-PB11
- **                + DMA : Enable Tx Channel 1 Stream 3, normal mode, 1 byte
- **                + IT  : Enable
+ **                + DMA : Normal mode, 1 byte
+ **                        DMA Tx Channel 1 Stream 3
+ **                        DMA Rx Channel 1 Stream 1
+ **                + IT  : Disable
  **
  ********************************************************************************
  **/

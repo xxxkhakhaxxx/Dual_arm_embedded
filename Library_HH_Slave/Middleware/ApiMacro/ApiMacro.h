@@ -38,7 +38,7 @@
 #define EQUALS    ==
 #define IS        =
 
-
+#define U32_MAX (65535)
 /* TYPES */
 //#define BOOL uint8_t
 //#define U08  uint8_t

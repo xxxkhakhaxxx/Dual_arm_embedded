@@ -39,6 +39,7 @@
 #define MOTOR_3_GEARBOX		(10)
 #endif
 
+#define TEST_SLAVE_UART	// enable this macro for testing uart with Master
 /********************************************************************************
  * TYPEDEFS AND ENUMS
  ********************************************************************************/

@@ -62,7 +62,7 @@ static void MX_USART1_UART_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_USART3_UART_Init(void);
 /* USER CODE BEGIN PFP */
-
+//PRIVATE U08 TxData[10] = {49,50,51,52,53,54,55,56,57,48};
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -114,6 +114,9 @@ int main(void)
   MX_USART2_UART_Init();
   MX_USART3_UART_Init();
   /* USER CODE BEGIN 2 */
+  AppCommUART_UserSetup(&huart1, UART_NODE_SLAVE_1);
+  AppCommUART_UserSetup(&huart2, UART_NODE_GUI);
+  AppCommUART_UserSetup(&huart3, UART_NODE_SLAVE_2);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -121,7 +124,9 @@ int main(void)
   HAL_TIM_Base_Start_IT(&htim2);	// Start timer for scheduler
   while (1)
   {
-	AppPeriodTask_TaskCall();
+//	AppPeriodTask_TaskCall();
+	AppPeriodTask_StateMachineProcess();
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */

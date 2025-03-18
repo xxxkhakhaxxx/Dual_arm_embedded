@@ -175,7 +175,7 @@ PRIVATE void AppPeriodTask_Scheduler(void)
 //		AppPeriodTask_SetTaskFlag(TASK_10MS_MOTOR_COMM);
 		break;
 	case 7:
-		AppPeriodTask_SetTaskFlag(TASK_10MS_MASTER_COMM_TX);
+//		AppPeriodTask_SetTaskFlag(TASK_10MS_MASTER_COMM_TX);
 		break;
 	default:
 		break;
@@ -224,3 +224,33 @@ GLOBAL void AppPeriodTask_TaskCall(void)	/* Performing the corresponding task */
 	enTaskId = TASK_NONE;	// Clear task flag
 }
 
+GLOBAL void AppPeriodTask_StateMachineProcess(void)
+{
+	switch (AppDataGet_SlaveState())
+	{
+	case SLAVE_STATE_INIT:
+#ifdef TEST_SLAVE_UART
+		AppDataSet_SlaveState(SLAVE_STATE_UART_TEST);		// Directly change to Uart test state
+#else
+
+#endif
+		break;
+	case SLAVE_STATE_UART_TEST:
+//		if (TRUE == AppDataGet_Uart1TxIsSendFlag())
+//		{
+//			AppCommUART_SendMsg(UART_NODE_SLAVE_1, UART_TX_MSG_TEST);
+//			AppDataSet_Uart1TxIsSendFlag(FALSE);
+//		}
+		break;
+
+	case SLAVE_STATE_WAIT_MASTER:
+	case SLAVE_STATE_CONTROL_MOTOR:
+	case SLAVE_STATE_MOTOR_FEEDBACK:
+	case SLAVE_STATE_FEEDBACK_MASTER:
+	default:
+		// if any abnormal, back to init state
+		AppDataSet_SlaveState(SLAVE_STATE_INIT);
+		break;
+	}
+	return;
+}

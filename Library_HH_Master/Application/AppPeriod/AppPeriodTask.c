@@ -20,7 +20,8 @@
 /********************************************************************************
  * PRIVATE MACROS AND DEFINES
  ********************************************************************************/
-#define TASK_TIMER_CNT_ELAPSED	(10000)
+#define TASK_TIMER_CNT_ELAPSED_10S	(10000)
+#define TASK_TIMER_CNT_ELAPSED_1S	(1000)
 
 #define L1              ((float)253.0) /* Length of 1st link - mm */
 #define L2              ((float)253.0) /* Length of 2nd link - mm */
@@ -64,8 +65,6 @@ GLOBAL strRobotJointInfor strRobotJoint = {0, };
  * PRIVATE FUNCTION DECLARATION
  ********************************************************************************/
 PRIVATE void AppPeriodTask_RobotCalIK(void);
-PRIVATE void AppPeriodTask_SlaveCmdKinematics(void);
-PRIVATE void AppPeriodTask_SlaveCmdDirectAngle(void);
 
 PRIVATE void AppPeriodTask_SetTaskFlag(enTaskList _TaskName);
 PRIVATE void AppPeriodTask_Scheduler(void);
@@ -112,19 +111,6 @@ PRIVATE void AppPeriodTask_RobotCalIK(void)
 	strRobotJoint.Joint_3 = RAD2DEG(Yaw - strRobotJoint.Joint_1 - strRobotJoint.Joint_2);
 	return;
 }
-
-PRIVATE void AppPeriodTask_SlaveCmdKinematics(void)
-{
-//	AppCommSPI_SendSlaveMessage(SLAVE_1_ID, MASTER_MSG_ANGLE_KINEMATICS);
-	return;
-}
-
-PRIVATE void AppPeriodTask_SlaveCmdDirectAngle(void)
-{
-//	AppCommSPI_SendSlaveMessage(SLAVE_1_ID, MASTER_MSG_ANGLE_DIRECT);
-	return;
-}
-
 
 PRIVATE void AppPeriodTask_SetTaskFlag(enTaskList _TaskName)
 {
@@ -176,12 +162,13 @@ GLOBAL void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 
 		AppPeriodTask_Scheduler();		// Check time for which task to perform
 
-		if (TASK_TIMER_CNT_ELAPSED <= u32TaskTimerCnt_1ms)	// Cycle 10s
+		if (TASK_TIMER_CNT_ELAPSED_1S <= u32TaskTimerCnt_1ms)	// Cycle 1s
 		{
 			u32TaskTimerCnt_1ms = 0;
 		}
 	}
 
+	return;
 }
 
 GLOBAL void AppPeriodTask_TaskCall(void)	/* Performing the corresponding task */
@@ -200,5 +187,39 @@ GLOBAL void AppPeriodTask_TaskCall(void)	/* Performing the corresponding task */
 	}
 
 	enTaskId = TASK_NONE;	// Clear task flag
+
+	return;
 }
 
+GLOBAL void AppPeriodTask_StateMachineProcess(void)
+{
+	switch (AppDataGet_MasterState())
+	{
+	case MASTER_STATE_INIT:
+#ifdef TEST_MASTER_UART
+		AppDataSet_MasterState(MASTER_STATE_UART_TEST);		// Directly change to Uart test state
+#else
+
+#endif
+		break;
+	case MASTER_STATE_UART_TEST:
+		if (TRUE == AppDataGet_Uart1TxIsSendFlag())
+		{
+			AppCommUART_SendMsg(UART_NODE_GUI, UART_TX_MSG_TEST);
+			AppDataSet_Uart1TxIsSendFlag(FALSE);
+		}
+		break;
+
+	case MASTER_STATE_CAL_CONTROL:
+	case MASTER_STATE_CAL_ERROR:
+	case MASTER_STATE_DATA_ACQUISITION:
+	case MASTER_STATE_TRAJECTORY_PLANNING:
+	case MASTER_STATE_WAIT_GUI_CMD:
+	case MASTER_STATE_WAIT_SLAVE:
+	default:
+		// if any abnormal, back to init state
+		AppDataSet_MasterState(MASTER_STATE_INIT);
+		break;
+	}
+	return;
+}

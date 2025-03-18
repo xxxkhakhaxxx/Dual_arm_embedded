@@ -45,7 +45,6 @@ CAN_HandleTypeDef hcan;
 TIM_HandleTypeDef htim2;
 
 UART_HandleTypeDef huart1;
-DMA_HandleTypeDef hdma_usart1_rx;
 DMA_HandleTypeDef hdma_usart1_tx;
 
 /* USER CODE BEGIN PV */
@@ -92,9 +91,7 @@ int main(void)
   SystemClock_Config();
 
   /* USER CODE BEGIN SysInit */
-  // Delay for Master ready and generate a stable SPI_CLK,
-  // otherwise Slave can use skewed clock leading to wrong data
-	HAL_Delay(3000);
+
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
@@ -104,6 +101,7 @@ int main(void)
   MX_TIM2_Init();
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
+	AppCommUART_UserSetup(&huart1, UART_NODE_MASTER);
 	AppCommCAN_UserSetup(&hcan);
 	HAL_CAN_Start(&hcan);
 
@@ -298,9 +296,6 @@ static void MX_DMA_Init(void)
   /* DMA1_Channel4_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA1_Channel4_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(DMA1_Channel4_IRQn);
-  /* DMA1_Channel5_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA1_Channel5_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(DMA1_Channel5_IRQn);
 
 }
 

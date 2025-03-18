@@ -2,7 +2,7 @@
  ********************************************************************************
  ** @file    AppCommUART.c
  ** @author  HH (hunghoang.1806@gmail.com)
- ** @date    Mar 14, 2025 (created)
+ ** @date    Mar 16, 2025 (created)
  ** @brief   
  ********************************************************************************
  **/
@@ -20,9 +20,7 @@
 /********************************************************************************
  * PRIVATE MACROS AND DEFINES
  ********************************************************************************/
-PRIVATE UART_HandleTypeDef* strUartSlaveLeft;
-PRIVATE UART_HandleTypeDef* strUartSlaveRight;
-PRIVATE UART_HandleTypeDef* strUartGUI;
+PRIVATE UART_HandleTypeDef* strUartMaster;
 
 /********************************************************************************
  * PRIVATE TYPEDEFS AND ENUMS
@@ -32,7 +30,7 @@ PRIVATE UART_HandleTypeDef* strUartGUI;
 /********************************************************************************
  * PRIVATE VARIABLES
  ********************************************************************************/
-
+PRIVATE U08 arrUartRxMsgData[UART_RX_BUFFER_SIZE] = {0, };
 
 /********************************************************************************
  * GLOBAL VARIABLES
@@ -42,12 +40,25 @@ PRIVATE UART_HandleTypeDef* strUartGUI;
 /********************************************************************************
  * PRIVATE FUNCTION DECLARATION
  ********************************************************************************/
-
+PRIVATE void AppCommUart_SetupRxHandler(enUartNode _node);
 
 /********************************************************************************
  * PRIVATE FUNCTION IMPLEMENTATION
  ********************************************************************************/
-
+PRIVATE void AppCommUart_SetupRxHandler(enUartNode _node)
+{
+	switch (_node)
+	{
+	case UART_NODE_MASTER:
+		// Slave use DMA normal mode for receiving data
+		// Save data to "arrUartRxMsgData" with maximum 256 bytes or when Rx line is IDLE (<256 bytes)
+		HAL_UARTEx_ReceiveToIdle_DMA(strUartMaster, arrUartRxMsgData, UART_RX_BUFFER_SIZE);
+		break;
+	default:
+		break;
+	}
+	return;
+}
 
 /********************************************************************************
  * GLOBAL FUNCTION IMPLEMENTATION
@@ -56,14 +67,9 @@ GLOBAL void AppCommUART_UserSetup(UART_HandleTypeDef* huart, enUartNode _node)
 {
 	switch (_node)
 	{
-	case UART_NODE_SLAVE_1:
-		strUartSlaveLeft = huart;
-		break;
-	case UART_NODE_SLAVE_2:
-		strUartSlaveRight = huart;
-		break;
-	case UART_NODE_GUI:
-		strUartGUI = huart;
+	case UART_NODE_MASTER:
+		strUartMaster = huart;
+		AppCommUart_SetupRxHandler(UART_NODE_MASTER);	// Enable DMA Rx 1st time
 		break;
 	default:
 		// Not support
@@ -73,31 +79,32 @@ GLOBAL void AppCommUART_UserSetup(UART_HandleTypeDef* huart, enUartNode _node)
 	return;
 }
 
-GLOBAL void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
+
+GLOBAL void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
 {
-	AppDataSet_Uart1TxIsSendFlag(TRUE);
+	AppCommUart_SetupRxHandler(UART_NODE_MASTER);	// Re-enable DMA Rx after receiving data (For DMA normal mode only)
+
 	return;
 }
 
+
 GLOBAL void AppCommUART_SendMsg(enUartNode _node, enUartTxMsg _txMsgId)
 {
-#ifdef TEST_MASTER_UART
+#ifdef TEST_SLAVE_UART
 	// Make test data
-	PRIVATE U08 TxDataTest[UART_TX_TEST_BUFFER_SIZE] = {49,50,51,52,53,54,55,56,57,48};
+	U08 uartTxMsgDataTest[UART_TX_TEST_BUFFER_SIZE] = {0, };
+	U08 idx;
+
+	uartTxMsgDataTest[0] = _txMsgId;
+	for (idx = 1 ; idx < UART_TX_TEST_BUFFER_SIZE ; idx++)
+	{
+		uartTxMsgDataTest[idx] = idx;
+	}
 
 	switch (_node)
 	{
-	case UART_NODE_SLAVE_1:
-		if (HAL_OK != HAL_UART_Transmit_DMA(strUartSlaveLeft, TxDataTest, UART_TX_TEST_BUFFER_SIZE))
-		{
-			AppDataSet_Uart1TxError();
-		}
-		break;
-	case UART_NODE_SLAVE_2:
-		HAL_UART_Transmit_DMA(strUartSlaveRight, TxDataTest, UART_TX_TEST_BUFFER_SIZE);
-		break;
-	case UART_NODE_GUI:
-		HAL_UART_Transmit_DMA(strUartGUI, TxDataTest, UART_TX_TEST_BUFFER_SIZE);
+	case UART_NODE_MASTER:
+		HAL_UART_Transmit_DMA(strUartMaster, uartTxMsgDataTest, UART_TX_TEST_BUFFER_SIZE);
 		break;
 	default:
 		// Not support
@@ -107,3 +114,4 @@ GLOBAL void AppCommUART_SendMsg(enUartNode _node, enUartTxMsg _txMsgId)
 
 	return;
 }
+

@@ -122,7 +122,8 @@ int main(void)
 	}
 
 
-	AppPeriodTask_TaskCall();
+//	AppPeriodTask_TaskCall();
+	AppPeriodTask_StateMachineProcess();
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */

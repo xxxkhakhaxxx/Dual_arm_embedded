@@ -208,6 +208,7 @@ GLOBAL void AppPeriodTask_StateMachineProcess(void)
 
 #endif
 		break;
+
 	case MASTER_STATE_UART_TEST:
 		if (FALSE == AppDataGet_UartTxWaitFlag(UART_NODE_GUI))
 		{
@@ -235,7 +236,11 @@ GLOBAL void AppPeriodTask_StateMachineProcess(void)
 
 #endif
 		break;
+
 	case MASTER_STATE_CAL_CONTROL:
+		AppCommUART_SendMsg(UART_NODE_SLAVE_1, UART_TX_MSG_INIT);
+		AppDataSet_MasterState(MASTER_STATE_WAIT_SLAVE);
+		break;
 	case MASTER_STATE_CAL_ERROR:
 	case MASTER_STATE_DATA_ACQUISITION:
 	case MASTER_STATE_TRAJECTORY_PLANNING:

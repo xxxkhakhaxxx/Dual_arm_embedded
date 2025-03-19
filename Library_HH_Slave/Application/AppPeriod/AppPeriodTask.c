@@ -20,7 +20,8 @@
 /********************************************************************************
  * PRIVATE MACROS AND DEFINES
  ********************************************************************************/
-#define TASK_TIMER_CNT_ELAPSED	(10000)
+#define TASK_TIMER_CNT_ELAPSED_10S	(10000)
+#define TASK_TIMER_CNT_ELAPSED_1S	(1000)
 
 /********************************************************************************
  * PRIVATE TYPEDEFS AND ENUMS
@@ -37,13 +38,13 @@ typedef enum ENUM_TASK_LIST
 /********************************************************************************
  * PRIVATE VARIABLES
  ********************************************************************************/
-PRIVATE volatile U32 u32TaskTimerCnt_1ms = 0;
-
 PRIVATE enTaskList enTaskId = TASK_NONE;
 
-PRIVATE U32 debug_cnt_task_Motor = 0;
+/* Debug variables */
+volatile static U32 u32TaskTimerCnt_1ms = 0;
 volatile static U32 debug_cnt_task_duplicate = 0;
 volatile static U32 debug_cnt_task_override = 0;
+PRIVATE U32 debug_cnt_task_Motor = 0;
 /********************************************************************************
  * GLOBAL VARIABLES
  ********************************************************************************/
@@ -195,7 +196,7 @@ GLOBAL void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 
 		AppPeriodTask_Scheduler();		// Check time for which task to perform
 
-		if (TASK_TIMER_CNT_ELAPSED <= u32TaskTimerCnt_1ms)	// Cycle 10s
+		if (TASK_TIMER_CNT_ELAPSED_1S <= u32TaskTimerCnt_1ms)	// Cycle 10s
 		{
 			u32TaskTimerCnt_1ms = 0;
 		}
@@ -229,24 +230,56 @@ GLOBAL void AppPeriodTask_StateMachineProcess(void)
 	switch (AppDataGet_SlaveState())
 	{
 	case SLAVE_STATE_INIT:
-#ifdef TEST_SLAVE_UART
+#if defined(TEST_SLAVE_UART)
 		AppDataSet_SlaveState(SLAVE_STATE_UART_TEST);		// Directly change to Uart test state
+#elif defined(TEST_MASTER_SLAVE_KINEMATICS)
+		// Master send init request to Slave -> Wait Master
+		// Change state
+		AppCommUart_RecvMsgStart(UART_NODE_MASTER);
+		AppDataSet_SlaveState(SLAVE_STATE_WAIT_MASTER);
+
+#else
+		// Master send init request to Slave -> Check motor and then respond
+		// TODO: implement check motor
+		// AppDataSet_SlaveState(SLAVE_STATE_INIT_MOTOR);
+#endif
+		break;
+
+	case SLAVE_STATE_UART_TEST:
+		if (FALSE == AppDataGet_UartTxWaitFlag(UART_NODE_MASTER))
+		{
+			AppCommUART_SendMsg(UART_NODE_MASTER, UART_TX_MSG_TEST);
+		}
+		break;
+
+	case SLAVE_STATE_WAIT_MASTER:
+#if defined(TEST_MASTER_SLAVE_KINEMATICS)
+		if (TRUE == AppDataGet_UartRxNewFlag(UART_NODE_MASTER))	// Received Rx from Master
+		{
+			switch (RxDataMaster[0])			// Check Rx msg ID
+			{
+			case UART_RX_MSG_INIT:
+				AppDataSet_SlaveState(SLAVE_STATE_FEEDBACK_MASTER);
+				break;
+			default:
+				// Something wrong, back to init
+				AppDataSet_SlaveState(SLAVE_STATE_INIT);
+				break;
+			}
+			AppDataSet_UartRxNewFlag(UART_NODE_MASTER, FALSE);
+		}
 #else
 
 #endif
 		break;
-	case SLAVE_STATE_UART_TEST:
-//		if (TRUE == AppDataGet_Uart1TxIsSendFlag())
-//		{
-//			AppCommUART_SendMsg(UART_NODE_SLAVE_1, UART_TX_MSG_TEST);
-//			AppDataSet_Uart1TxIsSendFlag(FALSE);
-//		}
+
+	case SLAVE_STATE_FEEDBACK_MASTER:
+		AppCommUART_SendMsg(UART_NODE_MASTER, UART_RX_MSG_INIT);
+		AppDataSet_SlaveState(SLAVE_STATE_WAIT_MASTER);
 		break;
 
-	case SLAVE_STATE_WAIT_MASTER:
 	case SLAVE_STATE_CONTROL_MOTOR:
 	case SLAVE_STATE_MOTOR_FEEDBACK:
-	case SLAVE_STATE_FEEDBACK_MASTER:
 	default:
 		// if any abnormal, back to init state
 		AppDataSet_SlaveState(SLAVE_STATE_INIT);

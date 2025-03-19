@@ -37,5 +37,7 @@
 GLOBAL void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim);
 GLOBAL void AppPeriodTask_TaskCall(void);
 
+GLOBAL void AppPeriodTask_StateMachineProcess(void);
+
 
 #endif /* APPLICATION_APPPERIOD_APPPERIODTASK_H_ */

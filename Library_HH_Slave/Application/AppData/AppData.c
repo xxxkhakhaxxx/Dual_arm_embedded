@@ -25,28 +25,46 @@
 /********************************************************************************
  * PRIVATE TYPEDEFS AND ENUMS
  ********************************************************************************/
-typedef union
+typedef union UNION_SLAVE_STATE
 {
 	U16 allState[SLAVE_STATE_MAX];
 	struct
 	{
 		U16 Init;
-		U16 WaitGuiCmd;
-		U16 TrajectoryPlanning;
-		U16 CalError;
-		U16 CalControl;
-		U16 WaitSlave;
-		U16 DataAcquisition;
+		U16 WaitMaster;
+		U16 ControlMotor;
+		U16 MotorFeedback;
+		U16 FeedbackMaster;
 
 		U16 UartTest;
 	} Cnt;
 } uniSlaveState;
+
+typedef struct STRUCT_COMM_MANAGER
+{
+	struct
+	{
+		BOOL IsWait;
+		U32  SendMsgCnt;
+		U32  ErrCnt;
+	} Tx;
+
+	struct
+	{
+		BOOL IsWait;
+		BOOL IsNew;
+		U32  RecvMsgCnt;
+		U32  ErrCnt;
+	} Rx;
+} strCommManager;
 
 /********************************************************************************
  * PRIVATE VARIABLES
  ********************************************************************************/
 PRIVATE enSlaveStateList enSlaveState = SLAVE_STATE_INIT;
 PRIVATE uniSlaveState SlaveState = {0, };
+
+PRIVATE strCommManager myUart[UART_NODE_MAX] = {0, };
 
 /********************************************************************************
  * GLOBAL VARIABLES
@@ -66,7 +84,6 @@ PRIVATE uniSlaveState SlaveState = {0, };
  ********************************************************************************/
 GLOBAL enSlaveStateList AppDataGet_SlaveState(void)
 {
-
 	return enSlaveState;
 }
 
@@ -95,6 +112,7 @@ GLOBAL BOOL AppDataGet_IsMotorHighTemp(U08 _u8MotorId)
 	return GETBIT(strRobotArmMotorRx[_u8MotorId].State.u8Error,3);	// 4th bit
 }
 
+/************ CAN BUS RX MANAGE FUNCTION  ************/
 PRIVATE BOOL bCanRxMsgFlag = FALSE;			// Any data in CAN Rx or not
 GLOBAL BOOL AppDataGet_CanRxMsgFlag(void)
 {
@@ -108,74 +126,123 @@ GLOBAL void AppDataSet_CanRxMsgFlag(BOOL _bFlag)
 	}
 }
 
-PRIVATE BOOL bSpiRxMsgFlag = FALSE;			// Any data in CAN Rx or not
-GLOBAL BOOL AppDataGet_SpiRxMsgFlag(void)
-{
-	return bSpiRxMsgFlag;
-}
-GLOBAL void AppDataSet_SpiRxMsgFlag(BOOL _bFlag)
-{
-	if (_bFlag != bSpiRxMsgFlag)
-	{
-		bSpiRxMsgFlag = _bFlag;
-	}
-}
 
-PRIVATE U32 u32Uart1TxIsSendCnt = 0;
-PRIVATE BOOL u8Uart1TxIsSendFlag = TRUE;	// End sending Tx
-PRIVATE U32 u32Uart1TxError = 0;
-GLOBAL BOOL AppDataGet_Uart1TxIsSendFlag(void)
+/************ UART TX MANAGE FUNCTION  ************/
+GLOBAL BOOL AppDataGet_UartTxWaitFlag(U08 _node)
 {
-	return u8Uart1TxIsSendFlag;
-}
-GLOBAL void AppDataSet_Uart1TxIsSendFlag(BOOL _bFlag)
-{
-	if (_bFlag != u8Uart1TxIsSendFlag)
+	BOOL waitFlag = FALSE;
+	if (_node < UART_NODE_MAX)
 	{
-		u8Uart1TxIsSendFlag = _bFlag;
-		if (TRUE == _bFlag)
+		waitFlag = myUart[_node].Tx.IsWait;
+	}
+
+	return waitFlag;
+}
+GLOBAL void AppDataSet_UartTxWaitFlag(U08 _node, BOOL _flag)
+{
+	if (_node < UART_NODE_MAX)
+	{
+		if (_flag != myUart[_node].Tx.IsWait)
 		{
-			u32Uart1TxIsSendCnt++;	// Count when finish send
+			myUart[_node].Tx.IsWait = _flag;
 		}
 	}
 
 	return;
 }
-GLOBAL void AppDataSet_Uart1TxError(void)
+GLOBAL void AppDataSet_UartTxMsgCnt(U08 _node)
 {
-	if (U32_MAX > u32Uart1TxError)
+	if (_node < UART_NODE_MAX)
 	{
-		u32Uart1TxError++;	// Count when error
+		if (U32_MAX >  myUart[_node].Tx.SendMsgCnt)
+		{
+			myUart[_node].Tx.SendMsgCnt++;
+		}
 	}
+
 	return;
 }
-
-PRIVATE U32 u32Uart1RxIsReceiveCnt = 0;
-PRIVATE BOOL u8Uart1RxIsReceiveFlag = TRUE;	// End sending Tx
-PRIVATE U32 u32Uart1RxError = 0;
-GLOBAL BOOL AppDataGet_Uart1RxIsReceiveFlag(void)
+GLOBAL void AppDataSet_UartTxErrCnt(U08 _node)
 {
-	return u8Uart1RxIsReceiveFlag;
-}
-GLOBAL void AppDataSet_Uart1RxIsSendFlag(BOOL _bFlag)
-{
-	if (_bFlag != u8Uart1RxIsReceiveFlag)
+	if (_node < UART_NODE_MAX)
 	{
-		u8Uart1RxIsReceiveFlag = _bFlag;
-		if (TRUE == _bFlag)
+		if (U32_MAX >  myUart[_node].Tx.ErrCnt)
 		{
-			u32Uart1RxIsReceiveCnt++;	// Count when finish send
+			myUart[_node].Tx.ErrCnt++;
+		}
+	}
+
+	return;
+}
+/************ UART RX MANAGE FUNCTION  ************/
+GLOBAL BOOL AppDataGet_UartRxWaitFlag(U08 _node)
+{
+	BOOL waitFlag = TRUE;	// For safety: default TRUE for not starting Rx DMA twice
+	if (_node < UART_NODE_MAX)
+	{
+		waitFlag = myUart[_node].Rx.IsWait;
+	}
+
+	return waitFlag;
+}
+GLOBAL void AppDataSet_UartRxWaitFlag(U08 _node, BOOL _flag)
+{
+	if (_node < UART_NODE_MAX)
+	{
+		if (_flag != myUart[_node].Rx.IsWait)
+		{
+			myUart[_node].Rx.IsWait = _flag;
+		}
+	}
+
+	return;
+}
+GLOBAL void AppDataSet_UartRxMsgCnt(U08 _node)
+{
+	if (_node < UART_NODE_MAX)
+	{
+		if (U32_MAX >  myUart[_node].Rx.RecvMsgCnt)
+		{
+			myUart[_node].Rx.RecvMsgCnt++;
+		}
+	}
+
+	return;
+}
+GLOBAL void AppDataSet_UartRxErrCnt(U08 _node)
+{
+	if (_node < UART_NODE_MAX)
+	{
+		if (U32_MAX >  myUart[_node].Rx.ErrCnt)
+		{
+			myUart[_node].Rx.ErrCnt++;
+		}
+	}
+
+	return;
+}
+GLOBAL BOOL AppDataGet_UartRxNewFlag(U08 _node)
+{
+	BOOL newFlag = TRUE;
+	if (_node < UART_NODE_MAX)
+	{
+		newFlag = myUart[_node].Rx.IsNew;
+	}
+
+	return newFlag;
+}
+GLOBAL void AppDataSet_UartRxNewFlag(U08 _node, BOOL _flag)
+{
+	if (_node < UART_NODE_MAX)
+	{
+		if (_flag != myUart[_node].Rx.IsNew)
+		{
+			myUart[_node].Rx.IsNew = _flag;
 		}
 	}
 
 	return;
 }
 
-GLOBAL void AppDataSet_Uart1RxError(void)
-{
-	if (U32_MAX > u32Uart1RxError)
-	{
-		u32Uart1RxError++;	// Count when error
-	}
-	return;
-}
+
+

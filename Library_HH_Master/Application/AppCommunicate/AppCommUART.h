@@ -47,10 +47,9 @@
 #define UART_BUFFER_SIZE	(256)
 
 
-#ifdef TEST_MASTER_UART
-#define UART_TX_TEST_BUFFER_SIZE (10)
-#endif
-
+/********************************************************************************
+ * TYPEDEFS AND ENUMS
+ ********************************************************************************/
 typedef enum ENUM_UART_NODE
 {
 	UART_NODE_SLAVE_1 = 0x00,
@@ -69,7 +68,6 @@ typedef enum ENUM_UART_TX_MSG
 
 	UART_TX_MSG_TEST = 0x40, // '@'
 	UART_TX_MSG_INIT = 0xFF
-
 } enUartTxMsg;
 
 typedef enum ENUM_UART_RX_MSG
@@ -81,9 +79,6 @@ typedef enum ENUM_UART_RX_MSG
 
 	UART_RX_MSG_INIT = 0xFF
 } enUartRxMsg;
-/********************************************************************************
- * TYPEDEFS AND ENUMS
- ********************************************************************************/
 
 
 /********************************************************************************

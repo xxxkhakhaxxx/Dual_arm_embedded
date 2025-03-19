@@ -281,13 +281,14 @@ GLOBAL void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
 /* Function initialize UART DMA Rx IDLE for corresponding node */
 GLOBAL void AppCommUart_RecvMsgStart(enUartNode _node)
 {
+// 1. Safety check
 	if (TRUE == AppDataGet_UartRxWaitFlag(_node))	// Check for duplicate DMA start or not
 	{
 		// The DMA Rx is already started
 		return;
 	}
 
-	// Start Rx DMA
+// 2. Start Rx DMA
 	switch (_node)
 	{
 	case UART_NODE_SLAVE_1:
@@ -303,7 +304,7 @@ GLOBAL void AppCommUart_RecvMsgStart(enUartNode _node)
 		break;
 	}
 
-	// Set Rx waiting flag
+// 3. Set Rx-wait flag
 	AppDataSet_UartRxWaitFlag(_node, TRUE);		// After start Rx DMA
 	return;
 }

@@ -196,26 +196,50 @@ GLOBAL void AppPeriodTask_StateMachineProcess(void)
 	switch (AppDataGet_MasterState())
 	{
 	case MASTER_STATE_INIT:
-#ifdef TEST_MASTER_UART
+#if defined(TEST_MASTER_UART)
 		AppDataSet_MasterState(MASTER_STATE_UART_TEST);		// Directly change to Uart test state
+#elif defined(TEST_MASTER_SLAVE_KINEMATICS)
+		// Send init request to Slave and wait for respond
+		AppCommUART_SendMsg(UART_NODE_SLAVE_1, UART_TX_MSG_INIT);
+
+		// Change state
+		AppDataSet_MasterState(MASTER_STATE_WAIT_SLAVE);
 #else
 
 #endif
 		break;
 	case MASTER_STATE_UART_TEST:
-		if (TRUE == AppDataGet_Uart1TxIsSendFlag())
+		if (FALSE == AppDataGet_UartTxWaitFlag(UART_NODE_GUI))
 		{
 			AppCommUART_SendMsg(UART_NODE_GUI, UART_TX_MSG_TEST);
-			AppDataSet_Uart1TxIsSendFlag(FALSE);
 		}
 		break;
 
+	case MASTER_STATE_WAIT_SLAVE:
+#if defined(TEST_MASTER_SLAVE_KINEMATICS)
+		if (TRUE == AppDataGet_UartRxNewFlag(UART_NODE_SLAVE_1))	// Received Rx from Slave
+		{
+			switch (RxDataSlaveLeft[0])			// Check Rx msg ID
+			{
+			case UART_RX_MSG_INIT:
+				AppDataSet_MasterState(MASTER_STATE_CAL_CONTROL);
+				break;
+			default:
+				// Something wrong, back to init
+				AppDataSet_MasterState(MASTER_STATE_INIT);
+				break;
+			}
+			AppDataSet_UartRxNewFlag(UART_NODE_SLAVE_1, FALSE);
+		}
+#else
+
+#endif
+		break;
 	case MASTER_STATE_CAL_CONTROL:
 	case MASTER_STATE_CAL_ERROR:
 	case MASTER_STATE_DATA_ACQUISITION:
 	case MASTER_STATE_TRAJECTORY_PLANNING:
 	case MASTER_STATE_WAIT_GUI_CMD:
-	case MASTER_STATE_WAIT_SLAVE:
 	default:
 		// if any abnormal, back to init state
 		AppDataSet_MasterState(MASTER_STATE_INIT);

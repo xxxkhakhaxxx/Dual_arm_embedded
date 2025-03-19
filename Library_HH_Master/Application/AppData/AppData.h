@@ -48,18 +48,17 @@ typedef enum ENUM_MASTER_STATE_LIST
 GLOBAL enMasterStateList AppDataGet_MasterState(void);
 GLOBAL void AppDataSet_MasterState(enMasterStateList _state);
 
-
-GLOBAL BOOL AppDataGet_IsMotorLowVoltage(U08 _u8MotorId);
-GLOBAL BOOL AppDataGet_IsMotorHighTemp(U08 _u8MotorId);
-
-GLOBAL BOOL AppDataGet_CanRxMsgFlag(void);
-GLOBAL void AppDataSet_CanRxMsgFlag(BOOL _bFlag);
-
-GLOBAL BOOL AppDataGet_SpiRxMsgFlag(void);
-GLOBAL void AppDataSet_SpiRxMsgFlag(BOOL _bFlag);
-
-GLOBAL BOOL AppDataGet_Uart1TxIsSendFlag(void);
-GLOBAL void AppDataSet_Uart1TxIsSendFlag(BOOL _bFlag);
-GLOBAL void AppDataSet_Uart1TxError(void);
+/************ UART TX MANAGE FUNCTION  ************/
+GLOBAL BOOL AppDataGet_UartTxWaitFlag(U08 _node);
+GLOBAL void AppDataSet_UartTxWaitFlag(U08 _node, BOOL _flag);	// Set Tx waiting flag
+GLOBAL void AppDataSet_UartTxMsgCnt(U08 _node);
+GLOBAL void AppDataSet_UartTxErrCnt(U08 _node);
+/************ UART RX MANAGE FUNCTION  ************/
+GLOBAL BOOL AppDataGet_UartRxWaitFlag(U08 _node);
+GLOBAL void AppDataSet_UartRxWaitFlag(U08 _node, BOOL _flag);	// Set Rx waiting flag
+GLOBAL void AppDataSet_UartRxMsgCnt(U08 _node);
+GLOBAL void AppDataSet_UartRxErrCnt(U08 _node);
+GLOBAL BOOL AppDataGet_UartRxNewFlag(U08 _node);
+GLOBAL void AppDataSet_UartRxNewFlag(U08 _node, BOOL _flag);
 
 #endif /* APPLICATION_APPDATA_APPDATA_H_ */

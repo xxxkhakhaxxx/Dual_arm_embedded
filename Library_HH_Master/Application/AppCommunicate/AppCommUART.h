@@ -44,15 +44,20 @@
 /********************************************************************************
  * MACROS AND DEFINES
  ********************************************************************************/
+#define UART_BUFFER_SIZE	(256)
+
+
 #ifdef TEST_MASTER_UART
 #define UART_TX_TEST_BUFFER_SIZE (10)
 #endif
 
 typedef enum ENUM_UART_NODE
 {
-	UART_NODE_SLAVE_1 = 0,
-	UART_NODE_SLAVE_2 = 1,
-	UART_NODE_GUI = 3
+	UART_NODE_SLAVE_1 = 0x00,
+	UART_NODE_SLAVE_2 = 0x01,
+	UART_NODE_GUI     = 0x02,
+
+	UART_NODE_MAX
 } enUartNode;
 
 typedef enum ENUM_UART_TX_MSG
@@ -62,7 +67,9 @@ typedef enum ENUM_UART_TX_MSG
 	UART_TX_MSG_SLAVE_SET_TORQUE,
 	UART_TX_MSG_GUI_DATA_FEEDBACK,
 
-	UART_TX_MSG_TEST = 0xFF
+	UART_TX_MSG_TEST = 0x40, // '@'
+	UART_TX_MSG_INIT = 0xFF
+
 } enUartTxMsg;
 
 typedef enum ENUM_UART_RX_MSG
@@ -70,7 +77,9 @@ typedef enum ENUM_UART_RX_MSG
 	UART_RX_MSG_SLAVE_SET_POSITION_FEEDBACK = 0,
 	UART_RX_MSG_SLAVE_SET_VELOCITY_FEEDBACK,
 	UART_RX_MSG_SLAVE_SET_TORQUE_FEEDBACK,
-	UART_RX_MSG_GUI_DATA_SET_TRAJECTORY
+	UART_RX_MSG_GUI_DATA_SET_TRAJECTORY,
+
+	UART_RX_MSG_INIT = 0xFF
 } enUartRxMsg;
 /********************************************************************************
  * TYPEDEFS AND ENUMS
@@ -80,13 +89,21 @@ typedef enum ENUM_UART_RX_MSG
 /********************************************************************************
  * GLOBAL VARIABLES
  ********************************************************************************/
+extern U08 RxDataSlaveLeft[UART_BUFFER_SIZE];
+extern U08 RxDataSlaveRight[UART_BUFFER_SIZE];
+extern U08 RxDataGUI[UART_BUFFER_SIZE];
 
 /********************************************************************************
  * GLOBAL FUNCTION DECLARATION
  ********************************************************************************/
 GLOBAL void AppCommUART_UserSetup(UART_HandleTypeDef* huart, enUartNode _node);		// Save huart structure pointer generated from IDE to library's private pointer
-GLOBAL void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart);						// Function callback when finished Tx
 
+GLOBAL void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart);						// Function callback when finished Tx
 GLOBAL void AppCommUART_SendMsg(enUartNode _node, enUartTxMsg _txMsgId);
+
+GLOBAL void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size);	// Function call back when detect IDLE on Rx
+GLOBAL void AppCommUart_RecvMsgStart(enUartNode _node);								// Start receive Rx message on DMA
+
+GLOBAL void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart);
 
 #endif /* APPLICATION_APPCOMMUNICATE_APPCOMMUART_H_ */

@@ -182,7 +182,20 @@ GLOBAL void AppCommUART_SendMsg(enUartNode _node, enUartTxMsg _txMsgId)
 	{
 	case UART_TX_MSG_INIT:
 		sourceTxData[0] = UART_TX_MSG_INIT;
-		sizeSend = 1;
+		sourceTxData[1] = 0xFE;
+		sourceTxData[2] = 0xFE;
+		sourceTxData[3] = 0xFE;
+		sizeSend = 4;
+		break;
+
+	case UART_TX_MSG_SLAVE_SET_POSITION_FEEDBACK:
+#if defined(TEST_MASTER_SLAVE_KINEMATICS)
+		sourceTxData[0] = UART_TX_MSG_SLAVE_SET_POSITION_FEEDBACK;
+		memcpy(&sourceTxData[1], &RxDataMaster[1], sizeof(float));
+		memcpy(&sourceTxData[5], &RxDataMaster[5], sizeof(float));
+		memcpy(&sourceTxData[9], &RxDataMaster[9], sizeof(float));
+		sizeSend = 13;
+#endif
 		break;
 	default:
 		// Do nothing and return

@@ -22,7 +22,7 @@
 #define PROJECT_MCU		STM32F4XX_FW_1_28_1
 
 //#define TEST_MASTER_UART	// enable this macro for testing uart with slave
-#define TEST_MASTER_SLAVE_KINEMATICS
+#define TEST_MASTER_SLAVE_KINEMATICS	// Init-> Send inti -> Wait Slave -> Cal Control -> Wait Slave->
 /********************************************************************************
  * TYPEDEFS AND ENUMS
  ********************************************************************************/

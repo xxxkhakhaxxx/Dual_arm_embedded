@@ -58,13 +58,13 @@ PRIVATE float Yaw = 0;
 /********************************************************************************
  * GLOBAL VARIABLES
  ********************************************************************************/
-GLOBAL strRobotJointInfor strRobotJoint = {0, };
+GLOBAL strRobot strRobotDualArm = {0, };
 
 
 /********************************************************************************
  * PRIVATE FUNCTION DECLARATION
  ********************************************************************************/
-PRIVATE void AppPeriodTask_RobotCalIK(void);
+PRIVATE void _RobotCalculateIK(void);
 
 PRIVATE void AppPeriodTask_SetTaskFlag(enTaskList _TaskName);
 PRIVATE void AppPeriodTask_Scheduler(void);
@@ -80,10 +80,10 @@ PRIVATE void AppPeriodTask_Scheduler(void);
 * Output:
 *  - Θ: unit 0.01°, type float pointer, pointer allocation include J1, J2, and J3
  */
-PRIVATE void AppPeriodTask_RobotCalIK(void)
+PRIVATE void _RobotCalculateIK(void)
 {
 	float x3, y3, c2, s2, c1, s1;
-	float q1, q2;
+	float _q1, _q2;
 
 	/* Calculating x3 y3 */
 	x3 = (float)((float)Px - L3*(float)cos(Yaw * D2R));
@@ -94,21 +94,21 @@ PRIVATE void AppPeriodTask_RobotCalIK(void)
 	s2 = -sqrt(1.0 - c2*c2);
 //	s2 = sqrt(1.0 - c2*c2);
 
-	q2 = atan2(s2,c2);
+	_q2 = atan2(s2,c2);
 
 	/* Calculating Θ_1 */
-	c1 = (x3*(L1 + L2*cos(q2)) +  y3*L2*sin(q2)) \
-		  / ((L1 + L2*cos(q2))*(L1 + L2*cos(q2)) + (L2*sin(q2))*(L2*sin(q2)));
+	c1 = (x3*(L1 + L2*cos(_q2)) +  y3*L2*sin(_q2)) \
+		  / ((L1 + L2*cos(_q2))*(L1 + L2*cos(_q2)) + (L2*sin(_q2))*(L2*sin(_q2)));
 
-	s1 = (y3*(L1 + L2*cos(q2)) -  x3*L2*sin(q2)) \
-		  / ((L1 + L2*cos(q2))*(L1 + L2*cos(q2)) + (L2*sin(q2))*(L2*sin(q2)));
+	s1 = (y3*(L1 + L2*cos(_q2)) -  x3*L2*sin(_q2)) \
+		  / ((L1 + L2*cos(_q2))*(L1 + L2*cos(_q2)) + (L2*sin(_q2))*(L2*sin(_q2)));
 
-	q1 = atan2(s1,c1);
+	_q1 = atan2(s1,c1);
 
 	/* Calculating Θ_3 */
-	strRobotJoint.Joint_1 = RAD2DEG(q1);
-	strRobotJoint.Joint_2 = RAD2DEG(q2);
-	strRobotJoint.Joint_3 = RAD2DEG(Yaw - strRobotJoint.Joint_1 - strRobotJoint.Joint_2);
+	strRobotDualArm.q1 = RAD2DEG(_q1);
+	strRobotDualArm.q2 = RAD2DEG(_q2);
+	strRobotDualArm.q3 = RAD2DEG(Yaw - strRobotDualArm.q1 - strRobotDualArm.q2);
 	return;
 }
 
@@ -176,7 +176,7 @@ GLOBAL void AppPeriodTask_TaskCall(void)	/* Performing the corresponding task */
 	switch(enTaskId)
 	{
 	case TASK_10MS_ROBOT_IK:
-		AppPeriodTask_RobotCalIK();
+		_RobotCalculateIK();
 		break;
 	case TASK_10MS_SLAVE_1_COMM:
 
@@ -204,16 +204,7 @@ GLOBAL void AppPeriodTask_StateMachineProcess(void)
 
 		// Change state
 		AppDataSet_MasterState(MASTER_STATE_WAIT_SLAVE);
-#else
-
 #endif
-		break;
-
-	case MASTER_STATE_UART_TEST:
-		if (FALSE == AppDataGet_UartTxWaitFlag(UART_NODE_GUI))
-		{
-			AppCommUART_SendMsg(UART_NODE_GUI, UART_TX_MSG_TEST);
-		}
 		break;
 
 	case MASTER_STATE_WAIT_SLAVE:
@@ -223,27 +214,49 @@ GLOBAL void AppPeriodTask_StateMachineProcess(void)
 			switch (RxDataSlaveLeft[0])			// Check Rx msg ID
 			{
 			case UART_RX_MSG_INIT:
+				if ((RxDataSlaveLeft[1] == 0xFE) && (RxDataSlaveLeft[2] == 0xFE) && (RxDataSlaveLeft[3] == 0xFE))
+				{
+					AppDataSet_MasterState(MASTER_STATE_CAL_CONTROL);
+				}
+				else
+				{
+					// Stuck in here
+				}
+				break;
+
+			case UART_RX_MSG_SLAVE_SET_POSITION_FEEDBACK:
+				// Temp: re-send again
 				AppDataSet_MasterState(MASTER_STATE_CAL_CONTROL);
 				break;
+
 			default:
 				// Something wrong, back to init
 				AppDataSet_MasterState(MASTER_STATE_INIT);
 				break;
 			}
+
+			// Reset flag
 			AppDataSet_UartRxNewFlag(UART_NODE_SLAVE_1, FALSE);
 		}
-#else
-
 #endif
 		break;
 
 	case MASTER_STATE_CAL_CONTROL:
-		AppCommUART_SendMsg(UART_NODE_SLAVE_1, UART_TX_MSG_INIT);
+#if defined(TEST_MASTER_SLAVE_KINEMATICS)
+		_RobotCalculateIK();
+		AppCommUART_SendMsg(UART_NODE_SLAVE_1, UART_TX_MSG_SLAVE_SET_POSITION);
 		AppDataSet_MasterState(MASTER_STATE_WAIT_SLAVE);
 		break;
-	case MASTER_STATE_CAL_ERROR:
+#endif
+
+	case MASTER_STATE_UART_TEST:
+		if (FALSE == AppDataGet_UartTxWaitFlag(UART_NODE_GUI))
+		{
+			AppCommUART_SendMsg(UART_NODE_GUI, UART_TX_MSG_TEST);
+		}
+		break;
+
 	case MASTER_STATE_DATA_ACQUISITION:
-	case MASTER_STATE_TRAJECTORY_PLANNING:
 	case MASTER_STATE_WAIT_GUI_CMD:
 	default:
 		// if any abnormal, back to init state

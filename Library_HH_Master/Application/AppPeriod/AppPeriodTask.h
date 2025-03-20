@@ -26,16 +26,16 @@
  ********************************************************************************/
 typedef struct
 {
-    float Joint_1;
-    float Joint_2;
-    float Joint_3;
-} strRobotJointInfor;	// Unit: 1 degree/bit
+    float q1;
+    float q2;
+    float q3;
+} strRobot;	// Unit: 1 degree/bit
 
 
 /********************************************************************************
  * GLOBAL VARIABLES
  ********************************************************************************/
-extern GLOBAL strRobotJointInfor strRobotJoint;
+extern GLOBAL strRobot strRobotDualArm;
 
 
 /********************************************************************************

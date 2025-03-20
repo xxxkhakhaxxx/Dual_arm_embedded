@@ -22,7 +22,7 @@
 #define PROJECT_MCU		STM32F1XX_FW_1_8_6
 
 //#define TEST_SLAVE_UART	// enable this macro for testing uart with Master
-#define TEST_MASTER_SLAVE_KINEMATICS
+#define TEST_MASTER_SLAVE_KINEMATICS	// Init-> Wait Master-> FeedBack Master-> Wait Master-> Control Motor-> Motor Feedback-> Feedback Master
 
 #define TOTAL_MOTOR_FOR_ONE_ARM	(3)
 #define MOTOR_1		LINGKONG_MG5010E_i10

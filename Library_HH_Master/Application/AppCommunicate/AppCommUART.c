@@ -217,8 +217,20 @@ GLOBAL void AppCommUART_SendMsg(enUartNode _node, enUartTxMsg _txMsgId)
 	{
 	case UART_TX_MSG_INIT:
 		sourceTxData[0] = UART_TX_MSG_INIT;
-		sizeSend = 1;
+		sourceTxData[1] = 0xFE;
+		sourceTxData[2] = 0xFE;
+		sourceTxData[3] = 0xFE;
+		sizeSend = 4;
 		break;
+
+	case UART_TX_MSG_SLAVE_SET_POSITION:
+		sourceTxData[0] = UART_TX_MSG_SLAVE_SET_POSITION;
+		memcpy(&sourceTxData[1], &strRobotDualArm.q1, sizeof(float));
+		memcpy(&sourceTxData[5], &strRobotDualArm.q2, sizeof(float));
+		memcpy(&sourceTxData[9], &strRobotDualArm.q3, sizeof(float));
+		sizeSend = 13;
+		break;
+
 	default:
 		// Do nothing and return
 		return;

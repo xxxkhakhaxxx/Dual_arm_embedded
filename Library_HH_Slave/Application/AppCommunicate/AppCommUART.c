@@ -189,7 +189,7 @@ GLOBAL void AppCommUART_SendMsg(enUartNode _node, enUartTxMsg _txMsgId)
 		break;
 
 	case UART_TX_MSG_SLAVE_SET_POSITION_FEEDBACK:
-#if defined(TEST_MASTER_SLAVE_KINEMATICS)
+#if defined(TEST_UART_CYCLE_NO_FEEDBACK)
 		sourceTxData[0] = UART_TX_MSG_SLAVE_SET_POSITION_FEEDBACK;
 		memcpy(&sourceTxData[1], &RxDataMaster[1], sizeof(float));
 		memcpy(&sourceTxData[5], &RxDataMaster[5], sizeof(float));

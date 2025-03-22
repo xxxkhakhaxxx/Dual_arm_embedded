@@ -196,9 +196,9 @@ GLOBAL void AppPeriodTask_StateMachineProcess(void)
 	switch (AppDataGet_MasterState())
 	{
 	case MASTER_STATE_INIT:
-#if defined(TEST_MASTER_UART)
+#if defined(TEST_UART_SEND)
 		AppDataSet_MasterState(MASTER_STATE_UART_TEST);		// Directly change to Uart test state
-#elif defined(TEST_MASTER_SLAVE_KINEMATICS)
+#elif defined(TEST_UART_CYCLE_NO_FEEDBACK)
 		// Send init request to Slave and wait for respond
 		AppCommUART_SendMsg(UART_NODE_SLAVE_1, UART_TX_MSG_INIT);
 
@@ -208,7 +208,7 @@ GLOBAL void AppPeriodTask_StateMachineProcess(void)
 		break;
 
 	case MASTER_STATE_WAIT_SLAVE:
-#if defined(TEST_MASTER_SLAVE_KINEMATICS)
+#if defined(TEST_UART_CYCLE_NO_FEEDBACK)
 		if (TRUE == AppDataGet_UartRxNewFlag(UART_NODE_SLAVE_1))	// Received Rx from Slave
 		{
 			switch (RxDataSlaveLeft[0])			// Check Rx msg ID
@@ -242,7 +242,7 @@ GLOBAL void AppPeriodTask_StateMachineProcess(void)
 		break;
 
 	case MASTER_STATE_CAL_CONTROL:
-#if defined(TEST_MASTER_SLAVE_KINEMATICS)
+#if defined(TEST_UART_CYCLE_NO_FEEDBACK)
 		_RobotCalculateIK();
 		AppCommUART_SendMsg(UART_NODE_SLAVE_1, UART_TX_MSG_SLAVE_SET_POSITION);
 		AppDataSet_MasterState(MASTER_STATE_WAIT_SLAVE);

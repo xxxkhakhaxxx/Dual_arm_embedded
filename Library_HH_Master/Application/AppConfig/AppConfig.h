@@ -21,8 +21,9 @@
  ********************************************************************************/
 #define PROJECT_MCU		STM32F4XX_FW_1_28_1
 
-//#define TEST_MASTER_UART	// enable this macro for testing uart with slave
-#define TEST_MASTER_SLAVE_KINEMATICS	// Init-> Send inti -> Wait Slave -> Cal Control -> Wait Slave->
+//#define TEST_UART_SEND				// Init-> Auto send and Receive: Used for checking which UART channel work with DMA and IT
+//#define TEST_UART_CYCLE_NO_FEEDBACK	// Init-> Send init -> Wait Slave -> Cal Control -> Wait Slave->...
+#define TEST_UART_CYCLE_MOTOR_DATA	// Init-> ... -> Request data -> wait Slave -> Read motor data -> ...
 /********************************************************************************
  * TYPEDEFS AND ENUMS
  ********************************************************************************/

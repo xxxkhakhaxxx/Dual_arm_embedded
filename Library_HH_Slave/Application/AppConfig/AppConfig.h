@@ -21,8 +21,10 @@
  ********************************************************************************/
 #define PROJECT_MCU		STM32F1XX_FW_1_8_6
 
-//#define TEST_SLAVE_UART	// enable this macro for testing uart with Master
-#define TEST_MASTER_SLAVE_KINEMATICS	// Init-> Wait Master-> FeedBack Master-> Wait Master-> Control Motor-> Motor Feedback-> Feedback Master
+#define TEST_UART_SEND				// Init-> Auto send and Receive: Used for checking which UART channel work with DMA and IT
+#define TEST_UART_CYCLE_NO_FEEDBACK	// Init-> Wait Master-> FeedBack Master-> Wait Master-> Control Motor-> Motor Feedback-> Feedback Master
+#define TEST_UART_CYCLE_MOTOR_DATA	// Init-> ... -> wait Master -> Read motor data -> Cal speed + accel -> Feedback  motor data -> wait Master.
+
 
 #define TOTAL_MOTOR_FOR_ONE_ARM	(3)
 #define MOTOR_1		LINGKONG_MG5010E_i10

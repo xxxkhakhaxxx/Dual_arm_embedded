@@ -196,7 +196,7 @@ GLOBAL void AppCommUART_SendMsg(enUartNode _node, enUartTxMsg _txMsgId)
 
 
 // 4. Set data to be transfer
-#ifdef TEST_MASTER_UART
+#ifdef TEST_UART_SEND
 	// Test data
 	sizeSend = 11;
 

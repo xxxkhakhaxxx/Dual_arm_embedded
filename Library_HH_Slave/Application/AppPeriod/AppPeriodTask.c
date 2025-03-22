@@ -235,7 +235,7 @@ GLOBAL void AppPeriodTask_StateMachineProcess(void)
 	case SLAVE_STATE_INIT:
 #if defined(TEST_SLAVE_UART)
 		AppDataSet_SlaveState(SLAVE_STATE_UART_TEST);		// Directly change to Uart test state
-#elif defined(TEST_MASTER_SLAVE_KINEMATICS)
+#elif defined(TEST_UART_CYCLE_NO_FEEDBACK)
 		// Master send init request to Slave -> Wait Master
 		// Change state
 		AppCommUart_RecvMsgStart(UART_NODE_MASTER);
@@ -249,7 +249,7 @@ GLOBAL void AppPeriodTask_StateMachineProcess(void)
 		break;
 
 	case SLAVE_STATE_WAIT_MASTER:
-#if defined(TEST_MASTER_SLAVE_KINEMATICS)
+#if defined(TEST_UART_CYCLE_NO_FEEDBACK)
 		if (TRUE == AppDataGet_UartRxNewFlag(UART_NODE_MASTER))	// Received Rx from Master
 		{
 			switch (RxDataMaster[0])			// Check Rx msg ID
@@ -279,7 +279,7 @@ GLOBAL void AppPeriodTask_StateMachineProcess(void)
 		break;
 
 	case SLAVE_STATE_CONTROL_MOTOR:
-#if defined(TEST_MASTER_SLAVE_KINEMATICS)
+#if defined(TEST_UART_CYCLE_NO_FEEDBACK)
 		// Do nothing, move to motor feedback
 		AppDataSet_SlaveState(SLAVE_STATE_MOTOR_FEEDBACK);
 
@@ -287,14 +287,14 @@ GLOBAL void AppPeriodTask_StateMachineProcess(void)
 		break;
 
 	case SLAVE_STATE_MOTOR_FEEDBACK:
-#if defined(TEST_MASTER_SLAVE_KINEMATICS)
+#if defined(TEST_UART_CYCLE_NO_FEEDBACK)
 		// Do nothing, move to feedback master
 		AppDataSet_SlaveState(SLAVE_STATE_FEEDBACK_MASTER);
 #endif
 		break;
 
 	case SLAVE_STATE_FEEDBACK_MASTER:
-#if defined(TEST_MASTER_SLAVE_KINEMATICS)
+#if defined(TEST_UART_CYCLE_NO_FEEDBACK)
 		if (FALSE == isInit) // One time only
 		{
 			AppCommUART_SendMsg(UART_NODE_MASTER, UART_TX_MSG_INIT);

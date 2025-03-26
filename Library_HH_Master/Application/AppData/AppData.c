@@ -94,10 +94,27 @@ GLOBAL void AppDataSet_MasterState(enMasterStateList _state)
 	if ((_state != enMasterState) && (_state < MASTER_STATE_MAX))
 	{
 		enMasterState = _state;				// Change state
-		if (U32_MAX > MasterState.allState[_state])
+		if (U16_MAX > MasterState.allState[_state])
 		{
 			MasterState.allState[_state]++;	// Count current state
 		}
+	}
+
+	return;
+}
+
+/**
+  * @brief  Sets the state of an LED (ON/OFF)
+  * @param  pin: LED GPIO pin (e.g., LED4_GREEN_PIN)
+  * @param  state: TRUE (ON) or FALSE (OFF)
+  * @retval None
+  */
+GLOBAL void AppDataSet_LedState(uint16_t _ledName, BOOL _ledState)
+{
+	if (_ledState != HAL_GPIO_ReadPin(LED_PORT, _ledName))
+	{
+		HAL_GPIO_WritePin(LED_PORT, _ledName, (_ledState ? GPIO_PIN_SET : GPIO_PIN_RESET));
+
 	}
 
 	return;
@@ -121,6 +138,7 @@ GLOBAL void AppDataSet_UartTxWaitFlag(U08 _node, BOOL _flag)
 		if (_flag != myUart[_node].Tx.IsWait)
 		{
 			myUart[_node].Tx.IsWait = _flag;
+			AppDataSet_LedState(LED_3_ORANGE, TRUE);
 		}
 	}
 
@@ -130,7 +148,7 @@ GLOBAL void AppDataSet_UartTxMsgCnt(U08 _node)
 {
 	if (_node < UART_NODE_MAX)
 	{
-		if (U32_MAX >  myUart[_node].Tx.SendMsgCnt)
+		if (U16_MAX >  myUart[_node].Tx.SendMsgCnt)
 		{
 			myUart[_node].Tx.SendMsgCnt++;
 		}
@@ -142,7 +160,7 @@ GLOBAL void AppDataSet_UartTxErrCnt(U08 _node)
 {
 	if (_node < UART_NODE_MAX)
 	{
-		if (U32_MAX >  myUart[_node].Tx.ErrCnt)
+		if (U16_MAX >  myUart[_node].Tx.ErrCnt)
 		{
 			myUart[_node].Tx.ErrCnt++;
 		}
@@ -177,7 +195,7 @@ GLOBAL void AppDataSet_UartRxMsgCnt(U08 _node)
 {
 	if (_node < UART_NODE_MAX)
 	{
-		if (U32_MAX >  myUart[_node].Rx.RecvMsgCnt)
+		if (U16_MAX >  myUart[_node].Rx.RecvMsgCnt)
 		{
 			myUart[_node].Rx.RecvMsgCnt++;
 		}
@@ -189,7 +207,7 @@ GLOBAL void AppDataSet_UartRxErrCnt(U08 _node)
 {
 	if (_node < UART_NODE_MAX)
 	{
-		if (U32_MAX >  myUart[_node].Rx.ErrCnt)
+		if (U16_MAX >  myUart[_node].Rx.ErrCnt)
 		{
 			myUart[_node].Rx.ErrCnt++;
 		}

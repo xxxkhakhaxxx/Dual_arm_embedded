@@ -19,6 +19,22 @@
 /********************************************************************************
  * MACROS AND DEFINES
  ********************************************************************************/
+#define MSG_INIT_LENGTH	(5)
+#define MSG_INIT_BYTE_1	(0xFF)
+#define MSG_INIT_BYTE_2	(0x01)
+#define MSG_INIT_BYTE_3	(0xFF)
+#define MSG_INIT_BYTE_4	(0x02)
+
+#define MSG_DATA_REQUEST_LENGTH	(5)
+#define MSG_DATA_RESPOND_LENGTH	(37)
+#define MSG_DATA_BYTE_1	(0xFF)
+#define MSG_DATA_BYTE_2	(0x03)
+#define MSG_DATA_BYTE_3	(0xFF)
+#define MSG_DATA_BYTE_4	(0x04)
+
+#define MSG_CONTROL_POS	(0xF5)
+#define MSG_CONTROL_VEL	(0xF6)
+#define MSG_CONTROL_TOR	(0xF7)
 
 /********************************************************************************
  * TYPEDEFS AND ENUMS
@@ -26,15 +42,26 @@
 typedef enum ENUM_SLAVE_STATE_LIST
 {
 	SLAVE_STATE_INIT = 0,
-	SLAVE_STATE_WAIT_MASTER,
-	SLAVE_STATE_CONTROL_MOTOR,
-	SLAVE_STATE_MOTOR_FEEDBACK,
-	SLAVE_STATE_FEEDBACK_MASTER,
+//	SLAVE_STATE_WAIT_MASTER_INIT,
+	SLAVE_STATE_WAIT_MASTER_REQUEST,
 
-	SLAVE_STATE_UART_TEST,
+	SLAVE_STATE_WAIT_MOTOR_FEEDBACK,
+	SLAVE_STATE_SEND_MOTOR_SEQUENCE,
 
 	SLAVE_STATE_MAX
 } enSlaveStateList;
+
+typedef enum ENUM_ROBOT_MODE
+{
+	ROBOT_MODE_INIT = 0,
+	ROBOT_MODE_READ_ONLY,
+	ROBOT_MODE_POSITION,
+	ROBOT_MODE_VELOCITY,
+	ROBOT_MODE_TORQUE,
+
+	ROBOT_MODE_MAX
+} enRobotMode;
+
 
 /********************************************************************************
  * GLOBAL VARIABLES
@@ -47,12 +74,19 @@ typedef enum ENUM_SLAVE_STATE_LIST
 GLOBAL enSlaveStateList AppDataGet_SlaveState(void);
 GLOBAL void AppDataSet_SlaveState(enSlaveStateList _state);
 
-GLOBAL BOOL AppDataGet_IsMotorLowVoltage(U08 _u8MotorId);
-GLOBAL BOOL AppDataGet_IsMotorHighTemp(U08 _u8MotorId);
+GLOBAL U08  AppDataGet_RobotMode(void);
+GLOBAL void AppDataSet_RobotMode(enRobotMode _mode);
+
+GLOBAL BOOL AppDataGet_IsMotorLowVoltage(U08 _motorId);
+GLOBAL BOOL AppDataGet_IsMotorHighTemp(U08 _motorId);
+
+/************ CAN BUS TX MANAGE FUNCTION  ************/
+GLOBAL U08  AppDataGet_CanComm(void);
+GLOBAL void AppDataSet_CanComm(U08 _canNode);
 
 /************ CAN BUS RX MANAGE FUNCTION  ************/
-GLOBAL BOOL AppDataGet_CanRxMsgFlag(void);
-GLOBAL void AppDataSet_CanRxMsgFlag(BOOL _bFlag);
+GLOBAL BOOL AppDataGet_CanRxNewFlag(void);
+GLOBAL void AppDataSet_CanRxNewFlag(BOOL _bFlag);
 
 /************ UART TX MANAGE FUNCTION  ************/
 GLOBAL BOOL AppDataGet_UartTxWaitFlag(U08 _node);

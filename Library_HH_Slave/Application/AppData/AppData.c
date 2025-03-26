@@ -61,7 +61,6 @@ typedef struct STRUCT_COMM_MANAGER
 /********************************************************************************
  * PRIVATE VARIABLES
  ********************************************************************************/
-PRIVATE enSlaveStateList enSlaveState = SLAVE_STATE_INIT;
 PRIVATE uniSlaveState SlaveState = {0, };
 
 PRIVATE strCommManager myUart[UART_NODE_MAX] = {0, };
@@ -82,6 +81,7 @@ PRIVATE strCommManager myUart[UART_NODE_MAX] = {0, };
 /********************************************************************************
  * GLOBAL FUNCTION IMPLEMENTATION
  ********************************************************************************/
+PRIVATE enSlaveStateList enSlaveState = SLAVE_STATE_INIT;
 GLOBAL enSlaveStateList AppDataGet_SlaveState(void)
 {
 	return enSlaveState;
@@ -92,7 +92,7 @@ GLOBAL void AppDataSet_SlaveState(enSlaveStateList _state)
 	if ((_state != enSlaveState) && (_state < SLAVE_STATE_MAX))
 	{
 		enSlaveState = _state;				// Change state
-		if (U32_MAX > SlaveState.allState[_state])
+		if (U16_MAX > SlaveState.allState[_state])
 		{
 			SlaveState.allState[_state]++;	// Count current state
 		}
@@ -101,31 +101,64 @@ GLOBAL void AppDataSet_SlaveState(enSlaveStateList _state)
 	return;
 }
 
-/** ###################### **/
-GLOBAL BOOL AppDataGet_IsMotorLowVoltage(U08 _u8MotorId)
-{	// 1 is TRUE, 0 is FALSE
-	return GETBIT(strRobotArmMotorRx[_u8MotorId].State.u8Error,0);	// 1st bit
+PRIVATE enRobotMode u8RobotMode = ROBOT_MODE_READ_ONLY;
+GLOBAL U08  AppDataGet_RobotMode(void)
+{
+	return u8RobotMode;
+}
+GLOBAL void AppDataSet_RobotMode(enRobotMode _mode)
+{
+	if ((_mode < ROBOT_MODE_MAX) && (_mode != u8RobotMode))
+	{
+		u8RobotMode = _mode;
+	}
+
+	return;
 }
 
-GLOBAL BOOL AppDataGet_IsMotorHighTemp(U08 _u8MotorId)
+
+
+/** ###################### **/
+GLOBAL BOOL AppDataGet_IsMotorLowVoltage(U08 _motorId)
 {	// 1 is TRUE, 0 is FALSE
-	return GETBIT(strRobotArmMotorRx[_u8MotorId].State.u8Error,3);	// 4th bit
+	return GETBIT(strRobotArmMotorRx[_motorId].State.u8Error,0);	// 1st bit
 }
+
+GLOBAL BOOL AppDataGet_IsMotorHighTemp(U08 _motorId)
+{	// 1 is TRUE, 0 is FALSE
+	return GETBIT(strRobotArmMotorRx[_motorId].State.u8Error,3);	// 4th bit
+}
+
+/************ CAN BUS TX MANAGE FUNCTION  ************/
+PRIVATE enCanNode u8CanNode = CAN_NODE_MOTOR_1;
+GLOBAL U08  AppDataGet_CanComm(void)
+{
+	return u8CanNode;
+}
+GLOBAL void AppDataSet_CanComm(U08 _canNode)
+{
+	if ((_canNode < CAN_NODE_MAX) && (_canNode != u8CanNode))
+	{
+		u8CanNode = _canNode;
+	}
+
+	return;
+}
+
 
 /************ CAN BUS RX MANAGE FUNCTION  ************/
-PRIVATE BOOL bCanRxMsgFlag = FALSE;			// Any data in CAN Rx or not
-GLOBAL BOOL AppDataGet_CanRxMsgFlag(void)
+PRIVATE BOOL bCanRxNewFlag = FALSE;			// If new Msg in Can Rx buffer
+GLOBAL BOOL AppDataGet_CanRxNewFlag(void)
 {
-	return bCanRxMsgFlag;
+	return bCanRxNewFlag;
 }
-GLOBAL void AppDataSet_CanRxMsgFlag(BOOL _bFlag)
+GLOBAL void AppDataSet_CanRxNewFlag(BOOL _bFlag)
 {
-	if (_bFlag != bCanRxMsgFlag)
+	if (_bFlag != bCanRxNewFlag)
 	{
-		bCanRxMsgFlag = _bFlag;
+		bCanRxNewFlag = _bFlag;
 	}
 }
-
 
 /************ UART TX MANAGE FUNCTION  ************/
 GLOBAL BOOL AppDataGet_UartTxWaitFlag(U08 _node)
@@ -154,7 +187,7 @@ GLOBAL void AppDataSet_UartTxMsgCnt(U08 _node)
 {
 	if (_node < UART_NODE_MAX)
 	{
-		if (U32_MAX >  myUart[_node].Tx.SendMsgCnt)
+		if (U16_MAX >  myUart[_node].Tx.SendMsgCnt)
 		{
 			myUart[_node].Tx.SendMsgCnt++;
 		}
@@ -166,7 +199,7 @@ GLOBAL void AppDataSet_UartTxErrCnt(U08 _node)
 {
 	if (_node < UART_NODE_MAX)
 	{
-		if (U32_MAX >  myUart[_node].Tx.ErrCnt)
+		if (U16_MAX >  myUart[_node].Tx.ErrCnt)
 		{
 			myUart[_node].Tx.ErrCnt++;
 		}
@@ -201,7 +234,7 @@ GLOBAL void AppDataSet_UartRxMsgCnt(U08 _node)
 {
 	if (_node < UART_NODE_MAX)
 	{
-		if (U32_MAX >  myUart[_node].Rx.RecvMsgCnt)
+		if (U16_MAX >  myUart[_node].Rx.RecvMsgCnt)
 		{
 			myUart[_node].Rx.RecvMsgCnt++;
 		}
@@ -213,7 +246,7 @@ GLOBAL void AppDataSet_UartRxErrCnt(U08 _node)
 {
 	if (_node < UART_NODE_MAX)
 	{
-		if (U32_MAX >  myUart[_node].Rx.ErrCnt)
+		if (U16_MAX >  myUart[_node].Rx.ErrCnt)
 		{
 			myUart[_node].Rx.ErrCnt++;
 		}

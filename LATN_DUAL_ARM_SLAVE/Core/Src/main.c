@@ -114,14 +114,6 @@ int main(void)
 	 HAL_TIM_Base_Start_IT(&htim2);		// Start scheduling task
   while (1)
   {
-	if (TRUE == AppDataGet_CanRxMsgFlag())
-	{
-		// Handle the CAN Rx package
-		AppCommCAN_GetMotorMessage();
-		AppDataSet_CanRxMsgFlag(FALSE);
-	}
-
-
 //	AppPeriodTask_TaskCall();
 	AppPeriodTask_StateMachineProcess();
     /* USER CODE END WHILE */
@@ -321,10 +313,10 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, LD3_Pin|LD2_Pin|LD1_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOB, LED4_GREEN_Pin|LED3_ORANGE_Pin|LED5_RED_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pins : LD3_Pin LD2_Pin LD1_Pin */
-  GPIO_InitStruct.Pin = LD3_Pin|LD2_Pin|LD1_Pin;
+  /*Configure GPIO pins : LED4_GREEN_Pin LED3_ORANGE_Pin LED5_RED_Pin */
+  GPIO_InitStruct.Pin = LED4_GREEN_Pin|LED3_ORANGE_Pin|LED5_RED_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;

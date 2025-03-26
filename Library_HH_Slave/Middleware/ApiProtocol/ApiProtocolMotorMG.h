@@ -209,7 +209,7 @@ extern strMotorMsgTx strRobotArmMotorTx[3];		// Data buffer from motor respond
 /********************************************************************************
  * GLOBAL FUNCTION DECLARATION
  ********************************************************************************/
-GLOBAL void ApiProtocolMotorMG_RxHandler(U32 _u32MotorIdentifier, U08* _b8RxDataBuffer);
+GLOBAL void ApiProtocolMotorMG_RxHandler(U08 _u8MotorId, U08* _b8RxDataBuffer);
 GLOBAL void ApiProtocolMotorMG_TxHandler(enMotorId _u8MotorId, U08 _u8MessageID, U08* _b8TxDataBuffer);
 
 GLOBAL void ApiProtocolMotorMG_SetTorque(enMotorId _u8MotorId, I16 _i16Torque);

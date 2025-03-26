@@ -39,6 +39,12 @@ typedef enum ENUM_TASK_LIST
  * PRIVATE VARIABLES
  ********************************************************************************/
 PRIVATE enTaskList enTaskId = TASK_NONE;
+static BOOL _masterInitFlag = FALSE;
+static BOOL _slaveInitFlag = FALSE;
+static BOOL _sequenceEndFlag = FALSE;
+static enCanNode _canNode = CAN_NODE_MOTOR_1;
+static enRobotMode _robotMode = ROBOT_MODE_READ_ONLY;
+
 
 /* Debug variables */
 volatile static U32 u32TaskTimerCnt_1ms = 0;
@@ -55,8 +61,10 @@ PRIVATE U32 debug_cnt_task_Motor = 0;
  ********************************************************************************/
 PRIVATE void AppPeriodTask_10ms_MotorComm(void);
 
-PRIVATE void AppPeriodTask_SetTaskFlag(enTaskList _TaskName);
+//PRIVATE void AppPeriodTask_SetTaskFlag(enTaskList _TaskName);
 PRIVATE void AppPeriodTask_Scheduler(void);
+
+PRIVATE void AppPeriodTask_MotorComm(enCanNode _canNode, enRobotMode _mode);
 /********************************************************************************
  * PRIVATE FUNCTION IMPLEMENTATION
  ********************************************************************************/
@@ -78,7 +86,7 @@ PRIVATE void AppPeriodTask_10ms_MotorComm(void)
 
 		if (FALSE == _initFlag)	// Initial process
 		{
-			// Change initial cmd
+			// Change initial cmd: based on the previous cmd -> create a sequence
 			switch (_cmdSend)
 			{
 			case MOTOR_CMD_SET_ON:						_cmdSend = MOTOR_CMD_READ_PID;					break;
@@ -140,7 +148,7 @@ PRIVATE void AppPeriodTask_10ms_MotorComm(void)
 
 	return;
 }
-
+/*
 PRIVATE void AppPeriodTask_SetTaskFlag(enTaskList _TaskName)
 {
 	if (_TaskName != enTaskId)
@@ -157,7 +165,7 @@ PRIVATE void AppPeriodTask_SetTaskFlag(enTaskList _TaskName)
 	}
 
 	return;
-}
+}*/
 
 PRIVATE void AppPeriodTask_Scheduler(void)
 {
@@ -184,6 +192,38 @@ PRIVATE void AppPeriodTask_Scheduler(void)
 }
 
 
+PRIVATE void AppPeriodTask_MotorComm(enCanNode _canNode, enRobotMode _mode)
+{
+
+	U08 _motorId;
+	U08 _cmdSend;
+
+// 1. Mapping the CAN NODE to MOTOR_ID
+	switch (_canNode)
+	{
+	case CAN_NODE_MOTOR_1:	_motorId = MOTOR_1_ID;	break;
+	case CAN_NODE_MOTOR_2:	_motorId = MOTOR_2_ID;	break;
+	case CAN_NODE_MOTOR_3:	_motorId = MOTOR_3_ID;	break;
+	default:	return;		// No NODE support, exit
+	}
+
+// 2. Mapping the ROBOT MODE to MG MOTOR CMD
+	switch (_mode)
+	{
+	case ROBOT_MODE_INIT:		_cmdSend = MOTOR_CMD_SET_ON;						break;
+	case ROBOT_MODE_READ_ONLY:	_cmdSend = MOTOR_CMD_READ_MECHANICAL_STATE;			break;
+	case ROBOT_MODE_POSITION:	_cmdSend = MOTOR_CMD_CONTROL_POSITION_SINGLELOOP_2;	break;
+	case ROBOT_MODE_VELOCITY:	_cmdSend = MOTOR_CMD_CONTROL_SPEED;					break;
+	case ROBOT_MODE_TORQUE:		_cmdSend = MOTOR_CMD_CONTROL_TORQUE;				break;
+	default:	return;		// No CMD support, exit
+	}
+
+// 3. Send msg to motor
+	AppCommCAN_SendMotorMessage(_motorId, _cmdSend);
+
+
+	return;
+}
 /********************************************************************************
  * GLOBAL FUNCTION IMPLEMENTATION
  ********************************************************************************/
@@ -194,11 +234,24 @@ GLOBAL void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 //		u32TaskTimerCnt_1ms = __HAL_TIM_GET_COUNTER(htim);			// Directly read from register can take more time
 		u32TaskTimerCnt_1ms++;
 
-		AppPeriodTask_Scheduler();		// Check time for which task to perform
+//		AppPeriodTask_Scheduler();		// Check time for which task to perform
 
 		if (TASK_TIMER_CNT_ELAPSED_1S <= u32TaskTimerCnt_1ms)	// Cycle 10s
 		{
 			u32TaskTimerCnt_1ms = 0;
+		}
+
+		if (
+			(FALSE == _masterInitFlag) && \
+			(TRUE == _slaveInitFlag) && \
+			(SLAVE_STATE_WAIT_MASTER_REQUEST == AppDataGet_SlaveState())
+		)
+		{
+			if (u32TaskTimerCnt_1ms == 100)	// Every 100ms
+			{
+				AppDataSet_SlaveState(SLAVE_STATE_INIT);	// Re-send init to master: master takes ~2.1s to init
+				u32TaskTimerCnt_1ms = 0;
+			}
 		}
 	}
 
@@ -227,29 +280,199 @@ GLOBAL void AppPeriodTask_TaskCall(void)	/* Performing the corresponding task */
 
 GLOBAL void AppPeriodTask_StateMachineProcess(void)
 {
-	static BOOL isInit = FALSE;
 
 
+
+	/*	Slave Sequence:
+	 * 		1/ Init -> Send POWER ON to motors
+	 * 		2/ Back to Init -> Send Master that Slave initialized (multiple) <-> Wait master request
+	 * 		3/ Master request -> Send READ POSTIOTION to motors
+	 * 		4/ Collected data -> Send to Master data
+	 * 		5/ Master send control -> Send POSITION CONTROL to motors
+	 */
 	switch (AppDataGet_SlaveState())
 	{
 	case SLAVE_STATE_INIT:
-#if defined(TEST_SLAVE_UART)
-		AppDataSet_SlaveState(SLAVE_STATE_UART_TEST);		// Directly change to Uart test state
-#elif defined(TEST_UART_CYCLE_NO_FEEDBACK)
-		// Master send init request to Slave -> Wait Master
-		// Change state
-		AppCommUart_RecvMsgStart(UART_NODE_MASTER);
-		AppDataSet_SlaveState(SLAVE_STATE_WAIT_MASTER);
+		if (FALSE == _slaveInitFlag)
+		{
+			_robotMode = ROBOT_MODE_INIT;
+			_canNode = CAN_NODE_MOTOR_1;
+			_sequenceEndFlag = FALSE;
+			AppDataSet_SlaveState(SLAVE_STATE_SEND_MOTOR_SEQUENCE);	// Set motors ON first
+		}
+		else
+		{
+			AppCommUART_SendMsg(UART_NODE_MASTER, UART_MSG_INIT);	// Tell Master that Slave finished the init-process
+			AppDataSet_SlaveState(SLAVE_STATE_WAIT_MASTER_REQUEST);
+		}
+		break;
+/*
+	case SLAVE_STATE_WAIT_MASTER_INIT:
+		if (TRUE == AppDataGet_UartRxNewFlag(UART_NODE_MASTER))
+		{
+			switch (RxDataMaster[0])
+			{
+			case UART_MSG_INIT:
+				if (
+					(MSG_INIT_BYTE_1 == RxDataMaster[1]) && \
+					(MSG_INIT_BYTE_2 == RxDataMaster[2]) && \
+					(MSG_INIT_BYTE_3 == RxDataMaster[3]) && \
+					(MSG_INIT_BYTE_4 == RxDataMaster[4])
+				)
+				{	// Correct init format
+					AppCommUART_SendMsg(UART_NODE_MASTER, UART_MSG_INIT);	// Tell Master that Slave finished the init-process
+					AppDataSet_SlaveState(SLAVE_STATE_WAIT_MASTER_REQUEST);
+				}
+				else
+				{
+					// Trap here
+				}
+				break;
+			case UART_MSG_MOTOR_DATA:
+			case UART_MSG_MOTOR_CONTROL:
+			default:
+				AppDataSet_UartRxMsgCnt(UART_NODE_MASTER);		// Receive un-support message ID in this Slave state
+				AppCommUart_RecvMsgStart(UART_NODE_MASTER);		// Wait for another Master message
+				break;
+			}
+			AppDataSet_UartRxNewFlag(UART_NODE_MASTER, FALSE);
+		}
+		else
+		{
+			// Wait for UART Rx
+		}
+		break;
+*/
+	case SLAVE_STATE_WAIT_MASTER_REQUEST:
+		if (TRUE == AppDataGet_UartRxNewFlag(UART_NODE_MASTER))
+		{
+			switch (RxDataMaster[0])
+			{
+			case UART_MSG_INIT:	// Master send init
+				if (
+					(MSG_INIT_BYTE_1 == RxDataMaster[1]) && \
+					(MSG_INIT_BYTE_2 == RxDataMaster[2]) && \
+					(MSG_INIT_BYTE_3 == RxDataMaster[3]) && \
+					(MSG_INIT_BYTE_4 == RxDataMaster[4])
+				)
+				{
+					_masterInitFlag = TRUE;
+					AppCommUart_RecvMsgStart(UART_NODE_MASTER);				// Wait new request from master
+					AppDataSet_SlaveState(SLAVE_STATE_WAIT_MASTER_REQUEST);
+				}
+				break;
+			case UART_MSG_MOTOR_DATA:	// Master request motors' data
+				if (
+					(MSG_DATA_BYTE_1 == RxDataMaster[1]) && \
+					(MSG_DATA_BYTE_2 == RxDataMaster[2]) && \
+					(MSG_DATA_BYTE_3 == RxDataMaster[3]) && \
+					(MSG_DATA_BYTE_4 == RxDataMaster[4])
+				)
+				{	// Correct data request format
+					_robotMode = ROBOT_MODE_READ_ONLY;
+					_canNode = CAN_NODE_MOTOR_1;
+					_sequenceEndFlag = FALSE;
+					AppDataSet_SlaveState(SLAVE_STATE_SEND_MOTOR_SEQUENCE);	// Start collecting Motors' data
+				}
+				else
+				{
+					// Trap here
+				}
+				break;
+#if 0	// Chưa xài
+			case UART_MSG_MOTOR_CONTROL:	// Master send cmd control motor
+				switch (RxDataMaster[1])
+				{
+				case MSG_CONTROL_POS:
+					_robotMode = ROBOT_MODE_POSITION;
+					//ApiProtocolMotorMG_SetAngleSingle();
+					break;
+				case MSG_CONTROL_VEL:
+					_robotMode = ROBOT_MODE_VELOCITY;
+					//ApiProtocolMotorMG_SetSpeed();
+					break;
+				case MSG_CONTROL_TOR:
+					_robotMode = ROBOT_MODE_TORQUE;
+					//ApiProtocolMotorMG_SetTorque();
+					break;
+				default:
+					_robotMode = ROBOT_MODE_READ_ONLY;
+					break;
+				}
 
+				_canNode = CAN_NODE_MOTOR_1;
+				_sequenceEndFlag = FALSE;
+				AppDataSet_SlaveState(SLAVE_STATE_SEND_MOTOR_SEQUENCE);
+				break;
 #else
-		// Master send init request to Slave -> Check motor and then respond
-		// TODO: implement check motor
-		// AppDataSet_SlaveState(SLAVE_STATE_INIT_MOTOR);
+			case UART_MSG_MOTOR_CONTROL:
 #endif
+			default:
+				AppDataSet_UartRxMsgCnt(UART_NODE_MASTER);		// Receive un-support message ID in this Slave state
+				AppCommUart_RecvMsgStart(UART_NODE_MASTER);		// Wait for another Master message
+				break;
+			}
+			AppDataSet_UartRxNewFlag(UART_NODE_MASTER, FALSE);
+		}
+		else
+		{
+			// Wait for UART Rx
+		}
 		break;
 
+	case SLAVE_STATE_SEND_MOTOR_SEQUENCE:
+		AppPeriodTask_MotorComm(_canNode, _robotMode);
+		AppDataSet_SlaveState(SLAVE_STATE_WAIT_MOTOR_FEEDBACK);
+		break;
+
+	case SLAVE_STATE_WAIT_MOTOR_FEEDBACK:
+		if (TRUE == AppDataGet_CanRxNewFlag())
+		{
+			AppCommCAN_GetMotorMessage();
+			AppDataSet_CanRxNewFlag(FALSE);
+
+			// Check to send next motor or stop
+			switch (_canNode)
+			{
+			case CAN_NODE_MOTOR_1:	_canNode = CAN_NODE_MOTOR_2;	break;
+			case CAN_NODE_MOTOR_2:	_canNode = CAN_NODE_MOTOR_3;	break;
+			case CAN_NODE_MOTOR_3:
+				_canNode = CAN_NODE_MOTOR_1;
+				_sequenceEndFlag = TRUE;
+				break;
+			default:
+				// Do nothing
+				break;
+			}
+
+			// Change mode after CAN Rx handle
+			if (TRUE == _sequenceEndFlag)
+			{
+				if (FALSE == _slaveInitFlag)
+				{
+					AppDataSet_SlaveState(SLAVE_STATE_INIT);	// Back to init state
+					_slaveInitFlag = TRUE;
+				}
+				else	// Wait for master request
+				{
+					AppCommUART_SendMsg(UART_NODE_MASTER, UART_MSG_MOTOR_DATA);	// TODO: announce Master
+					AppDataSet_SlaveState(SLAVE_STATE_WAIT_MASTER_REQUEST);		// Wait for new request from Master
+				}
+			}
+			else
+			{
+				AppDataSet_SlaveState(SLAVE_STATE_SEND_MOTOR_SEQUENCE);
+			}
+		}
+		else
+		{
+			// Wait for CAN Rx
+		}
+		break;
+
+#if 0
+		//////////////////////////////////////////////////////////////////
 	case SLAVE_STATE_WAIT_MASTER:
-#if defined(TEST_UART_CYCLE_NO_FEEDBACK)
 		if (TRUE == AppDataGet_UartRxNewFlag(UART_NODE_MASTER))	// Received Rx from Master
 		{
 			switch (RxDataMaster[0])			// Check Rx msg ID
@@ -275,12 +498,15 @@ GLOBAL void AppPeriodTask_StateMachineProcess(void)
 
 			AppDataSet_UartRxNewFlag(UART_NODE_MASTER, FALSE);
 		}
-#endif
 		break;
 
 	case SLAVE_STATE_CONTROL_MOTOR:
 #if defined(TEST_UART_CYCLE_NO_FEEDBACK)
 		// Do nothing, move to motor feedback
+		AppDataSet_SlaveState(SLAVE_STATE_MOTOR_FEEDBACK);
+#elif defined(TEST_UART_CYCLE_MOTOR_DATA)
+		// Send cmd to each motor and wait for respond
+		AppPeriodTask_MotorComm();
 		AppDataSet_SlaveState(SLAVE_STATE_MOTOR_FEEDBACK);
 
 #endif
@@ -290,11 +516,18 @@ GLOBAL void AppPeriodTask_StateMachineProcess(void)
 #if defined(TEST_UART_CYCLE_NO_FEEDBACK)
 		// Do nothing, move to feedback master
 		AppDataSet_SlaveState(SLAVE_STATE_FEEDBACK_MASTER);
+#elif defined(TEST_UART_CYCLE_MOTOR_DATA)
+		if (TRUE == AppDataGet_CanRxNewFlag())
+		{
+			// Handle the CAN Rx package
+			AppCommCAN_GetMotorMessage();
+			AppDataSet_CanRxNewFlag(FALSE);
+		}
 #endif
 		break;
 
 	case SLAVE_STATE_FEEDBACK_MASTER:
-#if defined(TEST_UART_CYCLE_NO_FEEDBACK)
+#if defined(TEST_UART_CYCLE_NO_FEEDBACK) || defined(TEST_UART_CYCLE_MOTOR_DATA)
 		if (FALSE == isInit) // One time only
 		{
 			AppCommUART_SendMsg(UART_NODE_MASTER, UART_TX_MSG_INIT);
@@ -332,12 +565,13 @@ GLOBAL void AppPeriodTask_StateMachineProcess(void)
 			AppCommUART_SendMsg(UART_NODE_MASTER, UART_TX_MSG_TEST);
 		}
 		break;
-
+#endif
 	default:
 		// if any abnormal, back to init state
 		AppDataSet_SlaveState(SLAVE_STATE_INIT);
-		isInit = FALSE;
 		break;
 	}
+
 	return;
 }
+

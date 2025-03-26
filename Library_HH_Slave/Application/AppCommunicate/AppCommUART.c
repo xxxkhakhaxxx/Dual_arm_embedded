@@ -131,23 +131,22 @@ GLOBAL void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
  * 		2/ Default Case in _txMsgId Switch: The default case in the _txMsgId switch does nothing and returns.
  * 		                                    This is fine, but you might want to log an error or handle it differently.
  */
-GLOBAL void AppCommUART_SendMsg(enUartNode _node, enUartTxMsg _txMsgId)
+GLOBAL void AppCommUART_SendMsg(enUartNode _node, enUartMsg _txMsgId)
 {
-// 1. Safety check
+	// 1. Safety check
 	if (TRUE == AppDataGet_UartTxWaitFlag(_node))
 	{
-		// There's Message wating to be send. Therefore, this function call end here.
 		return;
 	}
 
 
-// 2. Initialize variables
+	// 2. Initialize variables
 	UART_HandleTypeDef* uartGoal;
 	U08* sourceTxData;
 	U16 sizeSend = 0;	// if not set value, TxErrCnt++
 
 
-// 3. Get goal and data to be transfered
+	// 3. Get UART target and data
 	switch (_node)
 	{
 	case UART_NODE_MASTER:
@@ -160,48 +159,38 @@ GLOBAL void AppCommUART_SendMsg(enUartNode _node, enUartTxMsg _txMsgId)
 	}
 
 
-// 4. Set data to be transfer
-#ifdef TEST_SLAVE_UART
-	// Test data
-	sizeSend = 11;
-
-	sourceTxData[0]  = UART_TX_MSG_TEST;	// '@'
-	sourceTxData[1]  = 0x31;				// '1'
-	sourceTxData[2]  = 0x32;				// '2'
-	sourceTxData[3]  = 0x33;				// '3'
-	sourceTxData[4]  = 0x34;				// '4'
-	sourceTxData[5]  = 0x35;				// '5'
-	sourceTxData[6]  = 0x36;				// '6'
-	sourceTxData[7]  = 0x37;				// '7'
-	sourceTxData[8]  = 0x38;				// '8'
-	sourceTxData[9]  = 0x39;				// '9'
-	sourceTxData[10] = 0x30;				// '0'
-#else
-	// Set data to be transfer
+	// 4. Prepare data
 	switch (_txMsgId)
 	{
-	case UART_TX_MSG_INIT:
-		sourceTxData[0] = UART_TX_MSG_INIT;
-		sourceTxData[1] = 0xFE;
-		sourceTxData[2] = 0xFE;
-		sourceTxData[3] = 0xFE;
-		sizeSend = 4;
+	case UART_MSG_INIT:
+		sourceTxData[0] = UART_MSG_INIT;
+		sourceTxData[1] = MSG_INIT_BYTE_1;
+		sourceTxData[2] = MSG_INIT_BYTE_2;
+		sourceTxData[3] = MSG_INIT_BYTE_3;
+		sourceTxData[4] = MSG_INIT_BYTE_4;
+		sizeSend = MSG_INIT_LENGTH;
 		break;
 
-	case UART_TX_MSG_SLAVE_SET_POSITION_FEEDBACK:
-#if defined(TEST_UART_CYCLE_NO_FEEDBACK)
-		sourceTxData[0] = UART_TX_MSG_SLAVE_SET_POSITION_FEEDBACK;
-		memcpy(&sourceTxData[1], &RxDataMaster[1], sizeof(float));
-		memcpy(&sourceTxData[5], &RxDataMaster[5], sizeof(float));
-		memcpy(&sourceTxData[9], &RxDataMaster[9], sizeof(float));
-		sizeSend = 13;
-#endif
+	case UART_MSG_MOTOR_DATA:
+		sourceTxData[0] = UART_MSG_MOTOR_DATA;
+		memcpy(&sourceTxData[1],  &myMotor[0].currPosition, sizeof(float));
+		memcpy(&sourceTxData[5],  &myMotor[0].currSpeed,    sizeof(float));
+		memcpy(&sourceTxData[9],  &myMotor[0].currAccel,    sizeof(float));
+		memcpy(&sourceTxData[13], &myMotor[1].currPosition, sizeof(float));
+		memcpy(&sourceTxData[17], &myMotor[1].currSpeed,    sizeof(float));
+		memcpy(&sourceTxData[21], &myMotor[1].currAccel,    sizeof(float));
+		memcpy(&sourceTxData[25], &myMotor[2].currPosition, sizeof(float));
+		memcpy(&sourceTxData[29], &myMotor[2].currSpeed,    sizeof(float));
+		memcpy(&sourceTxData[33], &myMotor[2].currAccel,    sizeof(float));
+		sizeSend = MSG_DATA_RESPOND_LENGTH;
 		break;
+
+	case UART_MSG_MOTOR_CONTROL:
 	default:
 		// Do nothing and return
 		return;
 	}
-#endif
+
 
 
 // 5. Send the message

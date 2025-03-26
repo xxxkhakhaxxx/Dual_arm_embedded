@@ -47,6 +47,8 @@ typedef enum ENUM_TASK_LIST
  ********************************************************************************/
 PRIVATE enTaskList enTaskId = TASK_NONE;
 
+volatile static BOOL bNewSequenceFlag = FALSE;
+
 /* Debug variables */
 volatile static U32 u32TaskTimerCnt_1ms = 0;
 volatile static U32 debug_cnt_task_duplicate = 0;
@@ -59,8 +61,7 @@ PRIVATE float Yaw = 0;
  * GLOBAL VARIABLES
  ********************************************************************************/
 GLOBAL strRobot strRobotDualArm = {0, };
-
-
+GLOBAL strRobotRxData myRobotRx[2] = {0, };
 /********************************************************************************
  * PRIVATE FUNCTION DECLARATION
  ********************************************************************************/
@@ -149,7 +150,6 @@ PRIVATE void AppPeriodTask_Scheduler(void)
 	}
 }
 
-
 /********************************************************************************
  * GLOBAL FUNCTION IMPLEMENTATION
  ********************************************************************************/
@@ -157,7 +157,7 @@ GLOBAL void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
 	if (htim->Instance == TIM2)
 	{
-//		u32TaskTimerCnt_1ms = __HAL_TIM_GET_COUNTER(htim);			// Directly read from register can take more time
+		/*
 		u32TaskTimerCnt_1ms++;
 
 		AppPeriodTask_Scheduler();		// Check time for which task to perform
@@ -165,7 +165,19 @@ GLOBAL void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 		if (TASK_TIMER_CNT_ELAPSED_1S <= u32TaskTimerCnt_1ms)	// Cycle 1s
 		{
 			u32TaskTimerCnt_1ms = 0;
+		}*/
+		if (FALSE == bNewSequenceFlag)	// Cycle 10ms
+		{
+			bNewSequenceFlag = TRUE;	// Start new sequence every 10ms
 		}
+		else	// All tasks take more 10ms to finished
+		{
+			if (U16_MAX > debug_cnt_task_override)
+			{
+				debug_cnt_task_override++;
+			}
+		}
+
 	}
 
 	return;
@@ -191,73 +203,130 @@ GLOBAL void AppPeriodTask_TaskCall(void)	/* Performing the corresponding task */
 	return;
 }
 
+static BOOL _masterInitFlag = FALSE;
+static BOOL _slave1InitFlag = FALSE;
+//	static BOOL _slave2InitFlag = FALSE;
+static BOOL _slave1HandleFlag = FALSE;
+
 GLOBAL void AppPeriodTask_StateMachineProcess(void)
 {
+//	static BOOL _slave2HandleFlag = FALSE;
+//	static enRobotMode _robotMode = ROBOT_MODE_READ_ONLY;		// The mode that you want to use
+
+
 	switch (AppDataGet_MasterState())
 	{
 	case MASTER_STATE_INIT:
-#if defined(TEST_UART_SEND)
-		AppDataSet_MasterState(MASTER_STATE_UART_TEST);		// Directly change to Uart test state
-#elif defined(TEST_UART_CYCLE_NO_FEEDBACK)
-		// Send init request to Slave and wait for respond
-		AppCommUART_SendMsg(UART_NODE_SLAVE_1, UART_TX_MSG_INIT);
-
-		// Change state
-		AppDataSet_MasterState(MASTER_STATE_WAIT_SLAVE);
-#endif
-		break;
-
-	case MASTER_STATE_WAIT_SLAVE:
-#if defined(TEST_UART_CYCLE_NO_FEEDBACK)
-		if (TRUE == AppDataGet_UartRxNewFlag(UART_NODE_SLAVE_1))	// Received Rx from Slave
+		if (FALSE == _masterInitFlag)
 		{
-			switch (RxDataSlaveLeft[0])			// Check Rx msg ID
+			AppCommUart_RecvMsgStart(UART_NODE_SLAVE_1);
+//			AppCommUart_RecvMsgStart(UART_NODE_SLAVE_2);
+			_masterInitFlag = TRUE;
+			AppDataSet_LedState(LED_5_RED, TRUE);
+		}
+		else
+		{
+			if (FALSE == _slave1InitFlag)
 			{
-			case UART_RX_MSG_INIT:
-				if ((RxDataSlaveLeft[1] == 0xFE) && (RxDataSlaveLeft[2] == 0xFE) && (RxDataSlaveLeft[3] == 0xFE))
+				if (TRUE == AppDataGet_UartRxNewFlag(UART_NODE_SLAVE_1))
 				{
-					AppDataSet_MasterState(MASTER_STATE_CAL_CONTROL);
+					if (
+						(UART_MSG_INIT == RxDataSlaveLeft[0]) && \
+						(MSG_INIT_BYTE_1 == RxDataSlaveLeft[1]) && \
+						(MSG_INIT_BYTE_2 == RxDataSlaveLeft[2]) && \
+						(MSG_INIT_BYTE_3 == RxDataSlaveLeft[3]) && \
+						(MSG_INIT_BYTE_4 == RxDataSlaveLeft[4])
+					)
+					{	// Correct init format
+						AppCommUART_SendMsg(UART_NODE_SLAVE_1, UART_MSG_INIT);
+						_slave1InitFlag = TRUE;
+					}
+					else
+					{
+						// Wait for another Rx
+						AppDataSet_UartRxMsgCnt(UART_NODE_SLAVE_1);
+						AppCommUart_RecvMsgStart(UART_NODE_SLAVE_1);
+					}
+					AppDataSet_UartRxNewFlag(UART_NODE_SLAVE_1, FALSE);
 				}
 				else
 				{
-					// Stuck in here
+					// Wait for Slave Tx
 				}
-				break;
-
-			case UART_RX_MSG_SLAVE_SET_POSITION_FEEDBACK:
-				// Temp: re-send again
-				AppDataSet_MasterState(MASTER_STATE_CAL_CONTROL);
-				break;
-
-			default:
-				// Something wrong, back to init
-				AppDataSet_MasterState(MASTER_STATE_INIT);
-				break;
 			}
 
-			// Reset flag
-			AppDataSet_UartRxNewFlag(UART_NODE_SLAVE_1, FALSE);
+			if (TRUE == _slave1InitFlag) //&& (TRUE == _slave2InitFlag)	// SLAVEs are ready
+			{	// Exit INIT STATE
+				HAL_Delay(2);	// Wait for the Master init cmd send
+				AppDataSet_MasterState(MASTER_STATE_WAIT_NEW_SEQUENCE);
+			}
 		}
-#endif
+		break;
+
+	case MASTER_STATE_WAIT_NEW_SEQUENCE:
+		if (TRUE == bNewSequenceFlag)	// Timer 2
+		{
+			AppCommUART_SendMsg(UART_NODE_SLAVE_1, UART_MSG_MOTOR_DATA);
+//			AppCommUART_SendMsg(UART_NODE_SLAVE_2, UART_MSG_MOTOR_DATA);
+			_slave1HandleFlag = FALSE;
+			AppDataSet_MasterState(MASTER_STATE_WAIT_SLAVE_FEEDBACK);
+		}
+		else
+		{
+			// Wait timer 2 trigger for new sequence
+		/*	AppDataSet_LedState(LED_6_BLUE, FALSE);
+			AppDataSet_LedState(LED_4_GREEN, FALSE);
+			AppDataSet_LedState(LED_3_ORANGE, FALSE);*/
+		}
+		break;
+
+	case MASTER_STATE_WAIT_SLAVE_FEEDBACK:
+		if ((TRUE == AppDataGet_UartRxNewFlag(UART_NODE_SLAVE_1)) && (FALSE == _slave1HandleFlag))
+		{
+			switch (RxDataSlaveLeft[0])
+			{
+			case UART_MSG_MOTOR_DATA:
+				memcpy(&myRobotRx[0].Joint[0].Position, &RxDataSlaveLeft[1],  sizeof(float));
+				memcpy(&myRobotRx[0].Joint[0].Speed,    &RxDataSlaveLeft[5],  sizeof(float));
+				memcpy(&myRobotRx[0].Joint[0].Accel,    &RxDataSlaveLeft[9],  sizeof(float));
+				memcpy(&myRobotRx[0].Joint[1].Position, &RxDataSlaveLeft[13], sizeof(float));
+				memcpy(&myRobotRx[0].Joint[1].Speed,    &RxDataSlaveLeft[17], sizeof(float));
+				memcpy(&myRobotRx[0].Joint[1].Accel,    &RxDataSlaveLeft[21], sizeof(float));
+				memcpy(&myRobotRx[0].Joint[2].Position, &RxDataSlaveLeft[25], sizeof(float));
+				memcpy(&myRobotRx[0].Joint[2].Speed,    &RxDataSlaveLeft[29], sizeof(float));
+				memcpy(&myRobotRx[0].Joint[2].Accel,    &RxDataSlaveLeft[33], sizeof(float));
+				_slave1HandleFlag = TRUE;
+
+				break;
+
+			case UART_MSG_INIT:
+			case UART_MSG_MOTOR_CONTROL:
+			default:
+				// Wait for another Rx
+				AppDataSet_UartRxMsgCnt(UART_NODE_SLAVE_1);
+				AppCommUart_RecvMsgStart(UART_NODE_SLAVE_1);
+				break;;
+			}
+			AppDataSet_UartRxNewFlag(UART_NODE_SLAVE_1, FALSE);
+
+		}
+
+		if (TRUE == _slave1HandleFlag)
+		{	// Exit WAIT SLAVE state
+			AppDataSet_MasterState(MASTER_STATE_CAL_CONTROL);
+		}
+		AppDataSet_LedState(LED_4_GREEN, TRUE);
 		break;
 
 	case MASTER_STATE_CAL_CONTROL:
-#if defined(TEST_UART_CYCLE_NO_FEEDBACK)
-		_RobotCalculateIK();
-		AppCommUART_SendMsg(UART_NODE_SLAVE_1, UART_TX_MSG_SLAVE_SET_POSITION);
-		AppDataSet_MasterState(MASTER_STATE_WAIT_SLAVE);
-		break;
-#endif
-
-	case MASTER_STATE_UART_TEST:
-		if (FALSE == AppDataGet_UartTxWaitFlag(UART_NODE_GUI))
-		{
-			AppCommUART_SendMsg(UART_NODE_GUI, UART_TX_MSG_TEST);
-		}
+		AppDataSet_MasterState(MASTER_STATE_SEND_GUI);
 		break;
 
-	case MASTER_STATE_DATA_ACQUISITION:
-	case MASTER_STATE_WAIT_GUI_CMD:
+	case MASTER_STATE_SEND_GUI:
+		bNewSequenceFlag = FALSE;	// Sequence end
+		AppDataSet_MasterState(MASTER_STATE_WAIT_NEW_SEQUENCE);
+		break;
+
 	default:
 		// if any abnormal, back to init state
 		AppDataSet_MasterState(MASTER_STATE_INIT);

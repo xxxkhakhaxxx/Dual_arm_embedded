@@ -40,6 +40,7 @@ PRIVATE U08 arrCanRxMsgData[MOTOR_PROTOCOL_DATA_FRAME_LENGTH] = {0, };	// Rx dat
 
 PRIVATE U32 u32CanTxMsgMailBox = 0;				// Tx header and data
 
+
 /* Debug view variable */
 volatile static U32 debug_cnt_Rx_Ok = 0;
 volatile static U32 debug_cnt_Rx_Error = 0;
@@ -50,7 +51,7 @@ volatile static U32 debug_cnt_Tx_ErrorInit = 0;
 /********************************************************************************
  * GLOBAL VARIABLES
  ********************************************************************************/
-
+GLOBAL strMotorData myMotor[MOTOR_NUMBER] = {0 };	// Motor's data using for communication with Master
 
 /********************************************************************************
  * PRIVATE FUNCTION DECLARATION
@@ -59,6 +60,8 @@ PRIVATE void AppCommCAN_SetupFilter(void);
 PRIVATE void AppCommCAN_SetupRxInterrupt(void);
 PRIVATE void AppCommCAN_SetupTxFrame(void);
 PRIVATE void AppCommCAN_ClearTxMailBox(void);
+
+PRIVATE void AppCommCAN_UpdateMotorData(U08 _motorId, U16 _newEncoderValue);
 /********************************************************************************
  * PRIVATE FUNCTION IMPLEMENTATION
  ********************************************************************************/
@@ -150,6 +153,53 @@ PRIVATE void AppCommCAN_ClearTxMailBox(void)
 	}
 }
 
+PRIVATE void AppCommCAN_UpdateMotorData(U08 _motorId, U16 _newEncoderValue)
+{
+	// 1. Convert encoder value (0-65535) to degrees (0-360)
+	float newPosition = (float)_newEncoderValue * (360.0f / 65535.0f);
+
+	// 2. Handle encoder overflow (wrapping from 65535→0)
+	float positionDiff = newPosition - myMotor[_motorId].currPosition;
+	if (positionDiff > 180.0f)
+	{	// Check if position changed by more than 180° (adjust threshold if needed)
+		newPosition -= 360.0f; // Negative wrap (e.g., 350° → 10° becomes 350° → -350°)
+	}
+	else if (positionDiff < -180.0f)
+	{
+		newPosition += 360.0f; // Positive wrap (e.g., 10° → 350° becomes 370° → 350°)
+	}
+	else
+	{
+		// Do nothing
+	}
+
+	// 3. Get current time and calculate delta
+	U32 currentTime = HAL_GetTick();	// Unit: ms - timeout after ~49.7 days
+	float diffTime;
+	diffTime = (currentTime - myMotor[_motorId].currTime) / 1000.0f;	// Unit: seconds
+
+	// 4. Save new previous values
+	myMotor[_motorId].prevTime     = myMotor[_motorId].currTime;
+	myMotor[_motorId].prevPosition = myMotor[_motorId].currPosition;
+	myMotor[_motorId].prevSpeed    = myMotor[_motorId].currSpeed;
+
+	// 5 Calculate current values
+	myMotor[_motorId].currTime     = currentTime;
+	myMotor[_motorId].currPosition = newPosition;
+	if (diffTime > 0.0001f)
+	{	// Protect against divide-by-zero on first run or rapid updates
+		myMotor[_motorId].currSpeed    = (newPosition - myMotor[_motorId].prevPosition) / diffTime;
+		myMotor[_motorId].currAccel    = (myMotor[_motorId].currSpeed - myMotor[_motorId].prevSpeed) / diffTime;
+	}
+	else
+	{
+		// If time difference is too small, keep previous values
+		myMotor[_motorId].currSpeed = myMotor[_motorId].prevSpeed;
+		myMotor[_motorId].currAccel = 0.0f;
+	}
+
+	return;
+}
 /********************************************************************************
  * GLOBAL FUNCTION IMPLEMENTATION
  ********************************************************************************/
@@ -182,7 +232,7 @@ GLOBAL void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)	// When R
 	}
 	else	// No error
 	{
-		AppDataSet_CanRxMsgFlag(TRUE);
+		AppDataSet_CanRxNewFlag(TRUE);
 		debug_cnt_Rx_Ok++;
 	}
 }
@@ -217,6 +267,21 @@ GLOBAL void AppCommCAN_SendMotorMessage(U08 _u8MotorMsgId, U08 _u8MsgDataCmd)
 
 GLOBAL void AppCommCAN_GetMotorMessage(void)	// Process data in "strCanRxMsgId" and "arrCanRxMsgData"
 {
-	ApiProtocolMotorMG_RxHandler(strCanRxMsgId.StdId, arrCanRxMsgData);
-	// Here, you can call any other function to handle the message ID and DATA
+	if ((MOTOR_HEADER_INIT >=strCanRxMsgId.StdId) \
+		|| ((MOTOR_HEADER_MAX <= strCanRxMsgId.StdId) && (MOTOR_HEADER_MULTI != strCanRxMsgId.StdId)))
+	{
+		// Invalid, stop process
+		return;
+	}
+
+	U08 _motorId = (U08)MOTOR_PROTOCOL_GET_ID(strCanRxMsgId.StdId);
+
+	ApiProtocolMotorMG_RxHandler(_motorId, arrCanRxMsgData);	// Process CAN RX data
+
+	if (MOTOR_CMD_READ_MECHANICAL_STATE == arrCanRxMsgData[0])	// Calculate position - velocity - acceleration
+	{
+		AppCommCAN_UpdateMotorData(_motorId, strRobotArmMotorRx[_motorId].Data.u16Encoder14Bit);
+	}
+
+	return;
 }

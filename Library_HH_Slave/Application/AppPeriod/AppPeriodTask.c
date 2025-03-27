@@ -280,9 +280,6 @@ GLOBAL void AppPeriodTask_TaskCall(void)	/* Performing the corresponding task */
 
 GLOBAL void AppPeriodTask_StateMachineProcess(void)
 {
-
-
-
 	/*	Slave Sequence:
 	 * 		1/ Init -> Send POWER ON to motors
 	 * 		2/ Back to Init -> Send Master that Slave initialized (multiple) <-> Wait master request
@@ -306,43 +303,7 @@ GLOBAL void AppPeriodTask_StateMachineProcess(void)
 			AppDataSet_SlaveState(SLAVE_STATE_WAIT_MASTER_REQUEST);
 		}
 		break;
-/*
-	case SLAVE_STATE_WAIT_MASTER_INIT:
-		if (TRUE == AppDataGet_UartRxNewFlag(UART_NODE_MASTER))
-		{
-			switch (RxDataMaster[0])
-			{
-			case UART_MSG_INIT:
-				if (
-					(MSG_INIT_BYTE_1 == RxDataMaster[1]) && \
-					(MSG_INIT_BYTE_2 == RxDataMaster[2]) && \
-					(MSG_INIT_BYTE_3 == RxDataMaster[3]) && \
-					(MSG_INIT_BYTE_4 == RxDataMaster[4])
-				)
-				{	// Correct init format
-					AppCommUART_SendMsg(UART_NODE_MASTER, UART_MSG_INIT);	// Tell Master that Slave finished the init-process
-					AppDataSet_SlaveState(SLAVE_STATE_WAIT_MASTER_REQUEST);
-				}
-				else
-				{
-					// Trap here
-				}
-				break;
-			case UART_MSG_MOTOR_DATA:
-			case UART_MSG_MOTOR_CONTROL:
-			default:
-				AppDataSet_UartRxMsgCnt(UART_NODE_MASTER);		// Receive un-support message ID in this Slave state
-				AppCommUart_RecvMsgStart(UART_NODE_MASTER);		// Wait for another Master message
-				break;
-			}
-			AppDataSet_UartRxNewFlag(UART_NODE_MASTER, FALSE);
-		}
-		else
-		{
-			// Wait for UART Rx
-		}
-		break;
-*/
+
 	case SLAVE_STATE_WAIT_MASTER_REQUEST:
 		if (TRUE == AppDataGet_UartRxNewFlag(UART_NODE_MASTER))
 		{
@@ -470,102 +431,6 @@ GLOBAL void AppPeriodTask_StateMachineProcess(void)
 		}
 		break;
 
-#if 0
-		//////////////////////////////////////////////////////////////////
-	case SLAVE_STATE_WAIT_MASTER:
-		if (TRUE == AppDataGet_UartRxNewFlag(UART_NODE_MASTER))	// Received Rx from Master
-		{
-			switch (RxDataMaster[0])			// Check Rx msg ID
-			{
-			case UART_RX_MSG_INIT:
-				if ((RxDataMaster[1] == 0xFE) && (RxDataMaster[2] == 0xFE) && (RxDataMaster[3] == 0xFE))
-				{
-					AppDataSet_SlaveState(SLAVE_STATE_FEEDBACK_MASTER);
-				}
-				break;
-
-			case UART_RX_MSG_SLAVE_SET_POSITION:
-				// TODO: Process Master Rx data
-				AppDataSet_SlaveState(SLAVE_STATE_CONTROL_MOTOR);
-				break;
-
-			default:
-				// Something wrong, back to init
-				AppDataSet_SlaveState(SLAVE_STATE_INIT);
-				isInit = FALSE;
-				break;
-			}
-
-			AppDataSet_UartRxNewFlag(UART_NODE_MASTER, FALSE);
-		}
-		break;
-
-	case SLAVE_STATE_CONTROL_MOTOR:
-#if defined(TEST_UART_CYCLE_NO_FEEDBACK)
-		// Do nothing, move to motor feedback
-		AppDataSet_SlaveState(SLAVE_STATE_MOTOR_FEEDBACK);
-#elif defined(TEST_UART_CYCLE_MOTOR_DATA)
-		// Send cmd to each motor and wait for respond
-		AppPeriodTask_MotorComm();
-		AppDataSet_SlaveState(SLAVE_STATE_MOTOR_FEEDBACK);
-
-#endif
-		break;
-
-	case SLAVE_STATE_MOTOR_FEEDBACK:
-#if defined(TEST_UART_CYCLE_NO_FEEDBACK)
-		// Do nothing, move to feedback master
-		AppDataSet_SlaveState(SLAVE_STATE_FEEDBACK_MASTER);
-#elif defined(TEST_UART_CYCLE_MOTOR_DATA)
-		if (TRUE == AppDataGet_CanRxNewFlag())
-		{
-			// Handle the CAN Rx package
-			AppCommCAN_GetMotorMessage();
-			AppDataSet_CanRxNewFlag(FALSE);
-		}
-#endif
-		break;
-
-	case SLAVE_STATE_FEEDBACK_MASTER:
-#if defined(TEST_UART_CYCLE_NO_FEEDBACK) || defined(TEST_UART_CYCLE_MOTOR_DATA)
-		if (FALSE == isInit) // One time only
-		{
-			AppCommUART_SendMsg(UART_NODE_MASTER, UART_TX_MSG_INIT);
-			AppDataSet_SlaveState(SLAVE_STATE_WAIT_MASTER);
-			isInit = TRUE;
-		}
-		else
-		{	// Check last Master command
-			switch (RxDataMaster[0])
-			{
-			case UART_RX_MSG_SLAVE_SET_POSITION:
-				AppCommUART_SendMsg(UART_NODE_MASTER, UART_TX_MSG_SLAVE_SET_POSITION_FEEDBACK);
-				AppDataSet_SlaveState(SLAVE_STATE_WAIT_MASTER);
-				break;
-			case UART_RX_MSG_SLAVE_SET_VELOCITY:
-
-				break;
-			case UART_RX_MSG_SLAVE_SET_TORQUE:
-
-				break;
-			default:
-				AppDataSet_SlaveState(SLAVE_STATE_INIT);
-				isInit = FALSE;
-				break;
-			}
-		}
-#endif
-//		AppCommUART_SendMsg(UART_NODE_MASTER, UART_RX_MSG_INIT);
-		AppDataSet_SlaveState(SLAVE_STATE_WAIT_MASTER);
-		break;
-
-	case SLAVE_STATE_UART_TEST:
-		if (FALSE == AppDataGet_UartTxWaitFlag(UART_NODE_MASTER))
-		{
-			AppCommUART_SendMsg(UART_NODE_MASTER, UART_TX_MSG_TEST);
-		}
-		break;
-#endif
 	default:
 		// if any abnormal, back to init state
 		AppDataSet_SlaveState(SLAVE_STATE_INIT);

@@ -66,29 +66,6 @@ typedef enum ENUM_UART_MSG
 	UART_MSG_MOTOR_CONTROL
 } enUartMsg;
 
-/*
-typedef enum ENUM_UART_TX_MSG
-{
-	UART_TX_MSG_SLAVE_SET_POSITION = 0,
-	UART_TX_MSG_SLAVE_SET_VELOCITY,
-	UART_TX_MSG_SLAVE_SET_TORQUE,
-	UART_TX_MSG_GUI_DATA_FEEDBACK,
-
-	UART_TX_MSG_TEST = 0x40, // '@'
-	UART_TX_MSG_INIT = 0xFF
-} enUartTxMsg;
-
-typedef enum ENUM_UART_RX_MSG
-{
-	UART_RX_MSG_SLAVE_SET_POSITION_FEEDBACK = 0,
-	UART_RX_MSG_SLAVE_SET_VELOCITY_FEEDBACK,
-	UART_RX_MSG_SLAVE_SET_TORQUE_FEEDBACK,
-	UART_RX_MSG_GUI_DATA_SET_TRAJECTORY,
-
-	UART_RX_MSG_INIT = 0xFF
-} enUartRxMsg;
-*/
-
 /********************************************************************************
  * GLOBAL VARIABLES
  ********************************************************************************/

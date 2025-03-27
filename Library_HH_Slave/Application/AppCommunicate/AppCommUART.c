@@ -141,9 +141,10 @@ GLOBAL void AppCommUART_SendMsg(enUartNode _node, enUartMsg _txMsgId)
 
 
 	// 2. Initialize variables
-	UART_HandleTypeDef* uartGoal;
-	U08* sourceTxData;
+	static UART_HandleTypeDef* uartGoal;
+	static U08* sourceTxData;
 	U16 sizeSend = 0;	// if not set value, TxErrCnt++
+	float j_kinematics;	// Calculate J_kinematics for each motor and copy to UART buffer
 
 
 	// 3. Get UART target and data
@@ -163,29 +164,41 @@ GLOBAL void AppCommUART_SendMsg(enUartNode _node, enUartMsg _txMsgId)
 	switch (_txMsgId)
 	{
 	case UART_MSG_INIT:
-		sourceTxData[0] = UART_MSG_INIT;
+		sourceTxData[0] = MSG_INIT_BYTE_0;
 		sourceTxData[1] = MSG_INIT_BYTE_1;
 		sourceTxData[2] = MSG_INIT_BYTE_2;
-		sourceTxData[3] = MSG_INIT_BYTE_3;
-		sourceTxData[4] = MSG_INIT_BYTE_4;
 		sizeSend = MSG_INIT_LENGTH;
 		break;
 
 	case UART_MSG_MOTOR_DATA:
-		sourceTxData[0] = UART_MSG_MOTOR_DATA;
-		memcpy(&sourceTxData[1],  &myMotor[0].currPosition, sizeof(float));
-		memcpy(&sourceTxData[5],  &myMotor[0].currSpeed,    sizeof(float));
-		memcpy(&sourceTxData[9],  &myMotor[0].currAccel,    sizeof(float));
-		memcpy(&sourceTxData[13], &myMotor[1].currPosition, sizeof(float));
-		memcpy(&sourceTxData[17], &myMotor[1].currSpeed,    sizeof(float));
-		memcpy(&sourceTxData[21], &myMotor[1].currAccel,    sizeof(float));
-		memcpy(&sourceTxData[25], &myMotor[2].currPosition, sizeof(float));
-		memcpy(&sourceTxData[29], &myMotor[2].currSpeed,    sizeof(float));
-		memcpy(&sourceTxData[33], &myMotor[2].currAccel,    sizeof(float));
+		sourceTxData[0] = MSG_DATA_RESPOND_BYTE_0;
+		sourceTxData[1] = MSG_DATA_RESPOND_BYTE_1;
+		sourceTxData[2] = MSG_DATA_RESPOND_BYTE_2;
+
+		// Equation: J_real = J_kine*J_dir + J_offset
+		// Equation: J_kine = (J_real - J_offset)*J_dir
+		// Motor 0 (Joint 1)
+		j_kinematics = (myMotor[0].currPosition - J1_OFFSET) * J1_DIR;
+		memcpy(&sourceTxData[3] ,  &j_kinematics,           sizeof(float));
+		memcpy(&sourceTxData[7] ,  &myMotor[0].currSpeed,   sizeof(float));
+		memcpy(&sourceTxData[11],  &myMotor[0].currAccel,   sizeof(float));
+
+		// Motor 1 (Joint 2)
+		j_kinematics = (myMotor[1].currPosition - J2_OFFSET) * J2_DIR;
+		memcpy(&sourceTxData[15], &j_kinematics,            sizeof(float));
+		memcpy(&sourceTxData[19], &myMotor[1].currSpeed,    sizeof(float));
+		memcpy(&sourceTxData[23], &myMotor[1].currAccel,    sizeof(float));
+
+		// Motor 2 (Joint 3)
+		j_kinematics = (myMotor[2].currPosition - J3_OFFSET) * J3_DIR;
+		memcpy(&sourceTxData[27], &j_kinematics,            sizeof(float));
+		memcpy(&sourceTxData[31], &myMotor[2].currSpeed,    sizeof(float));
+		memcpy(&sourceTxData[35], &myMotor[2].currAccel,    sizeof(float));
 		sizeSend = MSG_DATA_RESPOND_LENGTH;
 		break;
 
-	case UART_MSG_MOTOR_CONTROL:
+	case UART_MSG_MOTOR_CONTROL_POS:
+	case UART_MSG_MOTOR_CONTROL_TOR:
 	default:
 		// Do nothing and return
 		return;
@@ -253,6 +266,45 @@ GLOBAL void AppCommUart_RecvMsgStart(enUartNode _node)
 
 // 3. Set Rx-wait flag
 	AppDataSet_UartRxWaitFlag(_node, TRUE);		// After start Rx DMA
+	return;
+}
+
+GLOBAL void AppCommUart_RecvMasterMsg(enUartMsg _rxMsgId)
+{
+	// 1. Initialize variables
+	U32 _angle;
+	U16 _speed;
+	BOOL _direction;	// 0 = CW, 1 = CCW
+	switch (_rxMsgId)
+	{
+	case UART_MSG_MOTOR_CONTROL_POS:
+		// TODO
+		memcpy(&_angle, &RxDataMaster[3], sizeof(float));
+		memcpy(&_speed, &RxDataMaster[7], sizeof(U16));
+		_direction = RxDataMaster[9];
+		ApiProtocolMotorMG_SetAngleSingle(MOTOR_1_ID, _angle, _speed, _direction);
+
+		memcpy(&_angle, &RxDataMaster[10], sizeof(float));
+		memcpy(&_speed, &RxDataMaster[14], sizeof(U16));
+		_direction = RxDataMaster[16];
+		ApiProtocolMotorMG_SetAngleSingle(MOTOR_2_ID, _angle, _speed, _direction);
+
+		memcpy(&_angle, &RxDataMaster[17], sizeof(float));
+		memcpy(&_speed, &RxDataMaster[21], sizeof(U16));
+		_direction = RxDataMaster[23];
+		ApiProtocolMotorMG_SetAngleSingle(MOTOR_3_ID, _angle, _speed, _direction);
+		break;
+	case UART_MSG_MOTOR_CONTROL_TOR:
+		// TODO
+		break;
+	case UART_MSG_INIT:
+	case UART_MSG_MOTOR_DATA:
+	default:
+		// No payload data to handle
+		break;
+	}
+
+
 	return;
 }
 

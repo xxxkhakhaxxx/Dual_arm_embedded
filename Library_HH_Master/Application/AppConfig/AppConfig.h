@@ -23,7 +23,12 @@
 
 //#define TEST_UART_SEND				// Init-> Auto send and Receive: Used for checking which UART channel work with DMA and IT
 //#define TEST_UART_CYCLE_NO_FEEDBACK	// Init-> Send init -> Wait Slave -> Cal Control -> Wait Slave->...
-#define TEST_UART_CYCLE_MOTOR_DATA	// Init-> ... -> Request data -> wait Slave -> Read motor data -> ...
+//#define TEST_UART_CYCLE_MOTOR_DATA	// Init-> ... -> Request data -> wait Slave -> Read motor data -> ...
+#define MASTER_NO_CONTROL				// Master will not send control command
+#define	MASTER_NO_GUI					// Master will not send data to GUI
+//#define	MASTER_CONTROL_POS
+//#define MASTER_CONTROL_VEL
+//#define MASTER_CONTROL_TOR
 /********************************************************************************
  * TYPEDEFS AND ENUMS
  ********************************************************************************/

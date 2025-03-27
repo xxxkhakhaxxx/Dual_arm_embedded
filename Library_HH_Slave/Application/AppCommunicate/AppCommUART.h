@@ -48,7 +48,9 @@ typedef enum ENUM_UART_MSG
 {
 	UART_MSG_INIT = 0x00,
 	UART_MSG_MOTOR_DATA,
-	UART_MSG_MOTOR_CONTROL
+	UART_MSG_MOTOR_CONTROL_POS,
+//	UART_MSG_MOTOR_CONTROL_VEL,
+	UART_MSG_MOTOR_CONTROL_TOR
 } enUartMsg;
 
 /********************************************************************************
@@ -62,10 +64,11 @@ extern U08 RxDataMaster[UART_BUFFER_SIZE];
 GLOBAL void AppCommUART_UserSetup(UART_HandleTypeDef* huart, enUartNode _node);		// Save huart structure pointer generated from IDE to library's private pointer
 
 GLOBAL void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart);						// Function callback when finished Tx
-GLOBAL void AppCommUART_SendMsg(enUartNode _node, enUartMsg _txMsgId);
+GLOBAL void AppCommUART_SendMsg(enUartNode _node, enUartMsg _txMsgId);				// Function send msg header + payloads
 
 GLOBAL void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size);	// Function call back when detect IDLE on Rx
 GLOBAL void AppCommUart_RecvMsgStart(enUartNode _node);								// Start receive Rx message on DMA
+GLOBAL void AppCommUart_RecvMasterMsg(enUartMsg _rxMsgId);							// Function handle Master msg payloads
 
 GLOBAL void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart);
 

@@ -170,8 +170,8 @@ GLOBAL void AppCommUART_SendMsg(enUartNode _node, enUartMsg _txMsgId)
 
 
 	// 2. Initialize variables
-	UART_HandleTypeDef* uartGoal;
-	U08* sourceTxData;
+	static UART_HandleTypeDef* uartGoal;
+	static U08* sourceTxData;
 	U16 sizeSend = 0;	// if not set value, TxErrCnt++
 
 
@@ -200,27 +200,36 @@ GLOBAL void AppCommUART_SendMsg(enUartNode _node, enUartMsg _txMsgId)
 	switch (_txMsgId)
 	{
 	case UART_MSG_INIT:
-		sourceTxData[0] = UART_MSG_INIT;
+		sourceTxData[0] = MSG_INIT_BYTE_0;
 		sourceTxData[1] = MSG_INIT_BYTE_1;
 		sourceTxData[2] = MSG_INIT_BYTE_2;
-		sourceTxData[3] = MSG_INIT_BYTE_3;
-		sourceTxData[4] = MSG_INIT_BYTE_4;
 		sizeSend = MSG_INIT_LENGTH;
 		break;
 
 	case UART_MSG_MOTOR_DATA:
-		sourceTxData[0] = UART_MSG_MOTOR_DATA;
-		sourceTxData[1] = MSG_DATA_BYTE_1;
-		sourceTxData[2] = MSG_DATA_BYTE_2;
-		sourceTxData[3] = MSG_DATA_BYTE_3;
-		sourceTxData[4] = MSG_DATA_BYTE_4;
+		sourceTxData[0] = MSG_DATA_REQUEST_BYTE_0;
+		sourceTxData[1] = MSG_DATA_REQUEST_BYTE_1;
+		sourceTxData[2] = MSG_DATA_REQUEST_BYTE_2;
 		sizeSend = MSG_DATA_REQUEST_LENGTH;
 		break;
 
-	case UART_MSG_MOTOR_CONTROL:
-		// Not support yet
-		return;
+	case UART_MSG_MOTOR_CONTROL_POS:
+		// TODO
+		break;;
 
+	case UART_MSG_MOTOR_CONTROL_TOR:
+		// TODO
+		break;
+
+	case UART_MSG_GUI_DATA_1:
+		// TODO
+		break;
+
+	case UART_MSG_GUI_DATA_2:
+		// TODO
+		break;
+
+//	case UART_MSG_MOTOR_CONTROL_VEL:
 	default:
 		// Do nothing and return
 		return;

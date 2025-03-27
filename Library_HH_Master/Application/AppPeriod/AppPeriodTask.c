@@ -212,7 +212,9 @@ GLOBAL void AppPeriodTask_StateMachineProcess(void)
 {
 //	static BOOL _slave2HandleFlag = FALSE;
 //	static enRobotMode _robotMode = ROBOT_MODE_READ_ONLY;		// The mode that you want to use
-
+	// Full sequence: Init ➩ wait Slave init ➩ Send init to confirm ➩ ...
+	//            ... ➩ Wait 20ms Flag ➩ Request data ➩ Handle data feedback ➩ Calculate control ➩ Send control
+	//                          ↖	⇦   ⇦   ⇦   ⇦   ⇦   ⇦   ⇦   ⇦   ⇦   ⇦   ⇦   ⇦   ⇦   ⇦  GUI feedback ↩
 
 	switch (AppDataGet_MasterState())
 	{
@@ -222,7 +224,7 @@ GLOBAL void AppPeriodTask_StateMachineProcess(void)
 			AppCommUart_RecvMsgStart(UART_NODE_SLAVE_1);
 //			AppCommUart_RecvMsgStart(UART_NODE_SLAVE_2);
 			_masterInitFlag = TRUE;
-			AppDataSet_LedState(LED_5_RED, TRUE);
+			AppDataSet_LedState(LED_5_RED, TRUE);	// Init LED
 		}
 		else
 		{
@@ -231,22 +233,23 @@ GLOBAL void AppPeriodTask_StateMachineProcess(void)
 				if (TRUE == AppDataGet_UartRxNewFlag(UART_NODE_SLAVE_1))
 				{
 					if (
-						(UART_MSG_INIT == RxDataSlaveLeft[0]) && \
+						(MSG_INIT_BYTE_0 == RxDataSlaveLeft[0]) && \
 						(MSG_INIT_BYTE_1 == RxDataSlaveLeft[1]) && \
-						(MSG_INIT_BYTE_2 == RxDataSlaveLeft[2]) && \
-						(MSG_INIT_BYTE_3 == RxDataSlaveLeft[3]) && \
-						(MSG_INIT_BYTE_4 == RxDataSlaveLeft[4])
+						(MSG_INIT_BYTE_2 == RxDataSlaveLeft[2])
 					)
 					{	// Correct init format
 						AppCommUART_SendMsg(UART_NODE_SLAVE_1, UART_MSG_INIT);
 						_slave1InitFlag = TRUE;
+//						AppDataSet_LedState(LED_5_RED, TRUE);
 					}
 					else
 					{
 						// Wait for another Rx
-						AppDataSet_UartRxMsgCnt(UART_NODE_SLAVE_1);
+						AppDataSet_UartRxErrCnt(UART_NODE_SLAVE_1);
 						AppCommUart_RecvMsgStart(UART_NODE_SLAVE_1);
 					}
+
+					AppDataSet_UartRxMsgCnt(UART_NODE_SLAVE_1);
 					AppDataSet_UartRxNewFlag(UART_NODE_SLAVE_1, FALSE);
 				}
 				else
@@ -257,7 +260,7 @@ GLOBAL void AppPeriodTask_StateMachineProcess(void)
 
 			if (TRUE == _slave1InitFlag) //&& (TRUE == _slave2InitFlag)	// SLAVEs are ready
 			{	// Exit INIT STATE
-				HAL_Delay(2);	// Wait for the Master init cmd send
+				HAL_Delay(2);	// Wait for the Master init cmd send - only for DMA
 				AppDataSet_MasterState(MASTER_STATE_WAIT_NEW_SEQUENCE);
 			}
 		}
@@ -269,46 +272,43 @@ GLOBAL void AppPeriodTask_StateMachineProcess(void)
 			AppCommUART_SendMsg(UART_NODE_SLAVE_1, UART_MSG_MOTOR_DATA);
 //			AppCommUART_SendMsg(UART_NODE_SLAVE_2, UART_MSG_MOTOR_DATA);
 			_slave1HandleFlag = FALSE;
+//			_slave2HandleFlag = FALSE;
 			AppDataSet_MasterState(MASTER_STATE_WAIT_SLAVE_FEEDBACK);
 		}
 		else
 		{
 			// Wait timer 2 trigger for new sequence
-		/*	AppDataSet_LedState(LED_6_BLUE, FALSE);
-			AppDataSet_LedState(LED_4_GREEN, FALSE);
-			AppDataSet_LedState(LED_3_ORANGE, FALSE);*/
 		}
 		break;
 
 	case MASTER_STATE_WAIT_SLAVE_FEEDBACK:
 		if ((TRUE == AppDataGet_UartRxNewFlag(UART_NODE_SLAVE_1)) && (FALSE == _slave1HandleFlag))
 		{
-			switch (RxDataSlaveLeft[0])
+			if (
+			(MSG_DATA_RESPOND_BYTE_0 == RxDataSlaveLeft[0]) && \
+			(MSG_DATA_RESPOND_BYTE_1 == RxDataSlaveLeft[1]) && \
+			(MSG_DATA_RESPOND_BYTE_2 == RxDataSlaveLeft[2])
+			)
 			{
-			case UART_MSG_MOTOR_DATA:
-				memcpy(&myRobotRx[0].Joint[0].Position, &RxDataSlaveLeft[1],  sizeof(float));
-				memcpy(&myRobotRx[0].Joint[0].Speed,    &RxDataSlaveLeft[5],  sizeof(float));
-				memcpy(&myRobotRx[0].Joint[0].Accel,    &RxDataSlaveLeft[9],  sizeof(float));
-				memcpy(&myRobotRx[0].Joint[1].Position, &RxDataSlaveLeft[13], sizeof(float));
-				memcpy(&myRobotRx[0].Joint[1].Speed,    &RxDataSlaveLeft[17], sizeof(float));
-				memcpy(&myRobotRx[0].Joint[1].Accel,    &RxDataSlaveLeft[21], sizeof(float));
-				memcpy(&myRobotRx[0].Joint[2].Position, &RxDataSlaveLeft[25], sizeof(float));
-				memcpy(&myRobotRx[0].Joint[2].Speed,    &RxDataSlaveLeft[29], sizeof(float));
-				memcpy(&myRobotRx[0].Joint[2].Accel,    &RxDataSlaveLeft[33], sizeof(float));
+				memcpy(&myRobotRx[0].Joint[0].Position, &RxDataSlaveLeft[3],  sizeof(float));
+				memcpy(&myRobotRx[0].Joint[0].Speed,    &RxDataSlaveLeft[7],  sizeof(float));
+				memcpy(&myRobotRx[0].Joint[0].Accel,    &RxDataSlaveLeft[11], sizeof(float));
+				memcpy(&myRobotRx[0].Joint[1].Position, &RxDataSlaveLeft[15], sizeof(float));
+				memcpy(&myRobotRx[0].Joint[1].Speed,    &RxDataSlaveLeft[19], sizeof(float));
+				memcpy(&myRobotRx[0].Joint[1].Accel,    &RxDataSlaveLeft[23], sizeof(float));
+				memcpy(&myRobotRx[0].Joint[2].Position, &RxDataSlaveLeft[27], sizeof(float));
+				memcpy(&myRobotRx[0].Joint[2].Speed,    &RxDataSlaveLeft[31], sizeof(float));
+				memcpy(&myRobotRx[0].Joint[2].Accel,    &RxDataSlaveLeft[35], sizeof(float));
 				_slave1HandleFlag = TRUE;
-
-				break;
-
-			case UART_MSG_INIT:
-			case UART_MSG_MOTOR_CONTROL:
-			default:
-				// Wait for another Rx
-				AppDataSet_UartRxMsgCnt(UART_NODE_SLAVE_1);
-				AppCommUart_RecvMsgStart(UART_NODE_SLAVE_1);
-				break;;
 			}
-			AppDataSet_UartRxNewFlag(UART_NODE_SLAVE_1, FALSE);
+			else
+			{
+				AppDataSet_UartRxErrCnt(UART_NODE_SLAVE_1);		// Receive un-support message ID in this Master state
+				AppCommUart_RecvMsgStart(UART_NODE_SLAVE_1);	// Wait for another Master message
+			}
 
+			AppDataSet_UartRxMsgCnt(UART_NODE_SLAVE_1);
+			AppDataSet_UartRxNewFlag(UART_NODE_SLAVE_1, FALSE);
 		}
 
 		if (TRUE == _slave1HandleFlag)
@@ -319,16 +319,41 @@ GLOBAL void AppPeriodTask_StateMachineProcess(void)
 		break;
 
 	case MASTER_STATE_CAL_CONTROL:
+#if defined (MASTER_NO_CONTROL)
 		AppDataSet_MasterState(MASTER_STATE_SEND_GUI);
+#else
+	#if defined (MASTER_CONTROL_POS)
+		// TODO
+	#elif defined (MASTER_CONTROL_VEL)
+		// TODO
+	#elif defined (MASTER_CONTROL_TOR)
+		// TODO
+	#else	// No control
+		AppDataSet_MasterState(MASTER_STATE_SEND_GUI);
+	#endif
+#endif
 		break;
 
 	case MASTER_STATE_SEND_GUI:
+#if defined (MASTER_NO_GUI)
+		// Do nothing
+#else
+	#if defined (MASTER_NO_CONTROL)
+		AppCommUart_SendMsg(UART_NODE_GUI, UART_MSG_GUI_DATA_1);
+	#else
+		AppCommUart_SendMsg(UART_NODE_GUI, UART_MSG_GUI_DATA_2);
+	#endif
+#endif
+
 		bNewSequenceFlag = FALSE;	// Sequence end
 		AppDataSet_MasterState(MASTER_STATE_WAIT_NEW_SEQUENCE);
 		break;
 
 	default:
-		// if any abnormal, back to init state
+		// if any abnormal, reset variables and back to init state
+		_masterInitFlag = FALSE;
+		_slave1InitFlag = FALSE;
+		_slave1HandleFlag = FALSE;
 		AppDataSet_MasterState(MASTER_STATE_INIT);
 		break;
 	}

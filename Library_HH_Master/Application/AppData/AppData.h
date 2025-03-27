@@ -25,22 +25,35 @@
 #define LED_6_BLUE		GPIO_PIN_15
 #define LED_PORT		GPIOD
 
-#define MSG_INIT_LENGTH	(5)
-#define MSG_INIT_BYTE_1	(0xFF)
+#define MSG_INIT_LENGTH	(3)				// 3 header + 0 payloads
+#define MSG_INIT_BYTE_0	(0xA1)
+#define MSG_INIT_BYTE_1	(0x01)
 #define MSG_INIT_BYTE_2	(0x01)
-#define MSG_INIT_BYTE_3	(0xFF)
-#define MSG_INIT_BYTE_4	(0x02)
 
-#define MSG_DATA_RESPOND_LENGTH	(37)
-#define MSG_DATA_REQUEST_LENGTH	(5)
-#define MSG_DATA_BYTE_1	(0xFF)
-#define MSG_DATA_BYTE_2	(0x03)
-#define MSG_DATA_BYTE_3	(0xFF)
-#define MSG_DATA_BYTE_4	(0x04)
+#define MSG_DATA_REQUEST_LENGTH	(3)		// 3 header + 0 payloads
+#define MSG_DATA_REQUEST_BYTE_0	(0xB2)
+#define MSG_DATA_REQUEST_BYTE_1	(0x02)
+#define MSG_DATA_REQUEST_BYTE_2	(0x02)
 
-#define MSG_CONTROL_POS	(0xF5)
-#define MSG_CONTROL_VEL	(0xF6)
-#define MSG_CONTROL_TOR	(0xF7)
+#define MSG_DATA_RESPOND_LENGTH	(39)	// 3 header + 3*(4+4+4) payloads
+#define MSG_DATA_RESPOND_BYTE_0	(0xB2)
+#define MSG_DATA_RESPOND_BYTE_1	(0x02)
+#define MSG_DATA_RESPOND_BYTE_2	(0x02)
+
+#define MSG_CONTROL_POS_LENGTH	(30)	// 3 header + 3*(4+2+1) payloads
+#define MSG_CONTROL_POS_BYTE_0	(0xC3)
+#define MSG_CONTROL_POS_BYTE_1	(0x03)
+#define MSG_CONTROL_POS_BYTE_2	(0x03)
+
+#define MSG_CONTROL_VEL_LENGTH	(15)	// 3 header + 3*4 payloads
+#define MSG_CONTROL_VEL_BYTE_0	(0xD4)
+#define MSG_CONTROL_VEL_BYTE_1	(0x04)
+#define MSG_CONTROL_VEL_BYTE_2	(0x04)
+
+#define MSG_CONTROL_TOR_LENGTH	(15)	// 3 header + 3*4 payloads
+#define MSG_CONTROL_TOR_BYTE_0	(0xE5)
+#define MSG_CONTROL_TOR_BYTE_1	(0x05)
+#define MSG_CONTROL_TOR_BYTE_2	(0x05)
 
 
 /********************************************************************************
@@ -82,7 +95,7 @@ GLOBAL void AppDataSet_MasterState(enMasterStateList _state);
 GLOBAL void AppDataSet_LedState(uint16_t pin_name, BOOL _state);
 
 /************ UART TX MANAGE FUNCTION  ************/
-GLOBAL BOOL AppDataGet_UartTxWaitFlag(U08 _node);
+GLOBAL BOOL AppDataGet_UartTxWaitFlag(U08 _node);				// if you don't want to use this flag, you should handle Tx success or not
 GLOBAL void AppDataSet_UartTxWaitFlag(U08 _node, BOOL _flag);	// Set Tx waiting flag
 GLOBAL void AppDataSet_UartTxMsgCnt(U08 _node);
 GLOBAL void AppDataSet_UartTxErrCnt(U08 _node);

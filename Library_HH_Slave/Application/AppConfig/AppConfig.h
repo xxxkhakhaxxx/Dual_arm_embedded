@@ -21,6 +21,35 @@
  ********************************************************************************/
 #define PROJECT_MCU		STM32F1XX_FW_1_8_6
 
+#define DUAL_ARM_LEFT	1
+#define DUAL_ARM_RIGHT	2
+#define THIS_IS_ARM 	DUAL_ARM_LEFT
+
+// Mapping direction and offset from Real joint to Kinematics
+#if defined(THIS_IS_ARM) && (THIS_IS_ARM == DUAL_ARM_LEFT)
+	// Left arm setting code here
+	#define J1_DIR	(1)
+	#define J2_DIR	(-1)
+	#define J3_DIR	(1)
+
+	// Joint calibration: J_real = J_kinematics*J_dir + J_offset
+	#define J1_OFFSET	(-253.0f)
+	#define J2_OFFSET	(-60.0f)
+	#define J3_OFFSET	(-44.0f)
+
+#elif defined(THIS_IS_ARM) && (THIS_IS_ARM == DUAL_ARM_RIGHT)
+	// Right arm setting code here
+	#define J1_DIR	(-1)
+	#define J2_DIR	(1)
+	#define J3_DIR	(-1)
+
+	#define J1_OFFSET	()
+	#define J2_OFFSET	()
+	#define J3_OFFSET	()
+#else
+	#error "Choose arm: DUAL_ARM_LEFT or DUAL_ARM_RIGHT"
+#endif
+
 //#define TEST_UART_SEND				// Init-> Auto send and Receive: Used for checking which UART channel work with DMA and IT
 //#define TEST_UART_CYCLE_NO_FEEDBACK	// Init-> Wait Master-> FeedBack Master-> Wait Master-> Control Motor-> Motor Feedback-> Feedback Master
 #define TEST_UART_CYCLE_MOTOR_DATA	// Init-> ... -> wait Master -> Read motor data -> Cal speed + accel -> Feedback  motor data -> wait Master.

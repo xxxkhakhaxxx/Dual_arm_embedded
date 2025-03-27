@@ -19,22 +19,35 @@
 /********************************************************************************
  * MACROS AND DEFINES
  ********************************************************************************/
-#define MSG_INIT_LENGTH	(5)
-#define MSG_INIT_BYTE_1	(0xFF)
+#define MSG_INIT_LENGTH	(3)				// 3 header + 0 payloads
+#define MSG_INIT_BYTE_0	(0xA1)
+#define MSG_INIT_BYTE_1	(0x01)
 #define MSG_INIT_BYTE_2	(0x01)
-#define MSG_INIT_BYTE_3	(0xFF)
-#define MSG_INIT_BYTE_4	(0x02)
 
-#define MSG_DATA_REQUEST_LENGTH	(5)
-#define MSG_DATA_RESPOND_LENGTH	(37)
-#define MSG_DATA_BYTE_1	(0xFF)
-#define MSG_DATA_BYTE_2	(0x03)
-#define MSG_DATA_BYTE_3	(0xFF)
-#define MSG_DATA_BYTE_4	(0x04)
+#define MSG_DATA_REQUEST_LENGTH	(3)		// 3 header + 0 payloads
+#define MSG_DATA_REQUEST_BYTE_0	(0xB2)
+#define MSG_DATA_REQUEST_BYTE_1	(0x02)
+#define MSG_DATA_REQUEST_BYTE_2	(0x02)
 
-#define MSG_CONTROL_POS	(0xF5)
-#define MSG_CONTROL_VEL	(0xF6)
-#define MSG_CONTROL_TOR	(0xF7)
+#define MSG_DATA_RESPOND_LENGTH	(39)	// 3 header + 4*9 payloads
+#define MSG_DATA_RESPOND_BYTE_0	(0xB2)
+#define MSG_DATA_RESPOND_BYTE_1	(0x02)
+#define MSG_DATA_RESPOND_BYTE_2	(0x02)
+
+#define MSG_CONTROL_POS_LENGTH	(24)	// 3 header + 3*(4+2+1) payloads
+#define MSG_CONTROL_POS_BYTE_0	(0xC3)
+#define MSG_CONTROL_POS_BYTE_1	(0x03)
+#define MSG_CONTROL_POS_BYTE_2	(0x03)
+
+#define MSG_CONTROL_VEL_LENGTH	(15)	// 3 header + 3*4 payloads
+#define MSG_CONTROL_VEL_BYTE_0	(0xD4)
+#define MSG_CONTROL_VEL_BYTE_1	(0x04)
+#define MSG_CONTROL_VEL_BYTE_2	(0x04)
+
+#define MSG_CONTROL_TOR_LENGTH	(15)	// 3 header + 3*4 payloads
+#define MSG_CONTROL_TOR_BYTE_0	(0xE5)
+#define MSG_CONTROL_TOR_BYTE_1	(0x05)
+#define MSG_CONTROL_TOR_BYTE_2	(0x05)
 
 /********************************************************************************
  * TYPEDEFS AND ENUMS
@@ -56,7 +69,7 @@ typedef enum ENUM_ROBOT_MODE
 	ROBOT_MODE_INIT = 0,
 	ROBOT_MODE_READ_ONLY,
 	ROBOT_MODE_POSITION,
-	ROBOT_MODE_VELOCITY,
+//	ROBOT_MODE_VELOCITY,
 	ROBOT_MODE_TORQUE,
 
 	ROBOT_MODE_MAX

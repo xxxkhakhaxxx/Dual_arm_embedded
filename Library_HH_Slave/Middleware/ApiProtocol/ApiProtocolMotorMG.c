@@ -341,19 +341,8 @@ PRIVATE void _TxFncHandlerWriteEncoderOffset(U08 _u8MotorId, U08* _b8Buffer)
 /********************************************************************************
  * GLOBAL FUNCTION IMPLEMENTATION
  ********************************************************************************/
-GLOBAL void ApiProtocolMotorMG_RxHandler(U32 _u32MotorIdentifier, U08* _b8RxDataBuffer)	// Call above _Rx static function
+GLOBAL void ApiProtocolMotorMG_RxHandler(U08 _u8MotorId, U08* _b8RxDataBuffer)	// Call above _Rx static function
 {
-	/* Check Identifier is valid for MG motor or not */
-	if ((MOTOR_HEADER_INIT >=_u32MotorIdentifier) \
-		|| ((MOTOR_HEADER_MAX <= _u32MotorIdentifier) && (MOTOR_HEADER_MULTI != _u32MotorIdentifier)))
-	{
-		// Invalid, stop process
-		return;
-	}
-
-	/* Adjust MotorID in range 1-32: U08 size */
-	U08 _u8MotorId = (U08)MOTOR_PROTOCOL_GET_ID(_u32MotorIdentifier);
-
 	/* Process the command data */
 	switch(_b8RxDataBuffer[0])		// Check command id
 	{

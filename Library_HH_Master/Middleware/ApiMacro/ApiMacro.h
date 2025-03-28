@@ -58,6 +58,7 @@
 #define UINT64 unsigned long long
 #define CHAR8 char
 
+#define U16_MAX (65535)
 
 /* MATHS */
 #define PI                  (3.14159265)

@@ -26,23 +26,35 @@
  ********************************************************************************/
 typedef struct
 {
-    float Joint_1;
-    float Joint_2;
-    float Joint_3;
-} strRobotJointInfor;	// Unit: 1 degree/bit
+    float q1;
+    float q2;
+    float q3;
+} strRobot;	// Unit: 1 degree/bit
+
+typedef struct
+{
+	struct
+	{
+		float Position;
+		float Speed;
+		float Accel;
+	} Joint[3];
+} strRobotRxData;
 
 
 /********************************************************************************
  * GLOBAL VARIABLES
  ********************************************************************************/
-extern GLOBAL strRobotJointInfor strRobotJoint;
-
+extern GLOBAL strRobot strRobotDualArm;
+extern GLOBAL strRobotRxData myRobotRx[2];
 
 /********************************************************************************
  * GLOBAL FUNCTION DECLARATION
  ********************************************************************************/
 GLOBAL void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim);
 GLOBAL void AppPeriodTask_TaskCall(void);
+
+GLOBAL void AppPeriodTask_StateMachineProcess(void);
 
 
 #endif /* APPLICATION_APPPERIOD_APPPERIODTASK_H_ */

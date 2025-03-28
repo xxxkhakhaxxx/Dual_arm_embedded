@@ -19,30 +19,37 @@
 /********************************************************************************
  * MACROS AND DEFINES
  ********************************************************************************/
+#define MOTOR_NUMBER	(3)
 
 
 /********************************************************************************
  * TYPEDEFS AND ENUMS
  ********************************************************************************/
-typedef enum ENUM_MOTOR_COMM_SEQUENCE
+typedef struct
 {
-	MOTOR_COMM_ON = 0,
-	MOTOR_COMM_READ_PID_PARAMS,
-	MOTOR_COMM_READ_ACCEL,
-	MOTOR_COMM_READ_ENCODER_INIT,
-	MOTOR_COMM_READ_ANGLE_MULTI,
-	MOTOR_COMM_READ_ANGLE_SINGLE,
-	MOTOR_COMM_READ_STATE_ERROR,
-	MOTOR_COMM_READ_STATE_MECHANICAL,
-	MOTOR_COMM_READ_STATE_ELECTRICAL
+	uint32_t prevTime;		// Previous time - ms
+	uint32_t currTime;		// Current time - ms
+	float currPosition;		// Current position
+	float prevPosition;		// Previous position
+	float currSpeed;		// Current speed
+	float prevSpeed;		// Previous speed
+	float currAccel;		// Current acceleration
+} strMotorData;
 
-} enMotorCommSequence;
+typedef enum ENUM_CAN_NODE
+{
+	CAN_NODE_MOTOR_1 = 0,
+	CAN_NODE_MOTOR_2,
+	CAN_NODE_MOTOR_3,
+
+	CAN_NODE_MAX
+} enCanNode;
 
 /********************************************************************************
  * GLOBAL VARIABLES
  ********************************************************************************/
 //GLOBAL enMotorCommSequence MotorCommCmd = MOTOR_COMM_ON;
-
+GLOBAL extern strMotorData myMotor[MOTOR_NUMBER];	// Motor's data using for communication with Master
 /********************************************************************************
  * GLOBAL FUNCTION DECLARATION
  ********************************************************************************/

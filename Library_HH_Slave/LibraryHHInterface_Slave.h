@@ -26,15 +26,11 @@
 // Must add "Library_HH" as a source folder
 #include "./Middleware/ApiMacro/ApiMacro.h"
 #include "./Middleware/ApiProtocol/ApiProtocolMotorMG.h"
-//#include "./Middleware/ApiController/ApiControllerPID.h"
-//#include "./Middleware/ApiController/ApiControllerSMC.h"
 
 #include "./Application/AppConfig/AppConfig.h"
 #include "./Application/AppData/AppData.h"
+#include "./Application/AppCommunicate/AppCommUART.h"
 #include "./Application/AppCommunicate/AppCommCAN.h"
-#include "./Application/AppCommunicate/AppCommSPI.h"
-#include "./Application/AppLoad/AppLoadLed.h"
-#include "./Application/AppLoad/AppLoadMotor.h"
 #include "./Application/AppPeriod/AppPeriodTask.h"
 
 

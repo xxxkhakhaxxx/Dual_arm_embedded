@@ -25,11 +25,48 @@
 /********************************************************************************
  * PRIVATE TYPEDEFS AND ENUMS
  ********************************************************************************/
+typedef union UNION_MASTER_STATE
+{
+	U16 allState[MASTER_STATE_MAX];
+	struct
+	{
+		U16 Init;
+		U16 WaitGuiCmd;
+		U16 TrajectoryPlanning;
+		U16 CalError;
+		U16 CalControl;
+		U16 WaitSlave;
+		U16 DataAcquisition;
+
+		U16 UartTest;
+	} Cnt;
+} uniMasterState;
+
+typedef struct STRUCT_COMM_MANAGER
+{
+	struct
+	{
+		BOOL IsWait;
+		U32  SendMsgCnt;
+		U32  ErrCnt;
+	} Tx;
+
+	struct
+	{
+		BOOL IsWait;
+		BOOL IsNew;
+		U32  RecvMsgCnt;
+		U32  ErrCnt;
+	} Rx;
+} strCommManager;
 
 /********************************************************************************
  * PRIVATE VARIABLES
  ********************************************************************************/
+PRIVATE enMasterStateList enMasterState = MASTER_STATE_INIT;
+PRIVATE uniMasterState MasterState = {0, };
 
+PRIVATE strCommManager myUart[UART_NODE_MAX] = {0, };
 
 /********************************************************************************
  * GLOBAL VARIABLES
@@ -47,43 +84,159 @@
 /********************************************************************************
  * GLOBAL FUNCTION IMPLEMENTATION
  ********************************************************************************/
-
-
-/** ###################### **/
-GLOBAL BOOL AppDataGet_IsMotorLowVoltage(U08 _u8MotorId)
-{	// 1 is TRUE, 0 is FALSE
-	return GETBIT(strRobotArmMotorRx[_u8MotorId].State.u8Error,0);	// 1st bit
-}
-
-GLOBAL BOOL AppDataGet_IsMotorHighTemp(U08 _u8MotorId)
-{	// 1 is TRUE, 0 is FALSE
-	return GETBIT(strRobotArmMotorRx[_u8MotorId].State.u8Error,3);	// 4th bit
-}
-
-PRIVATE BOOL bCanRxMsgFlag = FALSE;			// Any data in CAN Rx or not
-GLOBAL BOOL AppDataGet_CanRxMsgFlag(void)
+GLOBAL enMasterStateList AppDataGet_MasterState(void)
 {
-	return bCanRxMsgFlag;
+	return enMasterState;
 }
-GLOBAL void AppDataSet_CanRxMsgFlag(BOOL _bFlag)
+
+GLOBAL void AppDataSet_MasterState(enMasterStateList _state)
 {
-	if (_bFlag != bCanRxMsgFlag)
+	if ((_state != enMasterState) && (_state < MASTER_STATE_MAX))
 	{
-		bCanRxMsgFlag = _bFlag;
+		enMasterState = _state;				// Change state
+		if (U16_MAX > MasterState.allState[_state])
+		{
+			MasterState.allState[_state]++;	// Count current state
+		}
 	}
+
+	return;
 }
 
-PRIVATE BOOL bSpiRxMsgFlag = FALSE;			// Any data in CAN Rx or not
-GLOBAL BOOL AppDataGet_SpiRxMsgFlag(void)
+/**
+  * @brief  Sets the state of an LED (ON/OFF)
+  * @param  pin: LED GPIO pin (e.g., LED4_GREEN_PIN)
+  * @param  state: TRUE (ON) or FALSE (OFF)
+  * @retval None
+  */
+GLOBAL void AppDataSet_LedState(uint16_t _ledName, BOOL _ledState)
 {
-	return bSpiRxMsgFlag;
-}
-GLOBAL void AppDataSet_SpiRxMsgFlag(BOOL _bFlag)
-{
-	if (_bFlag != bSpiRxMsgFlag)
+	if (_ledState != HAL_GPIO_ReadPin(LED_PORT, _ledName))
 	{
-		bSpiRxMsgFlag = _bFlag;
+		HAL_GPIO_WritePin(LED_PORT, _ledName, (_ledState ? GPIO_PIN_SET : GPIO_PIN_RESET));
+
 	}
+
+	return;
 }
+
+/************ UART TX MANAGE FUNCTION  ************/
+GLOBAL BOOL AppDataGet_UartTxWaitFlag(U08 _node)
+{
+	BOOL waitFlag = FALSE;
+	if (_node < UART_NODE_MAX)
+	{
+		waitFlag = myUart[_node].Tx.IsWait;
+	}
+
+	return waitFlag;
+}
+GLOBAL void AppDataSet_UartTxWaitFlag(U08 _node, BOOL _flag)
+{
+	if (_node < UART_NODE_MAX)
+	{
+		if (_flag != myUart[_node].Tx.IsWait)
+		{
+			myUart[_node].Tx.IsWait = _flag;
+			AppDataSet_LedState(LED_3_ORANGE, TRUE);
+		}
+	}
+
+	return;
+}
+GLOBAL void AppDataSet_UartTxMsgCnt(U08 _node)
+{
+	if (_node < UART_NODE_MAX)
+	{
+		if (U16_MAX >  myUart[_node].Tx.SendMsgCnt)
+		{
+			myUart[_node].Tx.SendMsgCnt++;
+		}
+	}
+
+	return;
+}
+GLOBAL void AppDataSet_UartTxErrCnt(U08 _node)
+{
+	if (_node < UART_NODE_MAX)
+	{
+		if (U16_MAX >  myUart[_node].Tx.ErrCnt)
+		{
+			myUart[_node].Tx.ErrCnt++;
+		}
+	}
+
+	return;
+}
+/************ UART RX MANAGE FUNCTION  ************/
+GLOBAL BOOL AppDataGet_UartRxWaitFlag(U08 _node)
+{
+	BOOL waitFlag = TRUE;	// For safety: default TRUE for not starting Rx DMA twice
+	if (_node < UART_NODE_MAX)
+	{
+		waitFlag = myUart[_node].Rx.IsWait;
+	}
+
+	return waitFlag;
+}
+GLOBAL void AppDataSet_UartRxWaitFlag(U08 _node, BOOL _flag)
+{
+	if (_node < UART_NODE_MAX)
+	{
+		if (_flag != myUart[_node].Rx.IsWait)
+		{
+			myUart[_node].Rx.IsWait = _flag;
+		}
+	}
+
+	return;
+}
+GLOBAL void AppDataSet_UartRxMsgCnt(U08 _node)
+{
+	if (_node < UART_NODE_MAX)
+	{
+		if (U16_MAX >  myUart[_node].Rx.RecvMsgCnt)
+		{
+			myUart[_node].Rx.RecvMsgCnt++;
+		}
+	}
+
+	return;
+}
+GLOBAL void AppDataSet_UartRxErrCnt(U08 _node)
+{
+	if (_node < UART_NODE_MAX)
+	{
+		if (U16_MAX >  myUart[_node].Rx.ErrCnt)
+		{
+			myUart[_node].Rx.ErrCnt++;
+		}
+	}
+
+	return;
+}
+GLOBAL BOOL AppDataGet_UartRxNewFlag(U08 _node)
+{
+	BOOL newFlag = TRUE;
+	if (_node < UART_NODE_MAX)
+	{
+		newFlag = myUart[_node].Rx.IsNew;
+	}
+
+	return newFlag;
+}
+GLOBAL void AppDataSet_UartRxNewFlag(U08 _node, BOOL _flag)
+{
+	if (_node < UART_NODE_MAX)
+	{
+		if (_flag != myUart[_node].Rx.IsNew)
+		{
+			myUart[_node].Rx.IsNew = _flag;
+		}
+	}
+
+	return;
+}
+
 
 

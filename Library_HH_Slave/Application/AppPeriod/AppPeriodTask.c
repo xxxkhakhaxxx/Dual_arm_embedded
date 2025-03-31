@@ -357,11 +357,33 @@ GLOBAL void AppPeriodTask_StateMachineProcess(void)
 		break;
 
 	case SLAVE_STATE_SEND_MOTOR_SEQUENCE:
+#if defined (SLAVE_NO_MOTOR_COMM)
+		// No motor comm
+#else
 		AppPeriodTask_MotorComm(_canNode, _robotMode);
+#endif
 		AppDataSet_SlaveState(SLAVE_STATE_WAIT_MOTOR_FEEDBACK);
 		break;
 
 	case SLAVE_STATE_WAIT_MOTOR_FEEDBACK:
+#if defined (SLAVE_NO_MOTOR_COMM)
+		HAL_Delay(1);	// Simulate 3 motors comm with 1ms delay
+
+		// Finished motor comm
+		_canNode = CAN_NODE_MOTOR_1;
+		_sequenceEndFlag = TRUE;
+
+		if (FALSE == _slaveInitFlag)
+		{
+			AppDataSet_SlaveState(SLAVE_STATE_INIT);	// Back to init state
+			_slaveInitFlag = TRUE;
+		}
+		else	// Wait for master request
+		{
+			AppCommUART_SendMsg(UART_NODE_MASTER, UART_MSG_MOTOR_DATA);	// Empty data (no motor comm)
+			AppDataSet_SlaveState(SLAVE_STATE_WAIT_MASTER_REQUEST);		// Wait for new request from Master
+		}
+#else
 		if (TRUE == AppDataGet_CanRxNewFlag())
 		{
 			AppCommCAN_GetMotorMessage();
@@ -404,6 +426,7 @@ GLOBAL void AppPeriodTask_StateMachineProcess(void)
 		{
 			// Wait for CAN Rx
 		}
+#endif
 		break;
 
 	default:

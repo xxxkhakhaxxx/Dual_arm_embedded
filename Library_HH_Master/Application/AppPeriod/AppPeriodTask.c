@@ -54,6 +54,8 @@ volatile static U32 u32TaskTimerCnt_1ms = 0;
 volatile static U32 debug_cnt_task_duplicate = 0;
 volatile static U32 debug_cnt_task_override = 0;
 
+PRIVATE U08 u8GuiSendCnt = 0;
+
 PRIVATE I32 Px = 0;
 PRIVATE I32 Py = 0;
 PRIVATE float Yaw = 0;
@@ -143,7 +145,7 @@ PRIVATE void AppPeriodTask_Scheduler(void)
 //		AppPeriodTask_SetTaskFlag(TASK_10MS_ROBOT_IK);
 //		break;
 	case 5:
-		AppPeriodTask_SetTaskFlag(TASK_10MS_SLAVE_1_COMM);
+//		AppPeriodTask_SetTaskFlag(TASK_10MS_SLAVE_1_COMM);
 		break;
 	default:
 		break;
@@ -175,6 +177,7 @@ GLOBAL void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 			if (U16_MAX > debug_cnt_task_override)
 			{
 				debug_cnt_task_override++;
+				AppDataSet_LedState(LED_3_ORANGE, TRUE);
 			}
 		}
 
@@ -261,6 +264,7 @@ GLOBAL void AppPeriodTask_StateMachineProcess(void)
 			if (TRUE == _slave1InitFlag) //&& (TRUE == _slave2InitFlag)	// SLAVEs are ready
 			{	// Exit INIT STATE
 				HAL_Delay(2);	// Wait for the Master init cmd send - only for DMA
+				bNewSequenceFlag = FALSE;
 				AppDataSet_MasterState(MASTER_STATE_WAIT_NEW_SEQUENCE);
 			}
 		}
@@ -315,7 +319,6 @@ GLOBAL void AppPeriodTask_StateMachineProcess(void)
 		{	// Exit WAIT SLAVE state
 			AppDataSet_MasterState(MASTER_STATE_CAL_CONTROL);
 		}
-		AppDataSet_LedState(LED_4_GREEN, TRUE);
 		break;
 
 	case MASTER_STATE_CAL_CONTROL:
@@ -339,9 +342,18 @@ GLOBAL void AppPeriodTask_StateMachineProcess(void)
 		// Do nothing
 #else
 	#if defined (MASTER_NO_CONTROL)
-		AppCommUart_SendMsg(UART_NODE_GUI, UART_MSG_GUI_DATA_1);
+		/*if (u8GuiSendCnt < 5)// 100ms
+		{
+			u8GuiSendCnt++;
+		}
+		else
+		{
+			u8GuiSendCnt = 0;
+			AppCommUART_SendMsg(UART_NODE_GUI, UART_MSG_GUI_DATA_1);
+		}*/
+		AppCommUART_SendMsg(UART_NODE_GUI, UART_MSG_GUI_DATA_1);
 	#else
-		AppCommUart_SendMsg(UART_NODE_GUI, UART_MSG_GUI_DATA_2);
+		AppCommUART_SendMsg(UART_NODE_GUI, UART_MSG_GUI_DATA_2);
 	#endif
 #endif
 

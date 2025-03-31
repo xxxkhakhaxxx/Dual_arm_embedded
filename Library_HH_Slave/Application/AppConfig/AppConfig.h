@@ -33,9 +33,9 @@
 	#define J3_DIR	(1)
 
 	// Joint calibration: J_real = J_kinematics*J_dir + J_offset
-	#define J1_OFFSET	(-253.0f)
-	#define J2_OFFSET	(-60.0f)
-	#define J3_OFFSET	(-44.0f)
+	#define J1_OFFSET	(-252.73f)
+	#define J2_OFFSET	(-57.83f)
+	#define J3_OFFSET	(-42.73f)
 
 #elif defined(THIS_IS_ARM) && (THIS_IS_ARM == DUAL_ARM_RIGHT)
 	// Right arm setting code here
@@ -43,17 +43,17 @@
 	#define J2_DIR	(1)
 	#define J3_DIR	(-1)
 
-	#define J1_OFFSET	()
-	#define J2_OFFSET	()
-	#define J3_OFFSET	()
+	#define J1_OFFSET	(0)
+	#define J2_OFFSET	(0)
+	#define J3_OFFSET	(0)
 #else
 	#error "Choose arm: DUAL_ARM_LEFT or DUAL_ARM_RIGHT"
 #endif
 
 //#define TEST_UART_SEND				// Init-> Auto send and Receive: Used for checking which UART channel work with DMA and IT
 //#define TEST_UART_CYCLE_NO_FEEDBACK	// Init-> Wait Master-> FeedBack Master-> Wait Master-> Control Motor-> Motor Feedback-> Feedback Master
-#define TEST_UART_CYCLE_MOTOR_DATA	// Init-> ... -> wait Master -> Read motor data -> Cal speed + accel -> Feedback  motor data -> wait Master.
-
+//#define TEST_UART_CYCLE_MOTOR_DATA	// Init-> ... -> wait Master -> Read motor data -> Cal speed + accel -> Feedback  motor data -> wait Master.
+//#define SLAVE_NO_MOTOR_COMM
 
 #define TOTAL_MOTOR_FOR_ONE_ARM	(3)
 #define MOTOR_1		LINGKONG_MG5010E_i10

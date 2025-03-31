@@ -126,7 +126,6 @@ GLOBAL void AppCommUART_UserSetup(UART_HandleTypeDef* huart, enUartNode _node)
 /* Callback function when finished sending uart */
 GLOBAL void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 {
-	AppDataSet_LedState(LED_6_BLUE, TRUE);
 	if (huart->Instance == USART2)
 	{
 		AppDataSet_UartTxWaitFlag(UART_NODE_GUI, FALSE);	// Msg is send
@@ -173,6 +172,7 @@ GLOBAL void AppCommUART_SendMsg(enUartNode _node, enUartMsg _txMsgId)
 	static UART_HandleTypeDef* uartGoal;
 	static U08* sourceTxData;
 	U16 sizeSend = 0;	// if not set value, TxErrCnt++
+	U08 checksum = 0;
 
 
 	// 3. Get UART target and data
@@ -222,7 +222,36 @@ GLOBAL void AppCommUART_SendMsg(enUartNode _node, enUartMsg _txMsgId)
 		break;
 
 	case UART_MSG_GUI_DATA_1:
-		// TODO
+		sourceTxData[0] = MSG_DATA_1_BYTE_0;
+		sourceTxData[1] = MSG_DATA_1_BYTE_1;
+		sourceTxData[2] = MSG_DATA_1_BYTE_2;
+
+		// Cast sourceTxData to 32-bit pointer for direct access
+		uint32_t* txData32 = (uint32_t*)sourceTxData;
+
+		// Joint 11
+		txData32[1] = *(uint32_t*)&myRobotRx[0].Joint[0].Position; // sourceTxData[4-7]
+		txData32[2] = *(uint32_t*)&myRobotRx[0].Joint[0].Speed;    // sourceTxData[8-11]
+		txData32[3] = *(uint32_t*)&myRobotRx[0].Joint[0].Accel;    // sourceTxData[12-15]
+
+		// Joint 21
+		txData32[4] = *(uint32_t*)&myRobotRx[0].Joint[1].Position; // sourceTxData[16-19]
+		txData32[5] = *(uint32_t*)&myRobotRx[0].Joint[1].Speed;    // sourceTxData[20-23]
+		txData32[6] = *(uint32_t*)&myRobotRx[0].Joint[1].Accel;    // sourceTxData[24-27]
+
+		// Joint 31
+		txData32[7] = *(uint32_t*)&myRobotRx[0].Joint[2].Position; // sourceTxData[28-31]
+		txData32[8] = *(uint32_t*)&myRobotRx[0].Joint[2].Speed;    // sourceTxData[32-35]
+		txData32[9] = *(uint32_t*)&myRobotRx[0].Joint[2].Accel;    // sourceTxData[36-39]
+
+		 // Calculate checksum (payload only: byte 4-39)
+		checksum = 0x00;
+		for (int i = 4; i < MSG_DATA_1_LENGTH; i++) {  // Exclude 3 Header bytes + 1 CS byte
+			checksum ^= sourceTxData[i];  // XOR checksum
+		}
+		sourceTxData[3] = checksum;
+
+		sizeSend = MSG_DATA_1_LENGTH;
 		break;
 
 	case UART_MSG_GUI_DATA_2:

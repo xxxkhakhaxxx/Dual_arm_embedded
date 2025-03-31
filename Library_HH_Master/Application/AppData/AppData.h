@@ -55,6 +55,16 @@
 #define MSG_CONTROL_TOR_BYTE_1	(0x05)
 #define MSG_CONTROL_TOR_BYTE_2	(0x05)
 
+#define MSG_DATA_1_LENGTH		(40)	// 3 header + 1 checksum + 3*(4+4+4) payloads
+#define MSG_DATA_1_BYTE_0		(0xF6)
+#define MSG_DATA_1_BYTE_1		(0x06)
+#define MSG_DATA_1_BYTE_2		(0x06)
+
+#define MSG_DATA_2_LENGTH		(40)	// 3 header + 1 checksum + ...
+#define MSG_DATA_2_BYTE_0		(0xF7)
+#define MSG_DATA_2_BYTE_1		(0x07)
+#define MSG_DATA_2_BYTE_2		(0x07)
+
 
 /********************************************************************************
  * TYPEDEFS AND ENUMS

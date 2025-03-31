@@ -138,7 +138,6 @@ GLOBAL void AppDataSet_UartTxWaitFlag(U08 _node, BOOL _flag)
 		if (_flag != myUart[_node].Tx.IsWait)
 		{
 			myUart[_node].Tx.IsWait = _flag;
-			AppDataSet_LedState(LED_3_ORANGE, TRUE);
 		}
 	}
 

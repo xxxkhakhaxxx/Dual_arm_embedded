@@ -26,27 +26,41 @@
  ********************************************************************************/
 typedef struct
 {
-    float q1;
-    float q2;
-    float q3;
-} strRobot;	// Unit: 1 degree/bit
+	struct
+	{
+		float Angle;	// deg   per bit: range -360.0f ~ +360.0f
+		U16 Speed;		// deg/s per bit
+		U08 Direction;	// CC or CCW
+	} JointPos[3];
+
+/*	struct
+	{
+		I32 Speed;
+	} JointVel[3];*/
+
+	struct
+	{
+		I16 CurrentTor;
+	} JointTor[3];
+
+} strRobotDataCommand;
 
 typedef struct
 {
 	struct
 	{
-		float Position;
-		float Speed;
-		float Accel;
+		float Position;	// deg     per bit
+		float Speed;	// deg/s   per bit
+		float Accel;	// deg/s^2 per bit
 	} Joint[3];
-} strRobotRxData;
+} strRobotDataFeedback;
 
 
 /********************************************************************************
  * GLOBAL VARIABLES
  ********************************************************************************/
-extern GLOBAL strRobot strRobotDualArm;
-extern GLOBAL strRobotRxData myRobotRx[2];
+extern GLOBAL strRobotDataCommand  myRobotCommand[DUAL_ARM];			// Trajectory Planning data to be sent to Slave
+extern GLOBAL strRobotDataFeedback myRobotFeedback[DUAL_ARM];		// Motors' data are received from Slave
 
 /********************************************************************************
  * GLOBAL FUNCTION DECLARATION

@@ -62,12 +62,14 @@ PRIVATE float Yaw = 0;
 /********************************************************************************
  * GLOBAL VARIABLES
  ********************************************************************************/
-GLOBAL strRobot strRobotDualArm = {0, };
-GLOBAL strRobotRxData myRobotRx[2] = {0, };
+GLOBAL strRobotDataCommand  myRobotCommand[DUAL_ARM]  = {0, };
+GLOBAL strRobotDataFeedback myRobotFeedback[DUAL_ARM] = {0, };
+
 /********************************************************************************
  * PRIVATE FUNCTION DECLARATION
  ********************************************************************************/
-PRIVATE void _RobotCalculateIK(void);
+PRIVATE void _CalRobotIK(void);
+PRIVATE void _TestPositionToggle(void);
 
 PRIVATE void AppPeriodTask_SetTaskFlag(enTaskList _TaskName);
 PRIVATE void AppPeriodTask_Scheduler(void);
@@ -83,7 +85,7 @@ PRIVATE void AppPeriodTask_Scheduler(void);
 * Output:
 *  - Θ: unit 0.01°, type float pointer, pointer allocation include J1, J2, and J3
  */
-PRIVATE void _RobotCalculateIK(void)
+PRIVATE void _CalRobotIK(void)
 {
 	float x3, y3, c2, s2, c1, s1;
 	float _q1, _q2;
@@ -109,12 +111,34 @@ PRIVATE void _RobotCalculateIK(void)
 	_q1 = atan2(s1,c1);
 
 	/* Calculating Θ_3 */
-	strRobotDualArm.q1 = RAD2DEG(_q1);
-	strRobotDualArm.q2 = RAD2DEG(_q2);
-	strRobotDualArm.q3 = RAD2DEG(Yaw - strRobotDualArm.q1 - strRobotDualArm.q2);
+	myRobotCommand[LEFT_ARM].JointPos[0].Angle = (U32)RAD_TO_DEG001(_q1);
+	myRobotCommand[LEFT_ARM].JointPos[1].Angle = (U32)RAD_TO_DEG001(_q2);
+	myRobotCommand[LEFT_ARM].JointPos[2].Angle = (U32)RAD_TO_DEG001(Yaw - _q1 - _q2);
 	return;
 }
 
+PRIVATE float _angleMag = 10.00;		// Degree range -180 ~ +180
+PRIVATE U16 _speedMag = 10;				// Deg/s
+PRIVATE BOOL _isDirCCW = FALSE;
+PRIVATE void _TestPositionToggle(void)
+{
+	if (FALSE == _isDirCCW)	// 0 -> 10 in CCW
+	{
+		myRobotCommand[LEFT_ARM].JointPos[2].Angle = _angleMag;
+		myRobotCommand[LEFT_ARM].JointPos[2].Speed = _speedMag;
+		myRobotCommand[LEFT_ARM].JointPos[2].Direction = JOINT_DIR_CCW;
+		_isDirCCW = TRUE;
+	}
+	else	// 10 -> -10 (350) in CW
+	{
+		myRobotCommand[LEFT_ARM].JointPos[2].Angle = -_angleMag;
+		myRobotCommand[LEFT_ARM].JointPos[2].Speed = _speedMag;
+		myRobotCommand[LEFT_ARM].JointPos[2].Direction = JOINT_DIR_CW;
+		_isDirCCW = FALSE;
+	}
+
+	return;
+}
 PRIVATE void AppPeriodTask_SetTaskFlag(enTaskList _TaskName)
 {
 	if (_TaskName != enTaskId)
@@ -168,11 +192,14 @@ GLOBAL void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 		{
 			u32TaskTimerCnt_1ms = 0;
 		}*/
-		if (FALSE == bNewSequenceFlag)	// Cycle 10ms
+
+		AppDataCheck_UserButtonState();	// Check user btn every 20ms
+
+		if (FALSE == bNewSequenceFlag)	// Cycle 20ms
 		{
-			bNewSequenceFlag = TRUE;	// Start new sequence every 10ms
+			bNewSequenceFlag = TRUE;	// Start new sequence every 20ms
 		}
-		else	// All tasks take more 10ms to finished
+		else	// All tasks take more 20ms to finished
 		{
 			if (U16_MAX > debug_cnt_task_override)
 			{
@@ -191,7 +218,7 @@ GLOBAL void AppPeriodTask_TaskCall(void)	/* Performing the corresponding task */
 	switch(enTaskId)
 	{
 	case TASK_10MS_ROBOT_IK:
-		_RobotCalculateIK();
+//		_RobotCalculateIK();
 		break;
 	case TASK_10MS_SLAVE_1_COMM:
 
@@ -214,7 +241,7 @@ static BOOL _slave1HandleFlag = FALSE;
 GLOBAL void AppPeriodTask_StateMachineProcess(void)
 {
 //	static BOOL _slave2HandleFlag = FALSE;
-//	static enRobotMode _robotMode = ROBOT_MODE_READ_ONLY;		// The mode that you want to use
+//	static enRobotMode _robotMode = ROBOT_MODE_READ_DATA;		// The mode that you want to use
 	// Full sequence: Init ➩ wait Slave init ➩ Send init to confirm ➩ ...
 	//            ... ➩ Wait 20ms Flag ➩ Request data ➩ Handle data feedback ➩ Calculate control ➩ Send control
 	//                          ↖	⇦   ⇦   ⇦   ⇦   ⇦   ⇦   ⇦   ⇦   ⇦   ⇦   ⇦   ⇦   ⇦   ⇦  GUI feedback ↩
@@ -238,12 +265,11 @@ GLOBAL void AppPeriodTask_StateMachineProcess(void)
 					if (
 						(MSG_INIT_BYTE_0 == RxDataSlaveLeft[0]) && \
 						(MSG_INIT_BYTE_1 == RxDataSlaveLeft[1]) && \
-						(MSG_INIT_BYTE_2 == RxDataSlaveLeft[2])
+						(MSG_INIT_LENGTH == RxDataSlaveLeft[2])
 					)
 					{	// Correct init format
 						AppCommUART_SendMsg(UART_NODE_SLAVE_1, UART_MSG_INIT);
 						_slave1InitFlag = TRUE;
-//						AppDataSet_LedState(LED_5_RED, TRUE);
 					}
 					else
 					{
@@ -291,18 +317,18 @@ GLOBAL void AppPeriodTask_StateMachineProcess(void)
 			if (
 			(MSG_DATA_RESPOND_BYTE_0 == RxDataSlaveLeft[0]) && \
 			(MSG_DATA_RESPOND_BYTE_1 == RxDataSlaveLeft[1]) && \
-			(MSG_DATA_RESPOND_BYTE_2 == RxDataSlaveLeft[2])
+			(MSG_DATA_RESPOND_LENGTH == RxDataSlaveLeft[2])
 			)
 			{
-				memcpy(&myRobotRx[0].Joint[0].Position, &RxDataSlaveLeft[3],  sizeof(float));
-				memcpy(&myRobotRx[0].Joint[0].Speed,    &RxDataSlaveLeft[7],  sizeof(float));
-				memcpy(&myRobotRx[0].Joint[0].Accel,    &RxDataSlaveLeft[11], sizeof(float));
-				memcpy(&myRobotRx[0].Joint[1].Position, &RxDataSlaveLeft[15], sizeof(float));
-				memcpy(&myRobotRx[0].Joint[1].Speed,    &RxDataSlaveLeft[19], sizeof(float));
-				memcpy(&myRobotRx[0].Joint[1].Accel,    &RxDataSlaveLeft[23], sizeof(float));
-				memcpy(&myRobotRx[0].Joint[2].Position, &RxDataSlaveLeft[27], sizeof(float));
-				memcpy(&myRobotRx[0].Joint[2].Speed,    &RxDataSlaveLeft[31], sizeof(float));
-				memcpy(&myRobotRx[0].Joint[2].Accel,    &RxDataSlaveLeft[35], sizeof(float));
+				memcpy(&myRobotFeedback[LEFT_ARM].Joint[0].Position, &RxDataSlaveLeft[3],  sizeof(float));
+				memcpy(&myRobotFeedback[LEFT_ARM].Joint[0].Speed,    &RxDataSlaveLeft[7],  sizeof(float));
+				memcpy(&myRobotFeedback[LEFT_ARM].Joint[0].Accel,    &RxDataSlaveLeft[11], sizeof(float));
+				memcpy(&myRobotFeedback[LEFT_ARM].Joint[1].Position, &RxDataSlaveLeft[15], sizeof(float));
+				memcpy(&myRobotFeedback[LEFT_ARM].Joint[1].Speed,    &RxDataSlaveLeft[19], sizeof(float));
+				memcpy(&myRobotFeedback[LEFT_ARM].Joint[1].Accel,    &RxDataSlaveLeft[23], sizeof(float));
+				memcpy(&myRobotFeedback[LEFT_ARM].Joint[2].Position, &RxDataSlaveLeft[27], sizeof(float));
+				memcpy(&myRobotFeedback[LEFT_ARM].Joint[2].Speed,    &RxDataSlaveLeft[31], sizeof(float));
+				memcpy(&myRobotFeedback[LEFT_ARM].Joint[2].Accel,    &RxDataSlaveLeft[35], sizeof(float));
 				_slave1HandleFlag = TRUE;
 			}
 			else
@@ -326,7 +352,18 @@ GLOBAL void AppPeriodTask_StateMachineProcess(void)
 		AppDataSet_MasterState(MASTER_STATE_SEND_GUI);
 #else
 	#if defined (MASTER_CONTROL_POS)
-		// TODO
+		if (TRUE == AppDataGet_UserButtonEvent())
+		{
+//			AppPeriodTask_TrajectoryPlanning();
+			_TestPositionToggle();	// Calculate position value to be sent
+			AppCommUART_SendMsg(UART_NODE_SLAVE_1, UART_MSG_MOTOR_CONTROL_POS);	// Package and Send
+			AppDataSet_MasterState(MASTER_STATE_SEND_GUI);
+		}
+		else
+		{
+			AppDataSet_MasterState(MASTER_STATE_SEND_GUI);
+		}
+
 	#elif defined (MASTER_CONTROL_VEL)
 		// TODO
 	#elif defined (MASTER_CONTROL_TOR)
@@ -341,17 +378,16 @@ GLOBAL void AppPeriodTask_StateMachineProcess(void)
 #if defined (MASTER_NO_GUI)
 		// Do nothing
 #else
-	#if defined (MASTER_NO_CONTROL)
-		/*if (u8GuiSendCnt < 5)// 100ms
+	#if defined (MASTER_NO_CONTROL) || defined (MASTER_CONTROL_POS)
+		if (u8GuiSendCnt < GUI_SEND_CNT_MAX)// 100ms
 		{
 			u8GuiSendCnt++;
 		}
-		else
+		else	// If PERIOD_CONTROL == PERIOD_GUI_SEND -> Send every PERIOD_CONTROL
 		{
 			u8GuiSendCnt = 0;
 			AppCommUART_SendMsg(UART_NODE_GUI, UART_MSG_GUI_DATA_1);
-		}*/
-		AppCommUART_SendMsg(UART_NODE_GUI, UART_MSG_GUI_DATA_1);
+		}
 	#else
 		AppCommUART_SendMsg(UART_NODE_GUI, UART_MSG_GUI_DATA_2);
 	#endif

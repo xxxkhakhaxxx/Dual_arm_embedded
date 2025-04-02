@@ -172,7 +172,7 @@ GLOBAL void AppCommUART_SendMsg(enUartNode _node, enUartMsg _txMsgId)
 	static UART_HandleTypeDef* uartGoal;
 	static U08* sourceTxData;
 	U16 sizeSend = 0;	// if not set value, TxErrCnt++
-	U08 checksum = 0;
+	U08 checksum = 0x00;
 
 
 	// 3. Get UART target and data
@@ -202,19 +202,40 @@ GLOBAL void AppCommUART_SendMsg(enUartNode _node, enUartMsg _txMsgId)
 	case UART_MSG_INIT:
 		sourceTxData[0] = MSG_INIT_BYTE_0;
 		sourceTxData[1] = MSG_INIT_BYTE_1;
-		sourceTxData[2] = MSG_INIT_BYTE_2;
+		sourceTxData[2] = MSG_INIT_LENGTH;
 		sizeSend = MSG_INIT_LENGTH;
 		break;
 
 	case UART_MSG_MOTOR_DATA:
 		sourceTxData[0] = MSG_DATA_REQUEST_BYTE_0;
 		sourceTxData[1] = MSG_DATA_REQUEST_BYTE_1;
-		sourceTxData[2] = MSG_DATA_REQUEST_BYTE_2;
+		sourceTxData[2] = MSG_DATA_REQUEST_LENGTH;
 		sizeSend = MSG_DATA_REQUEST_LENGTH;
 		break;
 
 	case UART_MSG_MOTOR_CONTROL_POS:
-		// TODO
+		// Payload: q1-dq1-dir1 - q2-dq2-dir2 - q3-dq3-dir3
+		sourceTxData[0] = MSG_CONTROL_POS_BYTE_0;
+		sourceTxData[1] = MSG_CONTROL_POS_BYTE_1;
+		sourceTxData[2] = MSG_CONTROL_POS_LENGTH;
+		sizeSend = MSG_CONTROL_POS_LENGTH;
+
+		memcpy(&sourceTxData[4],  &myRobotCommand[LEFT_ARM].JointPos[0].Angle,     sizeof(float));
+		memcpy(&sourceTxData[8],  &myRobotCommand[LEFT_ARM].JointPos[0].Speed,     sizeof(U16));
+		memcpy(&sourceTxData[10], &myRobotCommand[LEFT_ARM].JointPos[0].Direction, sizeof(U08));
+		memcpy(&sourceTxData[11], &myRobotCommand[LEFT_ARM].JointPos[1].Angle,     sizeof(float));
+		memcpy(&sourceTxData[15], &myRobotCommand[LEFT_ARM].JointPos[1].Speed,     sizeof(U16));
+		memcpy(&sourceTxData[17], &myRobotCommand[LEFT_ARM].JointPos[1].Direction, sizeof(U08));
+		memcpy(&sourceTxData[18], &myRobotCommand[LEFT_ARM].JointPos[2].Angle,     sizeof(float));
+		memcpy(&sourceTxData[22], &myRobotCommand[LEFT_ARM].JointPos[2].Speed,     sizeof(U16));
+		memcpy(&sourceTxData[24], &myRobotCommand[LEFT_ARM].JointPos[2].Direction, sizeof(U08));
+
+		 // Calculate checksum (payload only: byte 4-24)
+		for (int i = 4; i < MSG_CONTROL_POS_LENGTH; i++)
+		{
+			checksum ^= sourceTxData[i];  // XOR checksum
+		}
+		sourceTxData[3] = checksum;
 		break;;
 
 	case UART_MSG_MOTOR_CONTROL_TOR:
@@ -222,36 +243,30 @@ GLOBAL void AppCommUART_SendMsg(enUartNode _node, enUartMsg _txMsgId)
 		break;
 
 	case UART_MSG_GUI_DATA_1:
-		sourceTxData[0] = MSG_DATA_1_BYTE_0;
-		sourceTxData[1] = MSG_DATA_1_BYTE_1;
-		sourceTxData[2] = MSG_DATA_1_BYTE_2;
+		sourceTxData[0] = MSG_GUI_DATA_1_BYTE_0;
+		sourceTxData[1] = MSG_GUI_DATA_1_BYTE_1;
+		sourceTxData[2] = MSG_GUI_DATA_1_LENGTH;
+		sizeSend = MSG_GUI_DATA_1_LENGTH;
 
 		// Cast sourceTxData to 32-bit pointer for direct access
 		uint32_t* txData32 = (uint32_t*)sourceTxData;
 
-		// Joint 11
-		txData32[1] = *(uint32_t*)&myRobotRx[0].Joint[0].Position; // sourceTxData[4-7]
-		txData32[2] = *(uint32_t*)&myRobotRx[0].Joint[0].Speed;    // sourceTxData[8-11]
-		txData32[3] = *(uint32_t*)&myRobotRx[0].Joint[0].Accel;    // sourceTxData[12-15]
-
-		// Joint 21
-		txData32[4] = *(uint32_t*)&myRobotRx[0].Joint[1].Position; // sourceTxData[16-19]
-		txData32[5] = *(uint32_t*)&myRobotRx[0].Joint[1].Speed;    // sourceTxData[20-23]
-		txData32[6] = *(uint32_t*)&myRobotRx[0].Joint[1].Accel;    // sourceTxData[24-27]
-
-		// Joint 31
-		txData32[7] = *(uint32_t*)&myRobotRx[0].Joint[2].Position; // sourceTxData[28-31]
-		txData32[8] = *(uint32_t*)&myRobotRx[0].Joint[2].Speed;    // sourceTxData[32-35]
-		txData32[9] = *(uint32_t*)&myRobotRx[0].Joint[2].Accel;    // sourceTxData[36-39]
+		txData32[1] = *(uint32_t*)&myRobotFeedback[LEFT_ARM].Joint[0].Position; // sourceTxData[4-7]
+		txData32[2] = *(uint32_t*)&myRobotFeedback[LEFT_ARM].Joint[0].Speed;    // sourceTxData[8-11]
+		txData32[3] = *(uint32_t*)&myRobotFeedback[LEFT_ARM].Joint[0].Accel;    // sourceTxData[12-15]
+		txData32[4] = *(uint32_t*)&myRobotFeedback[LEFT_ARM].Joint[1].Position; // sourceTxData[16-19]
+		txData32[5] = *(uint32_t*)&myRobotFeedback[LEFT_ARM].Joint[1].Speed;    // sourceTxData[20-23]
+		txData32[6] = *(uint32_t*)&myRobotFeedback[LEFT_ARM].Joint[1].Accel;    // sourceTxData[24-27]
+		txData32[7] = *(uint32_t*)&myRobotFeedback[LEFT_ARM].Joint[2].Position; // sourceTxData[28-31]
+		txData32[8] = *(uint32_t*)&myRobotFeedback[LEFT_ARM].Joint[2].Speed;    // sourceTxData[32-35]
+		txData32[9] = *(uint32_t*)&myRobotFeedback[LEFT_ARM].Joint[2].Accel;    // sourceTxData[36-39]
 
 		 // Calculate checksum (payload only: byte 4-39)
-		checksum = 0x00;
-		for (int i = 4; i < MSG_DATA_1_LENGTH; i++) {  // Exclude 3 Header bytes + 1 CS byte
+		for (int i = 4; i < MSG_GUI_DATA_1_LENGTH; i++)
+		{
 			checksum ^= sourceTxData[i];  // XOR checksum
 		}
 		sourceTxData[3] = checksum;
-
-		sizeSend = MSG_DATA_1_LENGTH;
 		break;
 
 	case UART_MSG_GUI_DATA_2:

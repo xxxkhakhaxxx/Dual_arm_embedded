@@ -28,14 +28,17 @@
 // Mapping direction and offset from Real joint to Kinematics
 #if defined(THIS_IS_ARM) && (THIS_IS_ARM == DUAL_ARM_LEFT)
 	// Left arm setting code here
-	#define J1_DIR	(1)
-	#define J2_DIR	(-1)
-	#define J3_DIR	(1)
+	#define J1_DIR	((I08)(1))
+	#define J2_DIR	((I08)(-1))
+	#define J3_DIR	((I08)(1))
 
 	// Joint calibration: J_real = J_kinematics*J_dir + J_offset
-	#define J1_OFFSET	(-252.73f)
-	#define J2_OFFSET	(-57.83f)
-	#define J3_OFFSET	(-42.73f)
+	#define J1_OFFSET_REAL2KINE	(-252.73f)
+	#define J2_OFFSET_REAL2KINE	(-57.83f)
+	#define J3_OFFSET_REAL2KINE	(-42.73f)
+	#define J1_OFFSET_KINE2REAL	((I32)(10727))
+	#define J2_OFFSET_KINE2REAL	((I32)(30217))
+	#define J3_OFFSET_KINE2REAL	((I32)(31727))
 
 #elif defined(THIS_IS_ARM) && (THIS_IS_ARM == DUAL_ARM_RIGHT)
 	// Right arm setting code here
@@ -43,12 +46,16 @@
 	#define J2_DIR	(1)
 	#define J3_DIR	(-1)
 
-	#define J1_OFFSET	(0)
-	#define J2_OFFSET	(0)
-	#define J3_OFFSET	(0)
+	#define J1_OFFSET_REAL2KINE	(0.0f)
+	#define J2_OFFSET_REAL2KINE	(0.0f)
+	#define J3_OFFSET_REAL2KINE	(0.0f)
+	#define J1_OFFSET_KINE2REAL	((I32)(0))
+	#define J2_OFFSET_KINE2REAL	((I32)(0))
+	#define J3_OFFSET_KINE2REAL	((I32)(0))
 #else
 	#error "Choose arm: DUAL_ARM_LEFT or DUAL_ARM_RIGHT"
 #endif
+
 
 //#define TEST_UART_SEND				// Init-> Auto send and Receive: Used for checking which UART channel work with DMA and IT
 //#define TEST_UART_CYCLE_NO_FEEDBACK	// Init-> Wait Master-> FeedBack Master-> Wait Master-> Control Motor-> Motor Feedback-> Feedback Master

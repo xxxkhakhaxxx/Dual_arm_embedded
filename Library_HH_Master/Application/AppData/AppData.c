@@ -120,6 +120,53 @@ GLOBAL void AppDataSet_LedState(uint16_t _ledName, BOOL _ledState)
 	return;
 }
 
+/************ BUTTON MANAGE FUNCTION  ************/
+PRIVATE volatile BOOL _userButtonEvent = FALSE;
+PRIVATE U08 btnPrevState = BUTTON_RELEASED; // Default to not pressed (pull-up)
+PRIVATE U32 lastChangeTime = 0;
+GLOBAL BOOL AppDataGet_UserButtonEvent(void)
+{
+	if (TRUE == _userButtonEvent)
+	{
+		_userButtonEvent = FALSE;
+		return TRUE;
+	}
+	return FALSE;
+}
+
+GLOBAL void AppDataCheck_UserButtonState(void)
+{
+	BOOL btnCurrState = HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_0) == GPIO_PIN_RESET ? BUTTON_RELEASED : BUTTON_PRESSED;
+	U32 currentTime = HAL_GetTick();
+
+	if (btnCurrState != btnPrevState)
+	{
+		if (currentTime - lastChangeTime >= BUTTON_DEBOUNCE_DELAY_MS)
+		{
+			// Stable state change detected
+			if (
+			(BUTTON_RELEASED == btnPrevState) && \
+			(BUTTON_PRESSED == btnCurrState))
+			{
+				// Pressed down (not setting event yet)
+			}
+			else if (
+			(BUTTON_PRESSED == btnPrevState) && \
+			(BUTTON_RELEASED == btnCurrState))
+			{
+				// Released - set event
+				_userButtonEvent = TRUE;
+			}
+			btnPrevState = btnCurrState;
+		}
+	}
+	else
+	{
+		lastChangeTime = currentTime;
+	}
+}
+
+
 /************ UART TX MANAGE FUNCTION  ************/
 GLOBAL BOOL AppDataGet_UartTxWaitFlag(U08 _node)
 {

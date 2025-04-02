@@ -517,7 +517,8 @@ GLOBAL void ApiProtocolMotorMG_SetAngleSingle(enMotorId _u8MotorId, U32 _u32Angl
 	case MOTOR_2_ID:
 	case MOTOR_3_ID:
 		strRobotArmMotorTx[_u8MotorId].Control.bDirection     = _bDirection;
-		strRobotArmMotorTx[_u8MotorId].Control.u32SingleAngle = CONSTRAIN(_u32Angle*MOTOR_MG_xx10_GEAR, 0, MOTOR_MG_SINGLE_ANGLE_CONSTRAINT);
+//		strRobotArmMotorTx[_u8MotorId].Control.u32SingleAngle = CONSTRAIN(_u32Angle*MOTOR_MG_xx10_GEAR, 0, MOTOR_MG_SINGLE_ANGLE_CONSTRAINT);
+		strRobotArmMotorTx[_u8MotorId].Control.u32SingleAngle = CONSTRAIN(_u32Angle, 0, MOTOR_MG_SINGLE_ANGLE_CONSTRAINT);	// TEMP
 		strRobotArmMotorTx[_u8MotorId].Control.u16SingleSpeed = _u16Speed*MOTOR_MG_xx10_GEAR;
 
 		break;
@@ -620,54 +621,54 @@ GLOBAL void ApiProtocolMotorMG_SetEncodeOffset(enMotorId _u8MotorId, U16 _u16Off
 ////	case MOTOR_CMD_READ_MECHANICAL_STATE:
 ////	case MOTOR_CMD_READ_ELECTRIC_STATE:
 //	case 1:
-//		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_SET_ON);
+//		AppCommCAN_SendMotorMsg(MOTOR_1_ID, MOTOR_CMD_SET_ON);
 //		break;
 //	case 2:
-//		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_SET_OFF);
+//		AppCommCAN_SendMotorMsg(MOTOR_1_ID, MOTOR_CMD_SET_OFF);
 //		break;
 //	case 3:
-//		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_SET_STOP);
+//		AppCommCAN_SendMotorMsg(MOTOR_1_ID, MOTOR_CMD_SET_STOP);
 //		break;
 //	case 4:
-//		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_READ_PID);
+//		AppCommCAN_SendMotorMsg(MOTOR_1_ID, MOTOR_CMD_READ_PID);
 //		break;
 //	case 5:
-//		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_READ_ACCEL);
+//		AppCommCAN_SendMotorMsg(MOTOR_1_ID, MOTOR_CMD_READ_ACCEL);
 //		break;
 //	case 6:
-//		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_READ_ENCODER);
+//		AppCommCAN_SendMotorMsg(MOTOR_1_ID, MOTOR_CMD_READ_ENCODER);
 //		break;
 //	case 7:
-////		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_WRITE_ENCODER_ZERO_ROM);
+////		AppCommCAN_SendMotorMsg(MOTOR_1_ID, MOTOR_CMD_WRITE_ENCODER_ZERO_ROM);
 //		break;
 //	case 8:
-//		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_READ_POSITION_MULTILOOP);
+//		AppCommCAN_SendMotorMsg(MOTOR_1_ID, MOTOR_CMD_READ_POSITION_MULTILOOP);
 //		break;
 //	case 9:
-//		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_READ_POSITION_SINGLELOOP);
+//		AppCommCAN_SendMotorMsg(MOTOR_1_ID, MOTOR_CMD_READ_POSITION_SINGLELOOP);
 //		break;
 //	case 10:
-//		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_READ_ERROR);
+//		AppCommCAN_SendMotorMsg(MOTOR_1_ID, MOTOR_CMD_READ_ERROR);
 //		break;
 //	case 11:
-//		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_CLEAR_ERROR);
+//		AppCommCAN_SendMotorMsg(MOTOR_1_ID, MOTOR_CMD_CLEAR_ERROR);
 //		break;
 //	case 12:
-//		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_READ_MECHANICAL_STATE);
+//		AppCommCAN_SendMotorMsg(MOTOR_1_ID, MOTOR_CMD_READ_MECHANICAL_STATE);
 //		break;
 //	case 13:
-//		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_READ_ELECTRIC_STATE);
+//		AppCommCAN_SendMotorMsg(MOTOR_1_ID, MOTOR_CMD_READ_ELECTRIC_STATE);
 //		break;
 //	case 14:
-//		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_CONTROL_POSITION_MULTILOOP_2);
+//		AppCommCAN_SendMotorMsg(MOTOR_1_ID, MOTOR_CMD_CONTROL_POSITION_MULTILOOP_2);
 //		break;
 //	case 15:
-//		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_CONTROL_POSITION_SINGLELOOP_2);
+//		AppCommCAN_SendMotorMsg(MOTOR_1_ID, MOTOR_CMD_CONTROL_POSITION_SINGLELOOP_2);
 //		break;
 //	case 16:
 //		strRobotArmMotorTx[MOTOR_1_ID].Control.i32JogAngle = 180*100*MOTOR_1_GEARBOX;
 //		strRobotArmMotorTx[MOTOR_1_ID].Control.u16JogSpeed = 90*MOTOR_1_GEARBOX;
-//		AppCommCAN_SendMotorMessage(MOTOR_1_ID, MOTOR_CMD_CONTROL_POSITION_JOG_2);
+//		AppCommCAN_SendMotorMsg(MOTOR_1_ID, MOTOR_CMD_CONTROL_POSITION_JOG_2);
 //		break;
 //	default:
 //		break;

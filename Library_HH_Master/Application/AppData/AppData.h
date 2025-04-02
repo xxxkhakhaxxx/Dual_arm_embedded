@@ -25,46 +25,42 @@
 #define LED_6_BLUE		GPIO_PIN_15
 #define LED_PORT		GPIOD
 
-#define MSG_INIT_LENGTH	(3)				// 3 header + 0 payloads
+#define BUTTON_DEBOUNCE_DELAY_MS	(50)
+#define BUTTON_PRESSED				(FALSE)
+#define BUTTON_RELEASED				(TRUE)
+
+// UART frame: 2 msg bytes + 1 length byte + 1 checksum byte (optional) + payload (optional)
+#define MSG_INIT_LENGTH	(3)				// 3 header + 0 checksum + 0 payloads
 #define MSG_INIT_BYTE_0	(0xA1)
 #define MSG_INIT_BYTE_1	(0x01)
-#define MSG_INIT_BYTE_2	(0x01)
 
-#define MSG_DATA_REQUEST_LENGTH	(3)		// 3 header + 0 payloads
+#define MSG_DATA_REQUEST_LENGTH	(3)		// 3 header + 0 checksum + 0 payloads
 #define MSG_DATA_REQUEST_BYTE_0	(0xB2)
 #define MSG_DATA_REQUEST_BYTE_1	(0x02)
-#define MSG_DATA_REQUEST_BYTE_2	(0x02)
 
-#define MSG_DATA_RESPOND_LENGTH	(39)	// 3 header + 3*(4+4+4) payloads
+#define MSG_DATA_RESPOND_LENGTH	(40)	// 3 header + 1 checksum + 3*(4+4+4) payloads
 #define MSG_DATA_RESPOND_BYTE_0	(0xB2)
 #define MSG_DATA_RESPOND_BYTE_1	(0x02)
-#define MSG_DATA_RESPOND_BYTE_2	(0x02)
 
-#define MSG_CONTROL_POS_LENGTH	(30)	// 3 header + 3*(4+2+1) payloads
+#define MSG_CONTROL_POS_LENGTH	(25)	// 3 header + 1 checksum + 3*(4+2+1) payloads
 #define MSG_CONTROL_POS_BYTE_0	(0xC3)
 #define MSG_CONTROL_POS_BYTE_1	(0x03)
-#define MSG_CONTROL_POS_BYTE_2	(0x03)
-
-#define MSG_CONTROL_VEL_LENGTH	(15)	// 3 header + 3*4 payloads
+/*
+#define MSG_CONTROL_VEL_LENGTH	()	// 3 header + 3*4 payloads
 #define MSG_CONTROL_VEL_BYTE_0	(0xD4)
-#define MSG_CONTROL_VEL_BYTE_1	(0x04)
-#define MSG_CONTROL_VEL_BYTE_2	(0x04)
+#define MSG_CONTROL_VEL_BYTE_1	(0x04)*/
 
-#define MSG_CONTROL_TOR_LENGTH	(15)	// 3 header + 3*4 payloads
+#define MSG_CONTROL_TOR_LENGTH	(10)	// 3 header + 1 checksum + 3*(2) payloads
 #define MSG_CONTROL_TOR_BYTE_0	(0xE5)
 #define MSG_CONTROL_TOR_BYTE_1	(0x05)
-#define MSG_CONTROL_TOR_BYTE_2	(0x05)
 
-#define MSG_DATA_1_LENGTH		(40)	// 3 header + 1 checksum + 3*(4+4+4) payloads
-#define MSG_DATA_1_BYTE_0		(0xF6)
-#define MSG_DATA_1_BYTE_1		(0x06)
-#define MSG_DATA_1_BYTE_2		(0x06)
+#define MSG_GUI_DATA_1_LENGTH	(40)	// 3 header + 1 checksum + 3*(4+4+4) payloads
+#define MSG_GUI_DATA_1_BYTE_0	(0xF6)
+#define MSG_GUI_DATA_1_BYTE_1	(0x06)
 
-#define MSG_DATA_2_LENGTH		(40)	// 3 header + 1 checksum + ...
-#define MSG_DATA_2_BYTE_0		(0xF7)
-#define MSG_DATA_2_BYTE_1		(0x07)
-#define MSG_DATA_2_BYTE_2		(0x07)
-
+#define MSG_GUI_DATA_2_LENGTH	(40)	// 3 header + 1 checksum + ...
+#define MSG_GUI_DATA_2_BYTE_0	(0xF7)
+#define MSG_GUI_DATA_2_BYTE_1	(0x07)
 
 /********************************************************************************
  * TYPEDEFS AND ENUMS
@@ -84,7 +80,7 @@ typedef enum ENUM_MASTER_STATE_LIST
 typedef enum ENUM_ROBOT_MODE
 {
 	ROBOT_MODE_INIT = 0,
-	ROBOT_MODE_READ_ONLY,
+	ROBOT_MODE_READ_DATA,
 	ROBOT_MODE_POSITION,
 	ROBOT_MODE_VELOCITY,
 	ROBOT_MODE_TORQUE,
@@ -103,6 +99,8 @@ typedef enum ENUM_ROBOT_MODE
 GLOBAL enMasterStateList AppDataGet_MasterState(void);
 GLOBAL void AppDataSet_MasterState(enMasterStateList _state);
 GLOBAL void AppDataSet_LedState(uint16_t pin_name, BOOL _state);
+GLOBAL BOOL AppDataGet_UserButtonEvent(void);
+GLOBAL void AppDataCheck_UserButtonEvent(BOOL _flag);
 
 /************ UART TX MANAGE FUNCTION  ************/
 GLOBAL BOOL AppDataGet_UartTxWaitFlag(U08 _node);				// if you don't want to use this flag, you should handle Tx success or not

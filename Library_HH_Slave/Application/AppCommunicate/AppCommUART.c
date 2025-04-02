@@ -45,11 +45,33 @@ GLOBAL U08 TxDataMaster[UART_BUFFER_SIZE] = {0, };
 /********************************************************************************
  * PRIVATE FUNCTION DECLARATION
  ********************************************************************************/
+PRIVATE U32 _PosControl_ConvertKineUnit2MotorUnit(float _angleRxFromMaster, I32 _offset, I08 _dir);
 
 
 /********************************************************************************
  * PRIVATE FUNCTION IMPLEMENTATION
  ********************************************************************************/
+PRIVATE U32 _PosControl_ConvertKineUnit2MotorUnit(float _angleRxFromMaster, I32 _offset, I08 _dir)
+{	/************************ CALCULATE OFFSET ************************
+	 *   Joint  |  kine_value  |  motor_value   |   offset_value
+	 * -----------------------------------------------------------
+	 *    q11   |    252.73    |   36000 & 0   ->      +10727
+	 *    q11   |      0       |       10727   ->      +10727
+	 *    q11   |     10       |       11727   ->      +10727
+	 * -----------------------------------------------------------
+	 *    q21   |      0       |       30217   ->      +30217
+	 *    q21   |     10       |       29217   ->      +30217
+	 *    q31   |     57.83    |   36000 & 0   ->      +30217
+	 ******************************************************************/
+
+	// Scale, offset, and handle wrapping
+	I32 _angleTxToMotor = (I32)roundf(_angleRxFromMaster * 100.0f * _dir) + _offset;
+
+	// Wrap negative values and clamp to [0, 36000)
+	_angleTxToMotor = (_angleTxToMotor % 36000 + 36000) % 36000;
+	return (U32)_angleTxToMotor;
+}
+
 
 /********************************************************************************
  * GLOBAL FUNCTION IMPLEMENTATION
@@ -131,7 +153,7 @@ GLOBAL void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
  * 		2/ Default Case in _txMsgId Switch: The default case in the _txMsgId switch does nothing and returns.
  * 		                                    This is fine, but you might want to log an error or handle it differently.
  */
-GLOBAL void AppCommUART_SendMsg(enUartNode _node, enUartMsg _txMsgId)
+GLOBAL void AppCommUART_SendMsg(enUartNode _node, enUartMsg _txMsgId)	// TODO: return send result
 {
 	// 1. Safety check
 	if (TRUE == AppDataGet_UartTxWaitFlag(_node))
@@ -166,34 +188,36 @@ GLOBAL void AppCommUART_SendMsg(enUartNode _node, enUartMsg _txMsgId)
 	case UART_MSG_INIT:
 		sourceTxData[0] = MSG_INIT_BYTE_0;
 		sourceTxData[1] = MSG_INIT_BYTE_1;
-		sourceTxData[2] = MSG_INIT_BYTE_2;
+		sourceTxData[2] = MSG_INIT_LENGTH;
 		sizeSend = MSG_INIT_LENGTH;
 		break;
 
 	case UART_MSG_MOTOR_DATA:
 		sourceTxData[0] = MSG_DATA_RESPOND_BYTE_0;
 		sourceTxData[1] = MSG_DATA_RESPOND_BYTE_1;
-		sourceTxData[2] = MSG_DATA_RESPOND_BYTE_2;
+		sourceTxData[2] = MSG_DATA_RESPOND_LENGTH;
 
 		// Equation: J_real = J_kine*J_dir + J_offset
 		// Equation: J_kine = (J_real - J_offset)*J_dir
 		// Motor 0 (Joint 1)
-		j_kinematics = (myMotor[0].currPosition - J1_OFFSET) * J1_DIR;
-		memcpy(&sourceTxData[3] ,  &j_kinematics,           sizeof(float));
-		memcpy(&sourceTxData[7] ,  &myMotor[0].currSpeed,   sizeof(float));
-		memcpy(&sourceTxData[11],  &myMotor[0].currAccel,   sizeof(float));
+		j_kinematics = (myMotorToMaster[0].currPosition - J1_OFFSET_REAL2KINE) * J1_DIR;
+		//j_kinematics = RAW_TO_KIN(myMotorToMaster[0].currPosition, J1_OFFSET, J1_DIR);	// Float
+		memcpy(&sourceTxData[3] ,  &j_kinematics,                   sizeof(float));
+		memcpy(&sourceTxData[7] ,  &myMotorToMaster[0].currSpeed,   sizeof(float));
+		memcpy(&sourceTxData[11],  &myMotorToMaster[0].currAccel,   sizeof(float));
 
-		// Motor 1 (Joint 2)
-		j_kinematics = (myMotor[1].currPosition - J2_OFFSET) * J2_DIR;
-		memcpy(&sourceTxData[15], &j_kinematics,            sizeof(float));
-		memcpy(&sourceTxData[19], &myMotor[1].currSpeed,    sizeof(float));
-		memcpy(&sourceTxData[23], &myMotor[1].currAccel,    sizeof(float));
+		j_kinematics = (myMotorToMaster[1].currPosition - J2_OFFSET_REAL2KINE) * J2_DIR;
+		//j_kinematics = RAW_TO_KIN(myMotorToMaster[1].currPosition, J2_OFFSET, J2_DIR);
+		memcpy(&sourceTxData[15], &j_kinematics,                    sizeof(float));
+		memcpy(&sourceTxData[19], &myMotorToMaster[1].currSpeed,    sizeof(float));
+		memcpy(&sourceTxData[23], &myMotorToMaster[1].currAccel,    sizeof(float));
 
 		// Motor 2 (Joint 3)
-		j_kinematics = (myMotor[2].currPosition - J3_OFFSET) * J3_DIR;
-		memcpy(&sourceTxData[27], &j_kinematics,            sizeof(float));
-		memcpy(&sourceTxData[31], &myMotor[2].currSpeed,    sizeof(float));
-		memcpy(&sourceTxData[35], &myMotor[2].currAccel,    sizeof(float));
+		j_kinematics = (myMotorToMaster[2].currPosition - J3_OFFSET_REAL2KINE) * J3_DIR;
+		//j_kinematics = RAW_TO_KIN(myMotorToMaster[2].currPosition, J3_OFFSET, J3_DIR);
+		memcpy(&sourceTxData[27], &j_kinematics,                    sizeof(float));
+		memcpy(&sourceTxData[31], &myMotorToMaster[2].currSpeed,    sizeof(float));
+		memcpy(&sourceTxData[35], &myMotorToMaster[2].currAccel,    sizeof(float));
 		sizeSend = MSG_DATA_RESPOND_LENGTH;
 		break;
 
@@ -269,31 +293,50 @@ GLOBAL void AppCommUart_RecvMsgStart(enUartNode _node)
 	return;
 }
 
-GLOBAL void AppCommUart_RecvMasterMsg(enUartMsg _rxMsgId)
+GLOBAL void AppCommUart_RecvMasterMsg(enUartMsg _rxMsgId)	// TODO: Return recv result
 {
 	// 1. Initialize variables
-	U32 _angle;
+	float _angleRx;
+	U32 _angleTx;
 	U16 _speed;
-	BOOL _direction;	// 0 = CW, 1 = CCW
+	U08 _direction;	// 0 = CW, 1 = CCW
+	U08 checksum = 0x00;
+
+	// 2. Check checksum and save data
 	switch (_rxMsgId)
 	{
 	case UART_MSG_MOTOR_CONTROL_POS:
-		// TODO
-		memcpy(&_angle, &RxDataMaster[3], sizeof(float));
-		memcpy(&_speed, &RxDataMaster[7], sizeof(U16));
-		_direction = RxDataMaster[9];
-		ApiProtocolMotorMG_SetAngleSingle(MOTOR_1_ID, _angle, _speed, _direction);
+		 // Check checksum correct or not(payload only: byte 4-24)
+		for (int i = 4; i < MSG_CONTROL_POS_LENGTH; i++)
+		{
+			checksum ^= RxDataMaster[i];  // XOR checksum
+		}
+		if (checksum != RxDataMaster[3])
+		{
+			// Wrong checksum
+			return;
+		}
 
-		memcpy(&_angle, &RxDataMaster[10], sizeof(float));
-		memcpy(&_speed, &RxDataMaster[14], sizeof(U16));
-		_direction = RxDataMaster[16];
-		ApiProtocolMotorMG_SetAngleSingle(MOTOR_2_ID, _angle, _speed, _direction);
+		// Payloads: q1-dq1-dir1 - q2-dq2-dir2 - q3-dq3-dir3
+		memcpy(&_angleRx,   &RxDataMaster[4],  sizeof(float));
+		memcpy(&_speed,     &RxDataMaster[8],  sizeof(U16));
+		memcpy(&_direction, &RxDataMaster[10], sizeof(U08));
+		_angleTx = _PosControl_ConvertKineUnit2MotorUnit(_angleRx, J1_OFFSET_KINE2REAL, J1_DIR);
+		ApiProtocolMotorMG_SetAngleSingle(MOTOR_1_ID, _angleTx, _speed, _direction);
 
-		memcpy(&_angle, &RxDataMaster[17], sizeof(float));
-		memcpy(&_speed, &RxDataMaster[21], sizeof(U16));
-		_direction = RxDataMaster[23];
-		ApiProtocolMotorMG_SetAngleSingle(MOTOR_3_ID, _angle, _speed, _direction);
+		memcpy(&_angleRx,   &RxDataMaster[11], sizeof(float));
+		memcpy(&_speed,     &RxDataMaster[15], sizeof(U16));
+		memcpy(&_direction, &RxDataMaster[17], sizeof(U08));
+		_angleTx = _PosControl_ConvertKineUnit2MotorUnit(_angleRx, J2_OFFSET_KINE2REAL, J2_DIR);
+		ApiProtocolMotorMG_SetAngleSingle(MOTOR_2_ID, _angleTx, _speed, _direction);
+
+		memcpy(&_angleRx,   &RxDataMaster[18], sizeof(float));
+		memcpy(&_speed,     &RxDataMaster[22], sizeof(U16));
+		memcpy(&_direction, &RxDataMaster[24], sizeof(U08));
+		_angleTx = _PosControl_ConvertKineUnit2MotorUnit(_angleRx, J3_OFFSET_KINE2REAL, J3_DIR);
+		ApiProtocolMotorMG_SetAngleSingle(MOTOR_3_ID, _angleTx, _speed, _direction);
 		break;
+
 	case UART_MSG_MOTOR_CONTROL_TOR:
 		// TODO
 		break;

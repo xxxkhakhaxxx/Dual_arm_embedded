@@ -198,6 +198,7 @@ GLOBAL void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 		if (FALSE == bNewSequenceFlag)	// Cycle 20ms
 		{
 			bNewSequenceFlag = TRUE;	// Start new sequence every 20ms
+			AppDataSet_LedState(LED_3_ORANGE, FALSE);
 		}
 		else	// All tasks take more 20ms to finished
 		{
@@ -308,6 +309,14 @@ GLOBAL void AppPeriodTask_StateMachineProcess(void)
 		else
 		{
 			// Wait timer 2 trigger for new sequence
+
+			// If a Rx msg received during this state -> Something's abnormal on the system sequence -> need check if happen
+			if (TRUE == AppDataGet_UartRxNewFlag(UART_NODE_SLAVE_1))
+			{
+				AppDataSet_UartRxErrCnt(UART_NODE_SLAVE_1);		// Receive un-support message ID in this Master state
+				AppDataSet_UartRxMsgCnt(UART_NODE_SLAVE_1);
+				AppDataSet_UartRxNewFlag(UART_NODE_SLAVE_1, FALSE);
+			}
 		}
 		break;
 

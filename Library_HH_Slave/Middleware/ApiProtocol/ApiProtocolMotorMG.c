@@ -517,8 +517,7 @@ GLOBAL void ApiProtocolMotorMG_SetAngleSingle(enMotorId _u8MotorId, U32 _u32Angl
 	case MOTOR_2_ID:
 	case MOTOR_3_ID:
 		strRobotArmMotorTx[_u8MotorId].Control.bDirection     = _bDirection;
-//		strRobotArmMotorTx[_u8MotorId].Control.u32SingleAngle = CONSTRAIN(_u32Angle*MOTOR_MG_xx10_GEAR, 0, MOTOR_MG_SINGLE_ANGLE_CONSTRAINT);
-		strRobotArmMotorTx[_u8MotorId].Control.u32SingleAngle = CONSTRAIN(_u32Angle, 0, MOTOR_MG_SINGLE_ANGLE_CONSTRAINT);	// TEMP
+		strRobotArmMotorTx[_u8MotorId].Control.u32SingleAngle = CONSTRAIN(_u32Angle*MOTOR_MG_xx10_GEAR, 0, MOTOR_MG_SINGLE_ANGLE_CONSTRAINT*MOTOR_MG_xx10_GEAR);
 		strRobotArmMotorTx[_u8MotorId].Control.u16SingleSpeed = _u16Speed*MOTOR_MG_xx10_GEAR;
 
 		break;

@@ -412,9 +412,17 @@ GLOBAL void AppPeriodTask_StateMachineProcess(void)
 					AppDataSet_SlaveState(SLAVE_STATE_INIT);	// Back to init state
 					_slaveInitFlag = TRUE;
 				}
-				else	// Wait for master request
+				else	// back to wait Master state
 				{
-					AppCommUART_SendMsg(UART_NODE_MASTER, UART_MSG_MOTOR_DATA);
+					if (ROBOT_MODE_READ_DATA == _robotMode)
+					{	// Only feedback when it's read data command
+						AppCommUART_SendMsg(UART_NODE_MASTER, UART_MSG_MOTOR_DATA);
+					}
+					else
+					{	// Start waiting new request from master
+						AppCommUart_RecvMsgStart(UART_NODE_MASTER);
+					}
+
 					AppDataSet_SlaveState(SLAVE_STATE_WAIT_MASTER_REQUEST);		// Wait for new request from Master
 				}
 			}

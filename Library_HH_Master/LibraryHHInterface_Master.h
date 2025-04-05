@@ -25,12 +25,11 @@
 
 // Must add "Library_HH" as a source folder
 #include "./Middleware/ApiMacro/ApiMacro.h"
-#include "./Middleware/ApiController/ApiControllerPID.h"
-#include "./Middleware/ApiController/ApiControllerSMC.h"
 
 #include "./Application/AppConfig/AppConfig.h"
 #include "./Application/AppData/AppData.h"
 #include "./Application/AppCommunicate/AppCommUART.h"
+#include "./Application/AppControl/AppControl.h"
 #include "./Application/AppPeriod/AppPeriodTask.h"
 
 

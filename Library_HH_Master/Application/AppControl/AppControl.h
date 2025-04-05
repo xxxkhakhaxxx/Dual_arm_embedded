@@ -34,6 +34,8 @@
 /********************************************************************************
  * GLOBAL FUNCTION DECLARATION
  ********************************************************************************/
+GLOBAL void AppControl_CalRobotIK(void);
+GLOBAL void AppControl_Pos_TestSquence(void);
 
 
 

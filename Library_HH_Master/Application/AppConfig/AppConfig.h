@@ -35,8 +35,13 @@
 #define LEFT_ARM		(0)
 #define RIGHT_ARM		(1)
 #define DUAL_ARM		(2)			// Left arm and Right arm
+
 #define JOINT_DIR_Z_POS		TRUE	// Positive direction in kinematics
 #define JOINT_DIR_Z_NEG		FALSE	// Negative direction in kinematics
+#define L1				((float)253.0) /* Length of 1st link - mm */
+#define L2				((float)253.0) /* Length of 2nd link - mm */
+#define L3				((float)139.0) /* Length of 3rd link - mm */
+#define D2R				(0.01745329F)
 
 #define PERIOD_CONTROL		(20)	// Update this base on your timer 2 (Unit: ms)
 #define PERIOD_GUI_SEND		(20)	// Unit: ms

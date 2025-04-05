@@ -24,13 +24,18 @@
 #define DUAL_ARM_LEFT	1
 #define DUAL_ARM_RIGHT	2
 #define THIS_IS_ARM 	DUAL_ARM_LEFT
+#define JOINT_DIR_Z_POS		TRUE	// Positive direction in kinematics
+#define JOINT_DIR_Z_NEG		FALSE	// Negative direction in kinematics
 
 // Mapping direction and offset from Real joint to Kinematics
 #if defined(THIS_IS_ARM) && (THIS_IS_ARM == DUAL_ARM_LEFT)
 	// Left arm setting code here
-	#define J1_DIR	((I08)(1))
-	#define J2_DIR	((I08)(-1))
-	#define J3_DIR	((I08)(1))
+	#define J1_DIR_KINE2REAL	((I08)(1))
+	#define J2_DIR_KINE2REAL	((I08)(-1))
+	#define J3_DIR_KINE2REAL	((I08)(1))
+	#define J1_DIR_REAL2KINE	((I08)(1))
+	#define J2_DIR_REAL2KINE	((I08)(-1))
+	#define J3_DIR_REAL2KINE	((I08)(1))
 
 	// Joint calibration: J_real = J_kinematics*J_dir + J_offset
 	#define J1_OFFSET_REAL2KINE	(-252.73f)
@@ -42,9 +47,12 @@
 
 #elif defined(THIS_IS_ARM) && (THIS_IS_ARM == DUAL_ARM_RIGHT)
 	// Right arm setting code here
-	#define J1_DIR	(-1)
-	#define J2_DIR	(1)
-	#define J3_DIR	(-1)
+	#define J1_DIR_KINE2REAL	((I08)(-1))
+	#define J2_DIR_KINE2REAL	((I08)(1))
+	#define J3_DIR_KINE2REAL	((I08)(-1))
+	#define J1_DIR_REAL2KINE	((I08)(-1))
+	#define J2_DIR_REAL2KINE	((I08)(1))
+	#define J3_DIR_REAL2KINE	((I08)(-1))
 
 	#define J1_OFFSET_REAL2KINE	(0.0f)
 	#define J2_OFFSET_REAL2KINE	(0.0f)

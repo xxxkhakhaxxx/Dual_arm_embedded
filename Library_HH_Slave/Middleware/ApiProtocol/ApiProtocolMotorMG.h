@@ -72,9 +72,9 @@
 
 #define MOTOR_MG_xx10_GEAR						(10)
 
-/* Motor move direction */
-#define MOTOR_MOVE_CW							(1)
-#define MOTOR_MOVE_CCW							(0)
+/* Motor move direction - Nhìn theo hướng mặt bích động cơ */
+#define MOTOR_FLANGE_MOVE_CW					(1)
+#define MOTOR_FLANGE_MOVE_CCW					(0)
 /********************************************************************************
  * TYPEDEFS AND ENUMS
  ********************************************************************************/

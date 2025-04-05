@@ -199,22 +199,17 @@ GLOBAL void AppCommUART_SendMsg(enUartNode _node, enUartMsg _txMsgId)	// TODO: r
 
 		// Equation: J_real = J_kine*J_dir + J_offset
 		// Equation: J_kine = (J_real - J_offset)*J_dir
-		// Motor 0 (Joint 1)
-		j_kinematics = (myMotorToMaster[0].currPosition - J1_OFFSET_REAL2KINE) * J1_DIR;
-		//j_kinematics = RAW_TO_KIN(myMotorToMaster[0].currPosition, J1_OFFSET, J1_DIR);	// Float
+		j_kinematics = (myMotorToMaster[0].currPosition - J1_OFFSET_REAL2KINE) * J1_DIR_REAL2KINE;
 		memcpy(&sourceTxData[3] ,  &j_kinematics,                   sizeof(float));
 		memcpy(&sourceTxData[7] ,  &myMotorToMaster[0].currSpeed,   sizeof(float));
 		memcpy(&sourceTxData[11],  &myMotorToMaster[0].currAccel,   sizeof(float));
 
-		j_kinematics = (myMotorToMaster[1].currPosition - J2_OFFSET_REAL2KINE) * J2_DIR;
-		//j_kinematics = RAW_TO_KIN(myMotorToMaster[1].currPosition, J2_OFFSET, J2_DIR);
+		j_kinematics = (myMotorToMaster[1].currPosition - J2_OFFSET_REAL2KINE) * J2_DIR_REAL2KINE;
 		memcpy(&sourceTxData[15], &j_kinematics,                    sizeof(float));
 		memcpy(&sourceTxData[19], &myMotorToMaster[1].currSpeed,    sizeof(float));
 		memcpy(&sourceTxData[23], &myMotorToMaster[1].currAccel,    sizeof(float));
 
-		// Motor 2 (Joint 3)
-		j_kinematics = (myMotorToMaster[2].currPosition - J3_OFFSET_REAL2KINE) * J3_DIR;
-		//j_kinematics = RAW_TO_KIN(myMotorToMaster[2].currPosition, J3_OFFSET, J3_DIR);
+		j_kinematics = (myMotorToMaster[2].currPosition - J3_OFFSET_REAL2KINE) * J3_DIR_REAL2KINE;
 		memcpy(&sourceTxData[27], &j_kinematics,                    sizeof(float));
 		memcpy(&sourceTxData[31], &myMotorToMaster[2].currSpeed,    sizeof(float));
 		memcpy(&sourceTxData[35], &myMotorToMaster[2].currAccel,    sizeof(float));
@@ -321,19 +316,22 @@ GLOBAL void AppCommUart_RecvMasterMsg(enUartMsg _rxMsgId)	// TODO: Return recv r
 		memcpy(&_angleRx,   &RxDataMaster[4],  sizeof(float));
 		memcpy(&_speed,     &RxDataMaster[8],  sizeof(U16));
 		memcpy(&_direction, &RxDataMaster[10], sizeof(U08));
-		_angleTx = _PosControl_ConvertKineUnit2MotorUnit(_angleRx, J1_OFFSET_KINE2REAL, J1_DIR);
+		_angleTx = _PosControl_ConvertKineUnit2MotorUnit(_angleRx, J1_OFFSET_KINE2REAL, J1_DIR_KINE2REAL);
+		_direction = CONVERT_DIR_KINE2REAL(_direction, J1_DIR_KINE2REAL);
 		ApiProtocolMotorMG_SetAngleSingle(MOTOR_1_ID, _angleTx, _speed, _direction);
 
 		memcpy(&_angleRx,   &RxDataMaster[11], sizeof(float));
 		memcpy(&_speed,     &RxDataMaster[15], sizeof(U16));
 		memcpy(&_direction, &RxDataMaster[17], sizeof(U08));
-		_angleTx = _PosControl_ConvertKineUnit2MotorUnit(_angleRx, J2_OFFSET_KINE2REAL, J2_DIR);
+		_angleTx = _PosControl_ConvertKineUnit2MotorUnit(_angleRx, J2_OFFSET_KINE2REAL, J2_DIR_KINE2REAL);
+		_direction = CONVERT_DIR_KINE2REAL(_direction, J2_DIR_KINE2REAL);
 		ApiProtocolMotorMG_SetAngleSingle(MOTOR_2_ID, _angleTx, _speed, _direction);
 
 		memcpy(&_angleRx,   &RxDataMaster[18], sizeof(float));
 		memcpy(&_speed,     &RxDataMaster[22], sizeof(U16));
 		memcpy(&_direction, &RxDataMaster[24], sizeof(U08));
-		_angleTx = _PosControl_ConvertKineUnit2MotorUnit(_angleRx, J3_OFFSET_KINE2REAL, J3_DIR);
+		_angleTx = _PosControl_ConvertKineUnit2MotorUnit(_angleRx, J3_OFFSET_KINE2REAL, J3_DIR_KINE2REAL);
+		_direction = CONVERT_DIR_KINE2REAL(_direction, J3_DIR_KINE2REAL);
 		ApiProtocolMotorMG_SetAngleSingle(MOTOR_3_ID, _angleTx, _speed, _direction);
 		break;
 

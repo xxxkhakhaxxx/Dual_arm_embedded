@@ -19,6 +19,12 @@
 /********************************************************************************
  * MACROS AND DEFINES
  ********************************************************************************/
+#define CONVERT_DIR_KINE2REAL(_kineDir, _dirSetting) \
+			((_kineDir) == JOINT_DIR_Z_POS ? \
+				((_dirSetting) == 1 ? MOTOR_FLANGE_MOVE_CCW : MOTOR_FLANGE_MOVE_CW) : \
+				((_dirSetting) == 1 ? MOTOR_FLANGE_MOVE_CW : MOTOR_FLANGE_MOVE_CCW))
+//#define CONVERT_DIR_KINE2REAL(_kineDir, _dirSetting)		((U08)(((_kineDir) ^ ((_dirSetting) == -1)) & 0x01))	// Faster
+
 // UART frame: 2 msg bytes + 1 length byte + 1 checksum byte (optional) + payload (optional)
 #define MSG_INIT_LENGTH	(3)				// 3 header + 0 checksum + 0 payloads
 #define MSG_INIT_BYTE_0	(0xA1)

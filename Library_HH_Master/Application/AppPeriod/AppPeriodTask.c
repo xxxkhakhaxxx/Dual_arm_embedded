@@ -69,7 +69,7 @@ GLOBAL strRobotDataFeedback myRobotFeedback[DUAL_ARM] = {0, };
  * PRIVATE FUNCTION DECLARATION
  ********************************************************************************/
 PRIVATE void _CalRobotIK(void);
-PRIVATE void _TestPositionToggle(void);
+PRIVATE void _TestPosControlSequence(void);
 
 PRIVATE void AppPeriodTask_SetTaskFlag(enTaskList _TaskName);
 PRIVATE void AppPeriodTask_Scheduler(void);
@@ -119,24 +119,116 @@ PRIVATE void _CalRobotIK(void)
 
 PRIVATE float _angleMag = 10.00;		// Degree range -180 ~ +180
 PRIVATE U16 _speedMag = 10;				// Deg/s
-PRIVATE BOOL _isDirCCW = FALSE;
-PRIVATE void _TestPositionToggle(void)
+PRIVATE U08 _btnSequence = FALSE;
+PRIVATE void _TestPosControlSequence(void)
 {
-	if (FALSE == _isDirCCW)	// 0 -> 10 in CCW
+#if 0
+	_speedMag = 10;
+	switch (_btnSequence)
 	{
-		myRobotCommand[LEFT_ARM].JointPos[2].Angle = _angleMag;
+	case 0:		// 90 | 0 | 0
+		myRobotCommand[LEFT_ARM].JointPos[0].Angle = 90.0;
+		myRobotCommand[LEFT_ARM].JointPos[0].Speed = _speedMag;
+		myRobotCommand[LEFT_ARM].JointPos[0].Direction = JOINT_DIR_Z_NEG;
+		myRobotCommand[LEFT_ARM].JointPos[1].Angle = 0.0;
+		myRobotCommand[LEFT_ARM].JointPos[1].Speed = _speedMag;
+		myRobotCommand[LEFT_ARM].JointPos[1].Direction = JOINT_DIR_Z_POS;
+		myRobotCommand[LEFT_ARM].JointPos[2].Angle = 0.0;
 		myRobotCommand[LEFT_ARM].JointPos[2].Speed = _speedMag;
-		myRobotCommand[LEFT_ARM].JointPos[2].Direction = JOINT_DIR_CCW;
-		_isDirCCW = TRUE;
-	}
-	else	// 10 -> -10 (350) in CW
-	{
-		myRobotCommand[LEFT_ARM].JointPos[2].Angle = -_angleMag;
-		myRobotCommand[LEFT_ARM].JointPos[2].Speed = _speedMag;
-		myRobotCommand[LEFT_ARM].JointPos[2].Direction = JOINT_DIR_CW;
-		_isDirCCW = FALSE;
-	}
+		myRobotCommand[LEFT_ARM].JointPos[2].Direction = JOINT_DIR_Z_NEG;
+		_btnSequence = 1;
+		break;
 
+	case 1:		// 180 | 0 | 0
+		myRobotCommand[LEFT_ARM].JointPos[0].Angle = 180.0;
+		myRobotCommand[LEFT_ARM].JointPos[0].Speed = _speedMag;
+		myRobotCommand[LEFT_ARM].JointPos[0].Direction = JOINT_DIR_Z_NEG;
+		_btnSequence = 2;
+		break;
+
+	case 2:		// 180 | -90 | 0
+		myRobotCommand[LEFT_ARM].JointPos[1].Angle = -90.0;
+		myRobotCommand[LEFT_ARM].JointPos[1].Speed = _speedMag;
+		myRobotCommand[LEFT_ARM].JointPos[1].Direction = JOINT_DIR_Z_NEG;
+		_btnSequence = 3;
+		break;
+
+	case 3:		// 180 | -90 | -90
+		myRobotCommand[LEFT_ARM].JointPos[2].Angle = -90.0;
+		myRobotCommand[LEFT_ARM].JointPos[2].Speed = _speedMag;
+		myRobotCommand[LEFT_ARM].JointPos[2].Direction = JOINT_DIR_Z_POS;
+		_btnSequence = 4;
+		break;
+
+	case 4:		// 90 | 0 | 0
+		myRobotCommand[LEFT_ARM].JointPos[0].Angle = 90.0;
+		myRobotCommand[LEFT_ARM].JointPos[0].Speed = _speedMag;
+		myRobotCommand[LEFT_ARM].JointPos[0].Direction = JOINT_DIR_Z_POS;
+		myRobotCommand[LEFT_ARM].JointPos[1].Angle = 0.0;
+		myRobotCommand[LEFT_ARM].JointPos[1].Speed = _speedMag;
+		myRobotCommand[LEFT_ARM].JointPos[1].Direction = JOINT_DIR_Z_POS;
+		myRobotCommand[LEFT_ARM].JointPos[2].Angle = 0.0;
+		myRobotCommand[LEFT_ARM].JointPos[2].Speed = _speedMag;
+		myRobotCommand[LEFT_ARM].JointPos[2].Direction = JOINT_DIR_Z_NEG;
+		_btnSequence = 1;
+		break;
+
+	default:
+		_btnSequence = 0;
+		break;
+	}
+#elif (1)
+	_speedMag = 90;
+	switch (_btnSequence)
+	{
+	case 0:		// <90 | <0 | <0  -->  90 | 0 | 0
+		myRobotCommand[LEFT_ARM].JointPos[0].Angle = 90.0;
+		myRobotCommand[LEFT_ARM].JointPos[0].Speed = _speedMag;
+		myRobotCommand[LEFT_ARM].JointPos[0].Direction = JOINT_DIR_Z_POS;
+		myRobotCommand[LEFT_ARM].JointPos[1].Angle = 0.0;
+		myRobotCommand[LEFT_ARM].JointPos[1].Speed = _speedMag;
+		myRobotCommand[LEFT_ARM].JointPos[1].Direction = JOINT_DIR_Z_POS;
+		myRobotCommand[LEFT_ARM].JointPos[2].Angle = 0.0;
+		myRobotCommand[LEFT_ARM].JointPos[2].Speed = _speedMag;
+		myRobotCommand[LEFT_ARM].JointPos[2].Direction = JOINT_DIR_Z_POS;
+		_btnSequence = 1;
+		break;
+
+	case 1:		// 90 | 0 | 0  -->  180 | -90 | -90
+		myRobotCommand[LEFT_ARM].JointPos[0].Angle = 180.0;
+		myRobotCommand[LEFT_ARM].JointPos[0].Speed = _speedMag;
+		myRobotCommand[LEFT_ARM].JointPos[0].Direction = JOINT_DIR_Z_POS;
+		myRobotCommand[LEFT_ARM].JointPos[1].Angle = -90.0;
+		myRobotCommand[LEFT_ARM].JointPos[1].Speed = _speedMag;
+		myRobotCommand[LEFT_ARM].JointPos[1].Direction = JOINT_DIR_Z_NEG;
+		myRobotCommand[LEFT_ARM].JointPos[2].Angle = -90.0;
+		myRobotCommand[LEFT_ARM].JointPos[2].Speed = _speedMag;
+		myRobotCommand[LEFT_ARM].JointPos[2].Direction = JOINT_DIR_Z_NEG;
+		_btnSequence = 2;
+		break;
+
+	case 2:		// 180 | -90 | -90  -->  90 | 0 | 0
+		myRobotCommand[LEFT_ARM].JointPos[0].Angle = 90.0;
+		myRobotCommand[LEFT_ARM].JointPos[0].Speed = _speedMag;
+		myRobotCommand[LEFT_ARM].JointPos[0].Direction = JOINT_DIR_Z_NEG;
+		myRobotCommand[LEFT_ARM].JointPos[1].Angle = 0.0;
+		myRobotCommand[LEFT_ARM].JointPos[1].Speed = _speedMag;
+		myRobotCommand[LEFT_ARM].JointPos[1].Direction = JOINT_DIR_Z_POS;
+		myRobotCommand[LEFT_ARM].JointPos[2].Angle = 0.0;
+		myRobotCommand[LEFT_ARM].JointPos[2].Speed = _speedMag;
+		myRobotCommand[LEFT_ARM].JointPos[2].Direction = JOINT_DIR_Z_POS;
+		_btnSequence = 1;
+		break;
+
+	default:
+		_btnSequence = 0;
+		break;
+	}
+#else
+
+
+
+#endif
 	return;
 }
 PRIVATE void AppPeriodTask_SetTaskFlag(enTaskList _TaskName)
@@ -364,7 +456,7 @@ GLOBAL void AppPeriodTask_StateMachineProcess(void)
 		if (TRUE == AppDataGet_UserButtonEvent())
 		{
 //			AppPeriodTask_TrajectoryPlanning();
-			_TestPositionToggle();	// Calculate position value to be sent
+			_TestPosControlSequence();	// Calculate position value to be sent
 			AppCommUART_SendMsg(UART_NODE_SLAVE_1, UART_MSG_MOTOR_CONTROL_POS);	// Package and Send
 			AppDataSet_MasterState(MASTER_STATE_SEND_GUI);
 		}

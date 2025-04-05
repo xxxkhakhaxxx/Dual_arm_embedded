@@ -336,7 +336,7 @@ GLOBAL void AppPeriodTask_StateMachineProcess(void)
 			{
 				AppCommUart_RecvMasterMsg(UART_MSG_MOTOR_CONTROL_POS);
 				_robotMode = ROBOT_MODE_POSITION;
-				_canNode = CAN_NODE_MOTOR_3;	// TEMP
+				_canNode = CAN_NODE_MOTOR_1;
 				_sequenceEndFlag = FALSE;								// Received request -> Start motor comm sequence_
 				AppDataSet_SlaveState(SLAVE_STATE_SEND_MOTOR_SEQUENCE);	// Start control motors' position
 			}

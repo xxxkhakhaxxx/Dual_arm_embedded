@@ -292,7 +292,8 @@ GLOBAL void AppPeriodTask_StateMachineProcess(void)
 		if (TRUE == AppDataGet_UserButtonEvent())
 		{
 //			AppPeriodTask_TrajectoryPlanning();
-			AppControl_Pos_TestSquence();	// Calculate position value to be sent
+//			AppControl_Pos_TestSquence();	// Calculate position value to be sent
+			AppControl_Pos_BackToHome(LEFT_ARM, HOME_SPEED);
 			AppCommUART_SendMsg(UART_NODE_SLAVE_1, UART_MSG_MOTOR_CONTROL_POS);	// Package and Send
 			AppDataSet_MasterState(MASTER_STATE_SEND_GUI);
 		}

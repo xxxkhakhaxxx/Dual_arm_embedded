@@ -248,39 +248,39 @@ GLOBAL void AppControl_Pos_TestSquence(void)
 	case 0:	// back home using auto check dir function
 		myRobotCommand[LEFT_ARM].JointPos[0].Angle = 90.0;
 		myRobotCommand[LEFT_ARM].JointPos[0].Speed = _speedMag;
-		myRobotCommand[LEFT_ARM].JointPos[0].Direction = _Pos_CalMoveDirection(myRobotFeedback[LEFT_ARM].Joint[0].Position, 90.0, SINGULAR_J11);
+		myRobotCommand[LEFT_ARM].JointPos[0].Direction = _Pos_CalMoveDirection(CURR_POS_J11, 90.0, SINGULAR_J11);
 		myRobotCommand[LEFT_ARM].JointPos[1].Angle = 0.0;
 		myRobotCommand[LEFT_ARM].JointPos[1].Speed = _speedMag;
-		myRobotCommand[LEFT_ARM].JointPos[1].Direction = _Pos_CalMoveDirection(myRobotFeedback[LEFT_ARM].Joint[1].Position, 0.0, SINGULAR_J21);
+		myRobotCommand[LEFT_ARM].JointPos[1].Direction = _Pos_CalMoveDirection(CURR_POS_J21, 0.0, SINGULAR_J21);
 		myRobotCommand[LEFT_ARM].JointPos[2].Angle = 0.0;
 		myRobotCommand[LEFT_ARM].JointPos[2].Speed = _speedMag;
-		myRobotCommand[LEFT_ARM].JointPos[2].Direction = _Pos_CalMoveDirection(myRobotFeedback[LEFT_ARM].Joint[2].Position, 0.0, SINGULAR_J31);
+		myRobotCommand[LEFT_ARM].JointPos[2].Direction = _Pos_CalMoveDirection(CURR_POS_J31, 0.0, SINGULAR_J31);
 		_btnSequence = 1;
 		break;
 		
 	case 1:
 		myRobotCommand[LEFT_ARM].JointPos[0].Angle = 180.0;
 		myRobotCommand[LEFT_ARM].JointPos[0].Speed = _speedMag;
-		myRobotCommand[LEFT_ARM].JointPos[0].Direction = _Pos_CalMoveDirection(myRobotFeedback[LEFT_ARM].Joint[0].Position, 180.0, SINGULAR_J11);
+		myRobotCommand[LEFT_ARM].JointPos[0].Direction = _Pos_CalMoveDirection(CURR_POS_J11, 180.0, SINGULAR_J11);
 		myRobotCommand[LEFT_ARM].JointPos[1].Angle = -90.0;
 		myRobotCommand[LEFT_ARM].JointPos[1].Speed = _speedMag;
-		myRobotCommand[LEFT_ARM].JointPos[1].Direction = _Pos_CalMoveDirection(myRobotFeedback[LEFT_ARM].Joint[1].Position, -90.0, SINGULAR_J21);
+		myRobotCommand[LEFT_ARM].JointPos[1].Direction = _Pos_CalMoveDirection(CURR_POS_J21, -90.0, SINGULAR_J21);
 		myRobotCommand[LEFT_ARM].JointPos[2].Angle = -90.0;
 		myRobotCommand[LEFT_ARM].JointPos[2].Speed = _speedMag;
-		myRobotCommand[LEFT_ARM].JointPos[2].Direction = _Pos_CalMoveDirection(myRobotFeedback[LEFT_ARM].Joint[2].Position, -90.0, SINGULAR_J31);
+		myRobotCommand[LEFT_ARM].JointPos[2].Direction = _Pos_CalMoveDirection(CURR_POS_J31, -90.0, SINGULAR_J31);
 		_btnSequence = 2;
 		break;
 	case 2:
 	
 		myRobotCommand[LEFT_ARM].JointPos[0].Angle = 90.0;
 		myRobotCommand[LEFT_ARM].JointPos[0].Speed = _speedMag;
-		myRobotCommand[LEFT_ARM].JointPos[0].Direction = _Pos_CalMoveDirection(myRobotFeedback[LEFT_ARM].Joint[0].Position, 90.0, 0.0);
+		myRobotCommand[LEFT_ARM].JointPos[0].Direction = _Pos_CalMoveDirection(CURR_POS_J11, 90.0, SINGULAR_J11);
 		myRobotCommand[LEFT_ARM].JointPos[1].Angle = 0.0;
 		myRobotCommand[LEFT_ARM].JointPos[1].Speed = _speedMag;
-		myRobotCommand[LEFT_ARM].JointPos[1].Direction = _Pos_CalMoveDirection(myRobotFeedback[LEFT_ARM].Joint[1].Position, 0.0, 180.0);
+		myRobotCommand[LEFT_ARM].JointPos[1].Direction = _Pos_CalMoveDirection(CURR_POS_J21, 0.0, SINGULAR_J21);
 		myRobotCommand[LEFT_ARM].JointPos[2].Angle = 0.0;
 		myRobotCommand[LEFT_ARM].JointPos[2].Speed = _speedMag;
-		myRobotCommand[LEFT_ARM].JointPos[2].Direction = _Pos_CalMoveDirection(myRobotFeedback[LEFT_ARM].Joint[2].Position, 0.0, 180.0);
+		myRobotCommand[LEFT_ARM].JointPos[2].Direction = _Pos_CalMoveDirection(CURR_POS_J31, 0.0, SINGULAR_J31);
 		_btnSequence = 1;
 		break;
 	default:
@@ -291,6 +291,28 @@ GLOBAL void AppControl_Pos_TestSquence(void)
 
 
 #endif
+	return;
+}
+
+GLOBAL void AppControl_Pos_BackToHome(U08 _arm, U16 _speed)
+{
+	if (LEFT_ARM == _arm)
+	{
+		myRobotCommand[LEFT_ARM].JointPos[0].Angle = HOME_POS_J11;
+		myRobotCommand[LEFT_ARM].JointPos[0].Speed = _speed;
+		myRobotCommand[LEFT_ARM].JointPos[0].Direction = _Pos_CalMoveDirection(CURR_POS_J11, HOME_POS_J11, SINGULAR_J11);
+		myRobotCommand[LEFT_ARM].JointPos[1].Angle = HOME_POS_J21;
+		myRobotCommand[LEFT_ARM].JointPos[1].Speed = _speed;
+		myRobotCommand[LEFT_ARM].JointPos[1].Direction = _Pos_CalMoveDirection(CURR_POS_J21, HOME_POS_J21, SINGULAR_J21);
+		myRobotCommand[LEFT_ARM].JointPos[2].Angle = HOME_POS_J31;
+		myRobotCommand[LEFT_ARM].JointPos[2].Speed = _speed;
+		myRobotCommand[LEFT_ARM].JointPos[2].Direction = _Pos_CalMoveDirection(CURR_POS_J31, HOME_POS_J31, SINGULAR_J31);
+	}
+	/*else if (RIGHT_ARM == _arm)
+	{
+
+	}*/
+
 	return;
 }
 

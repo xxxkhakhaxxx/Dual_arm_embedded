@@ -19,6 +19,15 @@
 /********************************************************************************
  * MACROS AND DEFINES
  ********************************************************************************/
+#define CURR_POS_J11	((float)myRobotFeedback[LEFT_ARM].Joint[0].Position)
+#define CURR_POS_J21	((float)myRobotFeedback[LEFT_ARM].Joint[1].Position)
+#define CURR_POS_J31	((float)myRobotFeedback[LEFT_ARM].Joint[2].Position)
+#define CURR_VEL_J11	((float)myRobotFeedback[LEFT_ARM].Joint[0].Speed)
+#define CURR_VEL_J21	((float)myRobotFeedback[LEFT_ARM].Joint[1].Speed)
+#define CURR_VEL_J31	((float)myRobotFeedback[LEFT_ARM].Joint[2].Speed)
+#define CURR_ACCEL_J11	((float)myRobotFeedback[LEFT_ARM].Joint[0].Accel)
+#define CURR_ACCEL_J21	((float)myRobotFeedback[LEFT_ARM].Joint[1].Accel)
+#define CURR_ACCEL_J31	((float)myRobotFeedback[LEFT_ARM].Joint[2].Accel)
 
 
 /********************************************************************************

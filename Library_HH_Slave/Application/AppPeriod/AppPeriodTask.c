@@ -292,6 +292,7 @@ GLOBAL void AppPeriodTask_StateMachineProcess(void)
 	case SLAVE_STATE_INIT:
 		if (FALSE == _slaveInitFlag)
 		{	// Set: Cmd -> Sequence -> Start -> State
+			HAL_Delay(3000);
 			_robotMode = ROBOT_MODE_INIT;							// Set init motor command
 			_canNode = CAN_NODE_MOTOR_1;							// Set motor sequence: 1 -> 2 -> 3 -> end
 			_sequenceEndFlag = FALSE;								// Start the sequence

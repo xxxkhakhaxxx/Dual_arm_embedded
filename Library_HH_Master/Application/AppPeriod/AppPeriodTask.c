@@ -55,8 +55,6 @@ PRIVATE U08 u8GuiSendCnt = 0;
 /********************************************************************************
  * GLOBAL VARIABLES
  ********************************************************************************/
-GLOBAL strRobotDataCommand  myRobotCommand[DUAL_ARM]  = {0, };
-GLOBAL strRobotDataFeedback myRobotFeedback[DUAL_ARM] = {0, };
 
 /********************************************************************************
  * PRIVATE FUNCTION DECLARATION
@@ -162,10 +160,11 @@ GLOBAL void AppPeriodTask_TaskCall(void)	/* Performing the corresponding task */
 	return;
 }
 
-static BOOL _masterInitFlag = FALSE;
-static BOOL _slave1InitFlag = FALSE;
-//	static BOOL _slave2InitFlag = FALSE;
-static BOOL _slave1HandleFlag = FALSE;
+PRIVATE BOOL _masterInitFlag = FALSE;
+PRIVATE BOOL _slave1InitFlag = FALSE;
+//	PRIVATE BOOL _slave2InitFlag = FALSE;
+PRIVATE BOOL _slave1HandleFlag = FALSE;
+PRIVATE U08 _btnSequence = 0;
 
 GLOBAL void AppPeriodTask_StateMachineProcess(void)
 {
@@ -289,11 +288,27 @@ GLOBAL void AppPeriodTask_StateMachineProcess(void)
 		AppDataSet_MasterState(MASTER_STATE_SEND_GUI);
 #else
 	#if defined (MASTER_CONTROL_POS)
-		if (TRUE == AppDataGet_UserButtonEvent())
+		if (TRUE == AppDataGet_UserButtonEvent())	// 1 time every btn press
 		{
 //			AppPeriodTask_TrajectoryPlanning();
 //			AppControl_Pos_TestSquence();	// Calculate position value to be sent
-			AppControl_Pos_BackToHome(LEFT_ARM, HOME_SPEED);
+			if (0 == _btnSequence)
+			{
+				AppControl_Pos_BackToHome(LEFT_ARM, HOME_SPEED);
+				AppCommUART_SendMsg(UART_NODE_SLAVE_1, UART_MSG_MOTOR_CONTROL_POS);	// Package and Send
+				_btnSequence = 1;
+			}
+			else if (1 == _btnSequence)
+			{
+
+				_btnSequence = 2;
+			}
+
+			AppDataSet_MasterState(MASTER_STATE_SEND_GUI);
+		}
+		else if (2 == _btnSequence)
+		{
+			AppControl_TP_SineWave(0.02f);	// Update tp
 			AppCommUART_SendMsg(UART_NODE_SLAVE_1, UART_MSG_MOTOR_CONTROL_POS);	// Package and Send
 			AppDataSet_MasterState(MASTER_STATE_SEND_GUI);
 		}

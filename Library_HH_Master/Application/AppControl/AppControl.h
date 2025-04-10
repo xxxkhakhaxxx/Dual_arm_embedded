@@ -31,6 +31,14 @@
 /********************************************************************************
  * TYPEDEFS AND ENUMS
  ********************************************************************************/
+typedef struct
+{
+	float Amp;		// Sine wave amplitude [Deg]
+	float Freq;		// Oscillation frequency [Hz]
+	float Phase;	// Phase offset [Deg]
+	float Bias;		// Amplitude bias [Deg]
+	float MoveTime;	// Total move time [s]
+} strTpSineWave;
 
 
 /********************************************************************************
@@ -44,6 +52,7 @@
 GLOBAL void AppControl_CalRobotIK(void);
 GLOBAL void AppControl_Pos_TestSquence(void);
 GLOBAL void AppControl_Pos_BackToHome(U08 _arm, U16 _speed);
+GLOBAL void AppControl_TP_SineWave(float _timeStep);		// Unit: s
 
 
 

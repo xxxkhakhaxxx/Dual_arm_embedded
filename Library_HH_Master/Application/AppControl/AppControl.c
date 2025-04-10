@@ -134,67 +134,11 @@ GLOBAL void AppControl_CalRobotIK(void)
 }
 
 
-PRIVATE float _angleMag = 10.00;		// Degree range -180 ~ +180
 PRIVATE U16 _speedMag = 10;				// Deg/s
-PRIVATE U08 _btnSequence = FALSE;
+PRIVATE U08 _btnSequence = 0;
 GLOBAL void AppControl_Pos_TestSquence(void)
 {
-#if 0
-	_speedMag = 10;
-	switch (_btnSequence)
-	{
-	case 0:		// 90 | 0 | 0
-		myRobotCommand[LEFT_ARM].JointPos[0].Angle = 90.0;
-		myRobotCommand[LEFT_ARM].JointPos[0].Speed = _speedMag;
-		myRobotCommand[LEFT_ARM].JointPos[0].Direction = JOINT_DIR_Z_NEG;
-		myRobotCommand[LEFT_ARM].JointPos[1].Angle = 0.0;
-		myRobotCommand[LEFT_ARM].JointPos[1].Speed = _speedMag;
-		myRobotCommand[LEFT_ARM].JointPos[1].Direction = JOINT_DIR_Z_POS;
-		myRobotCommand[LEFT_ARM].JointPos[2].Angle = 0.0;
-		myRobotCommand[LEFT_ARM].JointPos[2].Speed = _speedMag;
-		myRobotCommand[LEFT_ARM].JointPos[2].Direction = JOINT_DIR_Z_NEG;
-		_btnSequence = 1;
-		break;
-
-	case 1:		// 180 | 0 | 0
-		myRobotCommand[LEFT_ARM].JointPos[0].Angle = 180.0;
-		myRobotCommand[LEFT_ARM].JointPos[0].Speed = _speedMag;
-		myRobotCommand[LEFT_ARM].JointPos[0].Direction = JOINT_DIR_Z_NEG;
-		_btnSequence = 2;
-		break;
-
-	case 2:		// 180 | -90 | 0
-		myRobotCommand[LEFT_ARM].JointPos[1].Angle = -90.0;
-		myRobotCommand[LEFT_ARM].JointPos[1].Speed = _speedMag;
-		myRobotCommand[LEFT_ARM].JointPos[1].Direction = JOINT_DIR_Z_NEG;
-		_btnSequence = 3;
-		break;
-
-	case 3:		// 180 | -90 | -90
-		myRobotCommand[LEFT_ARM].JointPos[2].Angle = -90.0;
-		myRobotCommand[LEFT_ARM].JointPos[2].Speed = _speedMag;
-		myRobotCommand[LEFT_ARM].JointPos[2].Direction = JOINT_DIR_Z_POS;
-		_btnSequence = 4;
-		break;
-
-	case 4:		// 90 | 0 | 0
-		myRobotCommand[LEFT_ARM].JointPos[0].Angle = 90.0;
-		myRobotCommand[LEFT_ARM].JointPos[0].Speed = _speedMag;
-		myRobotCommand[LEFT_ARM].JointPos[0].Direction = JOINT_DIR_Z_POS;
-		myRobotCommand[LEFT_ARM].JointPos[1].Angle = 0.0;
-		myRobotCommand[LEFT_ARM].JointPos[1].Speed = _speedMag;
-		myRobotCommand[LEFT_ARM].JointPos[1].Direction = JOINT_DIR_Z_POS;
-		myRobotCommand[LEFT_ARM].JointPos[2].Angle = 0.0;
-		myRobotCommand[LEFT_ARM].JointPos[2].Speed = _speedMag;
-		myRobotCommand[LEFT_ARM].JointPos[2].Direction = JOINT_DIR_Z_NEG;
-		_btnSequence = 1;
-		break;
-
-	default:
-		_btnSequence = 0;
-		break;
-	}
-#elif (0)	// Tested
+#if (0)	// Tested
 	_speedMag = 90;
 	switch (_btnSequence)
 	{
@@ -312,6 +256,94 @@ GLOBAL void AppControl_Pos_BackToHome(U08 _arm, U16 _speed)
 	{
 
 	}*/
+
+	return;
+}
+
+PRIVATE strTpSineWave mySineTrajectory[3] = {
+		// Amp  , Freq , Phase, Bias ,  Time
+		{ 20.0f , 0.2f , 0.0f , 90.0f, 5.0f },
+		{ 20.0f , 0.2f , 0.0f ,  0.0f, 5.0f },		// 2025-04-10: Don't set the amplitude to high and run to fast
+		{ 20.0f , 0.2f , 0.0f ,  0.0f, 5.0f }};
+PRIVATE float _totalTime = 0.0f;
+PRIVATE U08	_currJoint = 0;	// Joint 1-2-3 = 0-1-2
+PRIVATE BOOL _trajectoryState[3] = { FALSE, FALSE, FALSE };
+GLOBAL void AppControl_TP_SineWave(float _timeStep)
+{
+	// 1. Check if total TP end?
+	if (TRUE == _trajectoryState[2])
+	{	// Finish TP SineWave for all joints
+		return;
+	}
+
+	// 2. Update time
+	_totalTime = _totalTime + _timeStep;
+
+	// 3. Check if current joint TP end?
+	if (_totalTime >= mySineTrajectory[_currJoint].MoveTime)
+	{
+		_trajectoryState[_currJoint] = TRUE;
+		_totalTime = 0.0f;
+
+		if (_currJoint < 2)
+		{
+			_currJoint++;	// TP for next joint
+		}
+		else
+		{	// Finish TP SineWave for all joints
+			return;
+		}
+	}
+
+	// 4. Caclulate sinwave for current joint
+	if (FALSE == _trajectoryState[_currJoint])
+	{
+		float t = _totalTime;
+		float Amp  = mySineTrajectory[_currJoint].Amp;
+		float Freq = mySineTrajectory[_currJoint].Freq;
+		float Bias = mySineTrajectory[_currJoint].Bias;
+		float Phase= DEG2RAD(mySineTrajectory[_currJoint].Phase);
+
+		// Position: p(t) = A * sin(2πft + φ) + Bias
+		// Velocity: v(t) = A * 2πf * cos(2πft + φ)
+		float rotateAngle = Amp*sinf(2*PI*Freq*t + Phase) + Bias;
+		float rotateSpeed = Amp*2*PI*Freq*cosf(2*PI*Freq*t + Phase);
+		U08   rotateDir   = (rotateSpeed > 0) ? JOINT_DIR_Z_POS : JOINT_DIR_Z_NEG;
+		rotateSpeed = fabs(rotateSpeed);
+
+		switch (_currJoint)
+		{
+		case 0:
+			myRobotCommand[LEFT_ARM].JointPos[0].Angle = rotateAngle;
+			myRobotCommand[LEFT_ARM].JointPos[0].Speed = (U16)fminf(rotateSpeed, 90.0)+1;
+//			myRobotCommand[LEFT_ARM].JointPos[0].Direction = _Pos_CalMoveDirection(CURR_POS_J11, rotateAngle, SINGULAR_J11);
+			myRobotCommand[LEFT_ARM].JointPos[0].Direction = rotateDir;
+			myRobotCommand[LEFT_ARM].JointPos[1].Speed = 0;
+			myRobotCommand[LEFT_ARM].JointPos[2].Speed = 0;
+			break;
+
+		case 1:
+			myRobotCommand[LEFT_ARM].JointPos[1].Angle = rotateAngle;
+			myRobotCommand[LEFT_ARM].JointPos[1].Speed = (U16)fminf(rotateSpeed, 90.0)+1;
+//			myRobotCommand[LEFT_ARM].JointPos[1].Direction = _Pos_CalMoveDirection(CURR_POS_J21, rotateAngle, SINGULAR_J21);
+			myRobotCommand[LEFT_ARM].JointPos[1].Direction = rotateDir;
+			myRobotCommand[LEFT_ARM].JointPos[0].Speed = 0;
+			myRobotCommand[LEFT_ARM].JointPos[2].Speed = 0;
+			break;
+
+		case 2:
+			myRobotCommand[LEFT_ARM].JointPos[2].Angle = rotateAngle;
+			myRobotCommand[LEFT_ARM].JointPos[2].Speed = (U16)fminf(rotateSpeed, 90.0)+1;
+//			myRobotCommand[LEFT_ARM].JointPos[2].Direction = _Pos_CalMoveDirection(CURR_POS_J31, rotateAngle, SINGULAR_J31);
+			myRobotCommand[LEFT_ARM].JointPos[2].Direction = rotateDir;
+			myRobotCommand[LEFT_ARM].JointPos[0].Speed = 0;
+			myRobotCommand[LEFT_ARM].JointPos[1].Speed = 0;
+			break;
+
+		default:
+			return;
+		}
+	}
 
 	return;
 }

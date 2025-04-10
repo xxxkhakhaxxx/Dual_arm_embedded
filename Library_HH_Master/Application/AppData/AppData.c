@@ -71,6 +71,8 @@ PRIVATE strCommManager myUart[UART_NODE_MAX] = {0, };
 /********************************************************************************
  * GLOBAL VARIABLES
  ********************************************************************************/
+GLOBAL strRobotDataCommand  myRobotCommand[DUAL_ARM]  = {0, };
+GLOBAL strRobotDataFeedback myRobotFeedback[DUAL_ARM] = {0, };
 
 
 /********************************************************************************

@@ -30,37 +30,45 @@
 #define BUTTON_RELEASED				(TRUE)
 
 // UART frame: 2 msg bytes + 1 length byte + 1 checksum byte (optional) + payload (optional)
-#define MSG_INIT_LENGTH	(3)				// 3 header + 0 checksum + 0 payloads
 #define MSG_INIT_BYTE_0	(0xA1)
 #define MSG_INIT_BYTE_1	(0x01)
+#define MSG_INIT_LENGTH	(3)				// 3 header + 0 checksum + 0 payloads
 
-#define MSG_DATA_REQUEST_LENGTH	(3)		// 3 header + 0 checksum + 0 payloads
 #define MSG_DATA_REQUEST_BYTE_0	(0xB2)
 #define MSG_DATA_REQUEST_BYTE_1	(0x02)
+#define MSG_DATA_REQUEST_LENGTH	(3)		// 3 header + 0 checksum + 0 payloads
 
-#define MSG_DATA_RESPOND_LENGTH	(40)	// 3 header + 1 checksum + 3*(4+4+4) payloads
 #define MSG_DATA_RESPOND_BYTE_0	(0xB2)
 #define MSG_DATA_RESPOND_BYTE_1	(0x02)
+#define MSG_DATA_RESPOND_LENGTH	(40)	// 3 header + 1 checksum + 3*(4+4+4) payloads
 
-#define MSG_CONTROL_POS_LENGTH	(25)	// 3 header + 1 checksum + 3*(4+2+1) payloads
 #define MSG_CONTROL_POS_BYTE_0	(0xC3)
 #define MSG_CONTROL_POS_BYTE_1	(0x03)
+#define MSG_CONTROL_POS_LENGTH	(25)	// 3 header + 1 checksum + 3*(4+2+1) payloads
 /*
-#define MSG_CONTROL_VEL_LENGTH	()	// 3 header + 3*4 payloads
 #define MSG_CONTROL_VEL_BYTE_0	(0xD4)
 #define MSG_CONTROL_VEL_BYTE_1	(0x04)*/
+#define MSG_CONTROL_VEL_LENGTH	()	// 3 header + 3*4 payloads
 
-#define MSG_CONTROL_TOR_LENGTH	(10)	// 3 header + 1 checksum + 3*(2) payloads
 #define MSG_CONTROL_TOR_BYTE_0	(0xE5)
 #define MSG_CONTROL_TOR_BYTE_1	(0x05)
+#define MSG_CONTROL_TOR_LENGTH	(10)	// 3 header + 1 checksum + 3*(2) payloads
 
-#define MSG_GUI_DATA_1_LENGTH	(40)	// 3 header + 1 checksum + 3*(4+4+4) payloads
-#define MSG_GUI_DATA_1_BYTE_0	(0xF6)
-#define MSG_GUI_DATA_1_BYTE_1	(0x06)
+#define MSG_GUI_DATA_1_SING_BYTE_0	(0xF6)
+#define MSG_GUI_DATA_1_SING_BYTE_1	(0x06)
+#define MSG_GUI_DATA_1_SING_LENGTH	(40)	// 3 header + 1 checksum + 3*(4+4+4) payloads
 
-#define MSG_GUI_DATA_2_LENGTH	(40)	// 3 header + 1 checksum + ...
-#define MSG_GUI_DATA_2_BYTE_0	(0xF7)
-#define MSG_GUI_DATA_2_BYTE_1	(0x07)
+#define MSG_GUI_DATA_1_DUAL_BYTE_0	(0xF7)
+#define MSG_GUI_DATA_1_DUAL_BYTE_1	(0x07)
+#define MSG_GUI_DATA_1_DUAL_LENGTH	(76)	// 3 header + 1 checksum + 2*3*(4+4+4) payloads
+
+#define MSG_GUI_DATA_2_SING_BYTE_0	(0xF8)
+#define MSG_GUI_DATA_2_SING_BYTE_1	(0x08)
+#define MSG_GUI_DATA_2_SING_LENGTH	(40)	// 3 header + 1 checksum + ...
+
+#define MSG_GUI_DATA_2_DUAL_BYTE_0	(0xF9)
+#define MSG_GUI_DATA_2_DUAL_BYTE_1	(0x09)
+#define MSG_GUI_DATA_2_DUAL_LENGTH	(40)	// 3 header + 1 checksum + ...
 
 
 #define CURR_POS_J11	((float)myRobotFeedback[LEFT_ARM].Joint[0].Position)
@@ -72,6 +80,16 @@
 #define CURR_ACCEL_J11	((float)myRobotFeedback[LEFT_ARM].Joint[0].Accel)
 #define CURR_ACCEL_J21	((float)myRobotFeedback[LEFT_ARM].Joint[1].Accel)
 #define CURR_ACCEL_J31	((float)myRobotFeedback[LEFT_ARM].Joint[2].Accel)
+
+#define CURR_POS_J12	((float)myRobotFeedback[RIGHT_ARM].Joint[0].Position)
+#define CURR_POS_J22	((float)myRobotFeedback[RIGHT_ARM].Joint[1].Position)
+#define CURR_POS_J32	((float)myRobotFeedback[RIGHT_ARM].Joint[2].Position)
+#define CURR_VEL_J12	((float)myRobotFeedback[RIGHT_ARM].Joint[0].Speed)
+#define CURR_VEL_J22	((float)myRobotFeedback[RIGHT_ARM].Joint[1].Speed)
+#define CURR_VEL_J32	((float)myRobotFeedback[RIGHT_ARM].Joint[2].Speed)
+#define CURR_ACCEL_J12	((float)myRobotFeedback[RIGHT_ARM].Joint[0].Accel)
+#define CURR_ACCEL_J22	((float)myRobotFeedback[RIGHT_ARM].Joint[1].Accel)
+#define CURR_ACCEL_J32	((float)myRobotFeedback[RIGHT_ARM].Joint[2].Accel)
 
 /********************************************************************************
  * TYPEDEFS AND ENUMS

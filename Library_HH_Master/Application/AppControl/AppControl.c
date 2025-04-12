@@ -134,101 +134,175 @@ GLOBAL void AppControl_CalRobotIK(void)
 }
 
 
-PRIVATE U16 _speedMag = 10;				// Deg/s
-PRIVATE U08 _btnSequence = 0;
-GLOBAL void AppControl_Pos_TestSquence(void)
-{
+PRIVATE U08 _btnSequenceTest = 0;
+GLOBAL void AppControl_Pos_TestSquence(U08 _arm, U16 _speed)
+{	// 1. Safety check
+	if ((LEFT_ARM != _arm) && (RIGHT_ARM != _arm))
+	{
+		return;
+	}
+
+	// 2. Test Speed constraints
+	if (_speed > TEST_SPEED_MAX)	// For safety
+	{
+		_speed = TEST_SPEED_MAX;
+	}
+
 #if (0)	// Tested
-	_speedMag = 90;
-	switch (_btnSequence)
+	switch (_btnSequenceTest)
 	{
 	case 0:		// <90 | <0 | <0  -->  90 | 0 | 0
 		myRobotCommand[LEFT_ARM].JointPos[0].Angle = 90.0;
-		myRobotCommand[LEFT_ARM].JointPos[0].Speed = _speedMag;
+		myRobotCommand[LEFT_ARM].JointPos[0].Speed = _speed;
 		myRobotCommand[LEFT_ARM].JointPos[0].Direction = JOINT_DIR_Z_POS;
 		myRobotCommand[LEFT_ARM].JointPos[1].Angle = 0.0;
-		myRobotCommand[LEFT_ARM].JointPos[1].Speed = _speedMag;
+		myRobotCommand[LEFT_ARM].JointPos[1].Speed = _speed;
 		myRobotCommand[LEFT_ARM].JointPos[1].Direction = JOINT_DIR_Z_POS;
 		myRobotCommand[LEFT_ARM].JointPos[2].Angle = 0.0;
-		myRobotCommand[LEFT_ARM].JointPos[2].Speed = _speedMag;
+		myRobotCommand[LEFT_ARM].JointPos[2].Speed = _speed;
 		myRobotCommand[LEFT_ARM].JointPos[2].Direction = JOINT_DIR_Z_POS;
-		_btnSequence = 1;
+
+		myRobotCommand[RIGHT_ARM].JointPos[0].Angle = 90.0;
+		myRobotCommand[RIGHT_ARM].JointPos[0].Speed = _speed;
+		myRobotCommand[RIGHT_ARM].JointPos[0].Direction = JOINT_DIR_Z_POS;
+		myRobotCommand[RIGHT_ARM].JointPos[1].Angle = 0.0;
+		myRobotCommand[RIGHT_ARM].JointPos[1].Speed = _speed;
+		myRobotCommand[RIGHT_ARM].JointPos[1].Direction = JOINT_DIR_Z_POS;
+		myRobotCommand[RIGHT_ARM].JointPos[2].Angle = 0.0;
+		myRobotCommand[RIGHT_ARM].JointPos[2].Speed = _speed;
+		myRobotCommand[RIGHT_ARM].JointPos[2].Direction = JOINT_DIR_Z_POS;
+
+		_btnSequenceTest = 1;
 		break;
 
 	case 1:		// 90 | 0 | 0  -->  180 | -90 | -90
 		myRobotCommand[LEFT_ARM].JointPos[0].Angle = 180.0;
-		myRobotCommand[LEFT_ARM].JointPos[0].Speed = _speedMag;
+		myRobotCommand[LEFT_ARM].JointPos[0].Speed = _speed;
 		myRobotCommand[LEFT_ARM].JointPos[0].Direction = JOINT_DIR_Z_POS;
 		myRobotCommand[LEFT_ARM].JointPos[1].Angle = -90.0;
-		myRobotCommand[LEFT_ARM].JointPos[1].Speed = _speedMag;
+		myRobotCommand[LEFT_ARM].JointPos[1].Speed = _speed;
 		myRobotCommand[LEFT_ARM].JointPos[1].Direction = JOINT_DIR_Z_NEG;
 		myRobotCommand[LEFT_ARM].JointPos[2].Angle = -90.0;
-		myRobotCommand[LEFT_ARM].JointPos[2].Speed = _speedMag;
+		myRobotCommand[LEFT_ARM].JointPos[2].Speed = _speed;
 		myRobotCommand[LEFT_ARM].JointPos[2].Direction = JOINT_DIR_Z_NEG;
-		_btnSequence = 2;
+
+		myRobotCommand[RIGHT_ARM].JointPos[0].Angle = 180.0;
+		myRobotCommand[RIGHT_ARM].JointPos[0].Speed = _speed;
+		myRobotCommand[RIGHT_ARM].JointPos[0].Direction = JOINT_DIR_Z_POS;
+		myRobotCommand[RIGHT_ARM].JointPos[1].Angle = -90.0;
+		myRobotCommand[RIGHT_ARM].JointPos[1].Speed = _speed;
+		myRobotCommand[RIGHT_ARM].JointPos[1].Direction = JOINT_DIR_Z_NEG;
+		myRobotCommand[RIGHT_ARM].JointPos[2].Angle = -90.0;
+		myRobotCommand[RIGHT_ARM].JointPos[2].Speed = _speed;
+		myRobotCommand[RIGHT_ARM].JointPos[2].Direction = JOINT_DIR_Z_NEG;
+
+		_btnSequenceTest = 2;
 		break;
 
 	case 2:		// 180 | -90 | -90  -->  90 | 0 | 0
 		myRobotCommand[LEFT_ARM].JointPos[0].Angle = 90.0;
-		myRobotCommand[LEFT_ARM].JointPos[0].Speed = _speedMag;
+		myRobotCommand[LEFT_ARM].JointPos[0].Speed = _speed;
 		myRobotCommand[LEFT_ARM].JointPos[0].Direction = JOINT_DIR_Z_NEG;
 		myRobotCommand[LEFT_ARM].JointPos[1].Angle = 0.0;
-		myRobotCommand[LEFT_ARM].JointPos[1].Speed = _speedMag;
+		myRobotCommand[LEFT_ARM].JointPos[1].Speed = _speed;
 		myRobotCommand[LEFT_ARM].JointPos[1].Direction = JOINT_DIR_Z_POS;
 		myRobotCommand[LEFT_ARM].JointPos[2].Angle = 0.0;
-		myRobotCommand[LEFT_ARM].JointPos[2].Speed = _speedMag;
+		myRobotCommand[LEFT_ARM].JointPos[2].Speed = _speed;
 		myRobotCommand[LEFT_ARM].JointPos[2].Direction = JOINT_DIR_Z_POS;
-		_btnSequence = 1;
+
+		myRobotCommand[RIGHT_ARM].JointPos[0].Angle = 90.0;
+		myRobotCommand[RIGHT_ARM].JointPos[0].Speed = _speed;
+		myRobotCommand[RIGHT_ARM].JointPos[0].Direction = JOINT_DIR_Z_NEG;
+		myRobotCommand[RIGHT_ARM].JointPos[1].Angle = 0.0;
+		myRobotCommand[RIGHT_ARM].JointPos[1].Speed = _speed;
+		myRobotCommand[RIGHT_ARM].JointPos[1].Direction = JOINT_DIR_Z_POS;
+		myRobotCommand[RIGHT_ARM].JointPos[2].Angle = 0.0;
+		myRobotCommand[RIGHT_ARM].JointPos[2].Speed = _speed;
+		myRobotCommand[RIGHT_ARM].JointPos[2].Direction = JOINT_DIR_Z_POS;
+
+		_btnSequenceTest = 1;
 		break;
 
 	default:
-		_btnSequence = 0;
+		_btnSequenceTest = 0;
 		break;
 	}
 #else // (Tested)
-	_speedMag = 45;
-	switch (_btnSequence)
+	switch (_btnSequenceTest)
 	{
 	case 0:	// back home using auto check dir function
 		myRobotCommand[LEFT_ARM].JointPos[0].Angle = 90.0;
-		myRobotCommand[LEFT_ARM].JointPos[0].Speed = _speedMag;
+		myRobotCommand[LEFT_ARM].JointPos[0].Speed = _speed;
 		myRobotCommand[LEFT_ARM].JointPos[0].Direction = _Pos_CalMoveDirection(CURR_POS_J11, 90.0, SINGULAR_J11);
 		myRobotCommand[LEFT_ARM].JointPos[1].Angle = 0.0;
-		myRobotCommand[LEFT_ARM].JointPos[1].Speed = _speedMag;
+		myRobotCommand[LEFT_ARM].JointPos[1].Speed = _speed;
 		myRobotCommand[LEFT_ARM].JointPos[1].Direction = _Pos_CalMoveDirection(CURR_POS_J21, 0.0, SINGULAR_J21);
 		myRobotCommand[LEFT_ARM].JointPos[2].Angle = 0.0;
-		myRobotCommand[LEFT_ARM].JointPos[2].Speed = _speedMag;
+		myRobotCommand[LEFT_ARM].JointPos[2].Speed = _speed;
 		myRobotCommand[LEFT_ARM].JointPos[2].Direction = _Pos_CalMoveDirection(CURR_POS_J31, 0.0, SINGULAR_J31);
-		_btnSequence = 1;
+
+		myRobotCommand[RIGHT_ARM].JointPos[0].Angle = 90.0;
+		myRobotCommand[RIGHT_ARM].JointPos[0].Speed = _speed;
+		myRobotCommand[RIGHT_ARM].JointPos[0].Direction = _Pos_CalMoveDirection(CURR_POS_J12, 90.0, SINGULAR_J12);
+		myRobotCommand[RIGHT_ARM].JointPos[1].Angle = 0.0;
+		myRobotCommand[RIGHT_ARM].JointPos[1].Speed = _speed;
+		myRobotCommand[RIGHT_ARM].JointPos[1].Direction = _Pos_CalMoveDirection(CURR_POS_J22, 0.0, SINGULAR_J22);
+		myRobotCommand[RIGHT_ARM].JointPos[2].Angle = 0.0;
+		myRobotCommand[RIGHT_ARM].JointPos[2].Speed = _speed;
+		myRobotCommand[RIGHT_ARM].JointPos[2].Direction = _Pos_CalMoveDirection(CURR_POS_J32, 0.0, SINGULAR_J32);
+
+		_btnSequenceTest = 1;
 		break;
 		
 	case 1:
 		myRobotCommand[LEFT_ARM].JointPos[0].Angle = 180.0;
-		myRobotCommand[LEFT_ARM].JointPos[0].Speed = _speedMag;
+		myRobotCommand[LEFT_ARM].JointPos[0].Speed = _speed;
 		myRobotCommand[LEFT_ARM].JointPos[0].Direction = _Pos_CalMoveDirection(CURR_POS_J11, 180.0, SINGULAR_J11);
 		myRobotCommand[LEFT_ARM].JointPos[1].Angle = -90.0;
-		myRobotCommand[LEFT_ARM].JointPos[1].Speed = _speedMag;
+		myRobotCommand[LEFT_ARM].JointPos[1].Speed = _speed;
 		myRobotCommand[LEFT_ARM].JointPos[1].Direction = _Pos_CalMoveDirection(CURR_POS_J21, -90.0, SINGULAR_J21);
 		myRobotCommand[LEFT_ARM].JointPos[2].Angle = -90.0;
-		myRobotCommand[LEFT_ARM].JointPos[2].Speed = _speedMag;
+		myRobotCommand[LEFT_ARM].JointPos[2].Speed = _speed;
 		myRobotCommand[LEFT_ARM].JointPos[2].Direction = _Pos_CalMoveDirection(CURR_POS_J31, -90.0, SINGULAR_J31);
-		_btnSequence = 2;
+
+		myRobotCommand[RIGHT_ARM].JointPos[0].Angle = 180.0;
+		myRobotCommand[RIGHT_ARM].JointPos[0].Speed = _speed;
+		myRobotCommand[RIGHT_ARM].JointPos[0].Direction = _Pos_CalMoveDirection(CURR_POS_J12, 180.0, SINGULAR_J12);
+		myRobotCommand[RIGHT_ARM].JointPos[1].Angle = -90.0;
+		myRobotCommand[RIGHT_ARM].JointPos[1].Speed = _speed;
+		myRobotCommand[RIGHT_ARM].JointPos[1].Direction = _Pos_CalMoveDirection(CURR_POS_J22, -90.0, SINGULAR_J22);
+		myRobotCommand[RIGHT_ARM].JointPos[2].Angle = -90.0;
+		myRobotCommand[RIGHT_ARM].JointPos[2].Speed = _speed;
+		myRobotCommand[RIGHT_ARM].JointPos[2].Direction = _Pos_CalMoveDirection(CURR_POS_J32, -90.0, SINGULAR_J32);
+
+		_btnSequenceTest = 2;
 		break;
+
 	case 2:
-	
 		myRobotCommand[LEFT_ARM].JointPos[0].Angle = 90.0;
-		myRobotCommand[LEFT_ARM].JointPos[0].Speed = _speedMag;
+		myRobotCommand[LEFT_ARM].JointPos[0].Speed = _speed;
 		myRobotCommand[LEFT_ARM].JointPos[0].Direction = _Pos_CalMoveDirection(CURR_POS_J11, 90.0, SINGULAR_J11);
 		myRobotCommand[LEFT_ARM].JointPos[1].Angle = 0.0;
-		myRobotCommand[LEFT_ARM].JointPos[1].Speed = _speedMag;
+		myRobotCommand[LEFT_ARM].JointPos[1].Speed = _speed;
 		myRobotCommand[LEFT_ARM].JointPos[1].Direction = _Pos_CalMoveDirection(CURR_POS_J21, 0.0, SINGULAR_J21);
 		myRobotCommand[LEFT_ARM].JointPos[2].Angle = 0.0;
-		myRobotCommand[LEFT_ARM].JointPos[2].Speed = _speedMag;
+		myRobotCommand[LEFT_ARM].JointPos[2].Speed = _speed;
 		myRobotCommand[LEFT_ARM].JointPos[2].Direction = _Pos_CalMoveDirection(CURR_POS_J31, 0.0, SINGULAR_J31);
-		_btnSequence = 1;
+
+		myRobotCommand[RIGHT_ARM].JointPos[0].Angle = 90.0;
+		myRobotCommand[RIGHT_ARM].JointPos[0].Speed = _speed;
+		myRobotCommand[RIGHT_ARM].JointPos[0].Direction = _Pos_CalMoveDirection(CURR_POS_J12, 90.0, SINGULAR_J12);
+		myRobotCommand[RIGHT_ARM].JointPos[1].Angle = 0.0;
+		myRobotCommand[RIGHT_ARM].JointPos[1].Speed = _speed;
+		myRobotCommand[RIGHT_ARM].JointPos[1].Direction = _Pos_CalMoveDirection(CURR_POS_J22, 0.0, SINGULAR_J22);
+		myRobotCommand[RIGHT_ARM].JointPos[2].Angle = 0.0;
+		myRobotCommand[RIGHT_ARM].JointPos[2].Speed = _speed;
+		myRobotCommand[RIGHT_ARM].JointPos[2].Direction = _Pos_CalMoveDirection(CURR_POS_J32, 0.0, SINGULAR_J32);
+
+		_btnSequenceTest = 1;
 		break;
 	default:
-		_btnSequence = 1;
+		_btnSequenceTest = 1;
 		break;
 	}
 
@@ -240,6 +314,11 @@ GLOBAL void AppControl_Pos_TestSquence(void)
 
 GLOBAL void AppControl_Pos_BackToHome(U08 _arm, U16 _speed)
 {
+	if (_speed > HOME_SPEED_MAX)
+	{
+		_speed = HOME_SPEED_MAX;
+	}
+
 	if (LEFT_ARM == _arm)
 	{
 		myRobotCommand[LEFT_ARM].JointPos[0].Angle = HOME_POS_J11;
@@ -252,42 +331,60 @@ GLOBAL void AppControl_Pos_BackToHome(U08 _arm, U16 _speed)
 		myRobotCommand[LEFT_ARM].JointPos[2].Speed = _speed;
 		myRobotCommand[LEFT_ARM].JointPos[2].Direction = _Pos_CalMoveDirection(CURR_POS_J31, HOME_POS_J31, SINGULAR_J31);
 	}
-	/*else if (RIGHT_ARM == _arm)
+	else if (RIGHT_ARM == _arm)
 	{
-
-	}*/
+		myRobotCommand[RIGHT_ARM].JointPos[0].Angle = HOME_POS_J12;
+		myRobotCommand[RIGHT_ARM].JointPos[0].Speed = _speed;
+		myRobotCommand[RIGHT_ARM].JointPos[0].Direction = _Pos_CalMoveDirection(CURR_POS_J12, HOME_POS_J12, SINGULAR_J12);
+		myRobotCommand[RIGHT_ARM].JointPos[1].Angle = HOME_POS_J22;
+		myRobotCommand[RIGHT_ARM].JointPos[1].Speed = _speed;
+		myRobotCommand[RIGHT_ARM].JointPos[1].Direction = _Pos_CalMoveDirection(CURR_POS_J22, HOME_POS_J22, SINGULAR_J22);
+		myRobotCommand[RIGHT_ARM].JointPos[2].Angle = HOME_POS_J32;
+		myRobotCommand[RIGHT_ARM].JointPos[2].Speed = _speed;
+		myRobotCommand[RIGHT_ARM].JointPos[2].Direction = _Pos_CalMoveDirection(CURR_POS_J32, HOME_POS_J32, SINGULAR_J32);
+	}
 
 	return;
 }
 
-PRIVATE strTpSineWave mySineTrajectory[3] = {
+PRIVATE strTpSineWave mySineTrajectory[DUAL_ARM][3] = {
 		// Amp  , Freq , Phase, Bias ,  Time
-		{ 20.0f , 0.2f , 0.0f , 90.0f, 5.0f },
+	{	{ 20.0f , 0.2f , 0.0f , 90.0f, 5.0f },		// LEFT_ARM
 		{ 20.0f , 0.2f , 0.0f ,  0.0f, 5.0f },		// 2025-04-10: Don't set the amplitude to high and run to fast
-		{ 20.0f , 0.2f , 0.0f ,  0.0f, 5.0f }};
-PRIVATE float _totalTime = 0.0f;
-PRIVATE U08	_currJoint = 0;	// Joint 1-2-3 = 0-1-2
-PRIVATE BOOL _trajectoryState[3] = { FALSE, FALSE, FALSE };
-GLOBAL void AppControl_TP_SineWave(float _timeStep)
-{
+		{ 20.0f , 0.2f , 0.0f ,  0.0f, 5.0f }	},
+	{	{ 20.0f , 0.2f , 180.0f , 90.0f, 5.0f },		// RIGHT_ARM
+		{ 20.0f , 0.2f , 180.0f ,  0.0f, 5.0f },
+		{ 20.0f , 0.2f , 180.0f ,  0.0f, 5.0f }	}};
+PRIVATE BOOL _trajectoryState[DUAL_ARM][3] = {
+		{ FALSE, FALSE, FALSE },
+		{ FALSE, FALSE, FALSE }};
+PRIVATE float _totalTime[DUAL_ARM] = { 0.0f , 0.0f };
+PRIVATE U08	_currJoint[DUAL_ARM] = { 0 , 0 };	// Joint 1-2-3 = 0-1-2
+GLOBAL void AppControl_TP_SineWave(U08 _arm, float _timeStep)
+{	// 0. Safety check
+	if ((LEFT_ARM != _arm) && (RIGHT_ARM != _arm))
+	{
+		return;
+	}
+
 	// 1. Check if total TP end?
-	if (TRUE == _trajectoryState[2])
+	if (TRUE == _trajectoryState[_arm][2])
 	{	// Finish TP SineWave for all joints
 		return;
 	}
 
 	// 2. Update time
-	_totalTime = _totalTime + _timeStep;
+	_totalTime[_arm] = _totalTime[_arm] + _timeStep;
 
 	// 3. Check if current joint TP end?
-	if (_totalTime >= mySineTrajectory[_currJoint].MoveTime)
+	if (_totalTime[_arm] >= mySineTrajectory[_arm][_currJoint[_arm]].MoveTime)
 	{
-		_trajectoryState[_currJoint] = TRUE;
-		_totalTime = 0.0f;
+		_trajectoryState[_arm][_currJoint[_arm]] = TRUE;
+		_totalTime[_arm] = 0.0f;
 
-		if (_currJoint < 2)
+		if (_currJoint[_arm] < 2)
 		{
-			_currJoint++;	// TP for next joint
+			_currJoint[_arm]++;	// TP for next joint
 		}
 		else
 		{	// Finish TP SineWave for all joints
@@ -296,13 +393,13 @@ GLOBAL void AppControl_TP_SineWave(float _timeStep)
 	}
 
 	// 4. Caclulate sinwave for current joint
-	if (FALSE == _trajectoryState[_currJoint])
+	if (FALSE == _trajectoryState[_arm][_currJoint[_arm]])
 	{
-		float t = _totalTime;
-		float Amp  = mySineTrajectory[_currJoint].Amp;
-		float Freq = mySineTrajectory[_currJoint].Freq;
-		float Bias = mySineTrajectory[_currJoint].Bias;
-		float Phase= DEG2RAD(mySineTrajectory[_currJoint].Phase);
+		float t = _totalTime[_arm];
+		float Amp  = mySineTrajectory[_arm][_currJoint[_arm]].Amp;
+		float Freq = mySineTrajectory[_arm][_currJoint[_arm]].Freq;
+		float Bias = mySineTrajectory[_arm][_currJoint[_arm]].Bias;
+		float Phase= DEG2RAD(mySineTrajectory[_arm][_currJoint[_arm]].Phase);
 
 		// Position: p(t) = A * sin(2πft + φ) + Bias
 		// Velocity: v(t) = A * 2πf * cos(2πft + φ)
@@ -311,33 +408,33 @@ GLOBAL void AppControl_TP_SineWave(float _timeStep)
 		U08   rotateDir   = (rotateSpeed > 0) ? JOINT_DIR_Z_POS : JOINT_DIR_Z_NEG;
 		rotateSpeed = fabs(rotateSpeed);
 
-		switch (_currJoint)
+		switch (_currJoint[_arm])
 		{
 		case 0:
-			myRobotCommand[LEFT_ARM].JointPos[0].Angle = rotateAngle;
-			myRobotCommand[LEFT_ARM].JointPos[0].Speed = (U16)fminf(rotateSpeed, 90.0)+1;
-//			myRobotCommand[LEFT_ARM].JointPos[0].Direction = _Pos_CalMoveDirection(CURR_POS_J11, rotateAngle, SINGULAR_J11);
-			myRobotCommand[LEFT_ARM].JointPos[0].Direction = rotateDir;
-			myRobotCommand[LEFT_ARM].JointPos[1].Speed = 0;
-			myRobotCommand[LEFT_ARM].JointPos[2].Speed = 0;
+			myRobotCommand[_arm].JointPos[0].Angle = rotateAngle;
+			myRobotCommand[_arm].JointPos[0].Speed = (U16)fminf(rotateSpeed, 90.0)+1;
+//			myRobotCommand[_arm].JointPos[0].Direction = _Pos_CalMoveDirection(CURR_POS_J11, rotateAngle, SINGULAR_J11);
+			myRobotCommand[_arm].JointPos[0].Direction = rotateDir;
+			myRobotCommand[_arm].JointPos[1].Speed = 0;
+			myRobotCommand[_arm].JointPos[2].Speed = 0;
 			break;
 
 		case 1:
-			myRobotCommand[LEFT_ARM].JointPos[1].Angle = rotateAngle;
-			myRobotCommand[LEFT_ARM].JointPos[1].Speed = (U16)fminf(rotateSpeed, 90.0)+1;
-//			myRobotCommand[LEFT_ARM].JointPos[1].Direction = _Pos_CalMoveDirection(CURR_POS_J21, rotateAngle, SINGULAR_J21);
-			myRobotCommand[LEFT_ARM].JointPos[1].Direction = rotateDir;
-			myRobotCommand[LEFT_ARM].JointPos[0].Speed = 0;
-			myRobotCommand[LEFT_ARM].JointPos[2].Speed = 0;
+			myRobotCommand[_arm].JointPos[1].Angle = rotateAngle;
+			myRobotCommand[_arm].JointPos[1].Speed = (U16)fminf(rotateSpeed, 90.0)+1;
+//			myRobotCommand[_arm].JointPos[1].Direction = _Pos_CalMoveDirection(CURR_POS_J21, rotateAngle, SINGULAR_J21);
+			myRobotCommand[_arm].JointPos[1].Direction = rotateDir;
+			myRobotCommand[_arm].JointPos[0].Speed = 0;
+			myRobotCommand[_arm].JointPos[2].Speed = 0;
 			break;
 
 		case 2:
-			myRobotCommand[LEFT_ARM].JointPos[2].Angle = rotateAngle;
-			myRobotCommand[LEFT_ARM].JointPos[2].Speed = (U16)fminf(rotateSpeed, 90.0)+1;
-//			myRobotCommand[LEFT_ARM].JointPos[2].Direction = _Pos_CalMoveDirection(CURR_POS_J31, rotateAngle, SINGULAR_J31);
-			myRobotCommand[LEFT_ARM].JointPos[2].Direction = rotateDir;
-			myRobotCommand[LEFT_ARM].JointPos[0].Speed = 0;
-			myRobotCommand[LEFT_ARM].JointPos[1].Speed = 0;
+			myRobotCommand[_arm].JointPos[2].Angle = rotateAngle;
+			myRobotCommand[_arm].JointPos[2].Speed = (U16)fminf(rotateSpeed, 90.0)+1;
+//			myRobotCommand[_arm].JointPos[2].Direction = _Pos_CalMoveDirection(CURR_POS_J31, rotateAngle, SINGULAR_J31);
+			myRobotCommand[_arm].JointPos[2].Direction = rotateDir;
+			myRobotCommand[_arm].JointPos[0].Speed = 0;
+			myRobotCommand[_arm].JointPos[1].Speed = 0;
 			break;
 
 		default:

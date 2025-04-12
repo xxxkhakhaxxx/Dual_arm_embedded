@@ -264,7 +264,7 @@ GLOBAL void AppDataSet_UartRxErrCnt(U08 _node)
 		{
 		case UART_NODE_SLAVE_1:		AppDataSet_LedState(LED_4_GREEN, TRUE);		break;
 		case UART_NODE_SLAVE_2:		AppDataSet_LedState(LED_6_BLUE, TRUE);		break;
-		case UART_NODE_GUI:			AppDataSet_LedState(LED_5_RED, FALSE);		break;
+//		case UART_NODE_GUI:			AppDataSet_LedState(LED_5_RED, FALSE);		break;
 		default:	break;
 		}
 	}

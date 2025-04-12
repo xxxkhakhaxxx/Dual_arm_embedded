@@ -62,8 +62,10 @@
 
 /* MATHS */
 #define PI                  (3.14159265f)
-#define RAD2DEG(x)          ((x)/PI*180.0f)
-#define DEG2RAD(x)          ((x)*PI/180.0f)
+#define D2R                 (0.01745329f)
+#define R2D                 (57.29577951f)
+#define RAD2DEG(x)          ((x)*R2D)
+#define DEG2RAD(x)          ((x)*D2R)
 
 #define DEG001_TO_DEG(x)    ((x)/100.0f)					// 0.01 degrees  →  degrees
 #define DEG_TO_DEG001(x)    (roundf((x)*100.0f))			// Degrees →  0.01 degrees

@@ -23,7 +23,8 @@
 
 #define DUAL_ARM_LEFT	1
 #define DUAL_ARM_RIGHT	2
-#define THIS_IS_ARM 	DUAL_ARM_LEFT
+#define THIS_IS_ARM 	DUAL_ARM_RIGHT
+
 #define JOINT_DIR_Z_POS		TRUE	// Positive direction in kinematics
 #define JOINT_DIR_Z_NEG		FALSE	// Negative direction in kinematics
 
@@ -54,12 +55,12 @@
 	#define J2_DIR_REAL2KINE	((I08)(1))
 	#define J3_DIR_REAL2KINE	((I08)(-1))
 
-	#define J1_OFFSET_REAL2KINE	(0.0f)
-	#define J2_OFFSET_REAL2KINE	(0.0f)
-	#define J3_OFFSET_REAL2KINE	(0.0f)
-	#define J1_OFFSET_KINE2REAL	((I32)(0))
-	#define J2_OFFSET_KINE2REAL	((I32)(0))
-	#define J3_OFFSET_KINE2REAL	((I32)(0))
+	#define J1_OFFSET_REAL2KINE	(-31.09f)
+	#define J2_OFFSET_REAL2KINE	(-18.15f)
+	#define J3_OFFSET_REAL2KINE	(-2.21f)
+	#define J1_OFFSET_KINE2REAL	((I32)(32897))
+	#define J2_OFFSET_KINE2REAL	((I32)(34185))
+	#define J3_OFFSET_KINE2REAL	((I32)(35779))
 #else
 	#error "Choose arm: DUAL_ARM_LEFT or DUAL_ARM_RIGHT"
 #endif

@@ -52,6 +52,13 @@ volatile static U32 debug_cnt_task_override = 0;
 
 PRIVATE U08 u8GuiSendCnt = 0;
 
+PRIVATE BOOL _masterInitFlag = FALSE;
+PRIVATE BOOL _slave1InitFlag = FALSE;
+PRIVATE BOOL _slave2InitFlag = FALSE;
+PRIVATE BOOL _slave1HandleFlag = FALSE;
+PRIVATE BOOL _slave2HandleFlag = FALSE;
+PRIVATE U08 _btnSequence = 0;
+
 /********************************************************************************
  * GLOBAL VARIABLES
  ********************************************************************************/
@@ -59,47 +66,56 @@ PRIVATE U08 u8GuiSendCnt = 0;
 /********************************************************************************
  * PRIVATE FUNCTION DECLARATION
  ********************************************************************************/
-PRIVATE void AppPeriodTask_SetTaskFlag(enTaskList _TaskName);
-PRIVATE void AppPeriodTask_Scheduler(void);
+PRIVATE BOOL _CheckAllSlaveInit(void);
+PRIVATE BOOL _CheckAllSlaveFeedback(void);
 
 /********************************************************************************
  * PRIVATE FUNCTION IMPLEMENTATION
  ********************************************************************************/
-PRIVATE void AppPeriodTask_SetTaskFlag(enTaskList _TaskName)
+PRIVATE BOOL _CheckAllSlaveInit(void)
 {
-	if (_TaskName != enTaskId)
+#if defined(SLAVE_1_ENA) && !defined(SLAVE_2_ENA)
+	if (TRUE == _slave1InitFlag)
 	{
-		if (TASK_NONE != enTaskId)
-		{
-			debug_cnt_task_override++;
-		}
-		enTaskId = _TaskName;
+		return TRUE;
 	}
-	else
+#elif !defined(SLAVE_1_ENA) && defined(SLAVE_2_ENA)
+	if (TRUE == _slave2InitFlag)
 	{
-		debug_cnt_task_duplicate++;
+		return TRUE;
 	}
-
-	return;
+#elif defined(SLAVE_1_ENA) && defined(SLAVE_2_ENA)
+	if ((TRUE == _slave1InitFlag) && (TRUE == _slave2InitFlag))
+	{
+		return TRUE;
+	}
+#else
+	#error [USER] Enable SLAVE_1_ENA or SLAVE_2_ENA or both
+#endif
+	return FALSE;
 }
 
-PRIVATE void AppPeriodTask_Scheduler(void)
+PRIVATE BOOL _CheckAllSlaveFeedback(void)
 {
-	/* At a time, only 1 task is set to do */
-
-
-	/* 10ms Task */
-	switch ((u32TaskTimerCnt_1ms)%10)
+#if defined(SLAVE_1_ENA) && !defined(SLAVE_2_ENA)
+	if (TRUE == _slave1HandleFlag)
 	{
-//	case 1:
-//		AppPeriodTask_SetTaskFlag(TASK_10MS_ROBOT_IK);
-//		break;
-	case 5:
-//		AppPeriodTask_SetTaskFlag(TASK_10MS_SLAVE_1_COMM);
-		break;
-	default:
-		break;
+		return TRUE;
 	}
+#elif !defined(SLAVE_1_ENA) && defined(SLAVE_2_ENA)
+	if (TRUE == _slave2HandleFlag)
+	{
+		return TRUE;
+	}
+#elif defined(SLAVE_1_ENA) && defined(SLAVE_2_ENA)
+	if ((TRUE == _slave1HandleFlag) && (TRUE == _slave2HandleFlag))
+	{
+		return TRUE;
+	}
+#else
+	#error [USER] Enable SLAVE_1_ENA or SLAVE_2_ENA or both
+#endif
+	return FALSE;
 }
 
 /********************************************************************************
@@ -109,16 +125,6 @@ GLOBAL void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
 	if (htim->Instance == TIM2)
 	{
-		/*
-		u32TaskTimerCnt_1ms++;
-
-		AppPeriodTask_Scheduler();		// Check time for which task to perform
-
-		if (TASK_TIMER_CNT_ELAPSED_1S <= u32TaskTimerCnt_1ms)	// Cycle 1s
-		{
-			u32TaskTimerCnt_1ms = 0;
-		}*/
-
 		AppDataCheck_UserButtonState();	// Check user btn every 20ms
 
 		if (FALSE == bNewSequenceFlag)	// Cycle 20ms
@@ -160,11 +166,6 @@ GLOBAL void AppPeriodTask_TaskCall(void)	/* Performing the corresponding task */
 	return;
 }
 
-PRIVATE BOOL _masterInitFlag = FALSE;
-PRIVATE BOOL _slave1InitFlag = FALSE;
-//	PRIVATE BOOL _slave2InitFlag = FALSE;
-PRIVATE BOOL _slave1HandleFlag = FALSE;
-PRIVATE U08 _btnSequence = 0;
 
 GLOBAL void AppPeriodTask_StateMachineProcess(void)
 {
@@ -179,13 +180,18 @@ GLOBAL void AppPeriodTask_StateMachineProcess(void)
 	case MASTER_STATE_INIT:
 		if (FALSE == _masterInitFlag)
 		{
+#ifdef SLAVE_1_ENA
 			AppCommUart_RecvMsgStart(UART_NODE_SLAVE_1);
-//			AppCommUart_RecvMsgStart(UART_NODE_SLAVE_2);
+#endif
+#ifdef SLAVE_2_ENA
+			AppCommUart_RecvMsgStart(UART_NODE_SLAVE_2);
+#endif
 			_masterInitFlag = TRUE;
 			AppDataSet_LedState(LED_5_RED, TRUE);	// Init LED
 		}
 		else
 		{
+#ifdef SLAVE_1_ENA
 			if (FALSE == _slave1InitFlag)
 			{
 				if (TRUE == AppDataGet_UartRxNewFlag(UART_NODE_SLAVE_1))
@@ -211,12 +217,44 @@ GLOBAL void AppPeriodTask_StateMachineProcess(void)
 				}
 				else
 				{
-					// Wait for Slave Tx
+					// Wait for Slave 1 Tx
 				}
 			}
+#endif
+#ifdef SLAVE_2_ENA
+			if (FALSE == _slave2InitFlag)
+			{
+				if (TRUE == AppDataGet_UartRxNewFlag(UART_NODE_SLAVE_2))
+				{
+					if (
+						(MSG_INIT_BYTE_0 == RxDataSlaveRight[0]) && \
+						(MSG_INIT_BYTE_1 == RxDataSlaveRight[1]) && \
+						(MSG_INIT_LENGTH == RxDataSlaveRight[2])
+					)
+					{	// Correct init format
+						AppCommUART_SendMsg(UART_NODE_SLAVE_2, UART_MSG_INIT);
+						_slave2InitFlag = TRUE;
+					}
+					else
+					{
+						// Wait for another Rx
+						AppDataSet_UartRxErrCnt(UART_NODE_SLAVE_2);
+						AppCommUart_RecvMsgStart(UART_NODE_SLAVE_2);
+					}
 
-			if (TRUE == _slave1InitFlag) //&& (TRUE == _slave2InitFlag)	// SLAVEs are ready
-			{	// Exit INIT STATE
+					AppDataSet_UartRxMsgCnt(UART_NODE_SLAVE_2);
+					AppDataSet_UartRxNewFlag(UART_NODE_SLAVE_2, FALSE);
+				}
+				else
+				{
+					// Wait for Slave 2 Tx
+				}
+			}
+#endif
+
+			// Exit INIT STATE
+			if (TRUE == _CheckAllSlaveInit())
+			{
 				HAL_Delay(2);	// Wait for the Master init cmd send - only for DMA
 				bNewSequenceFlag = FALSE;
 				AppDataSet_MasterState(MASTER_STATE_WAIT_NEW_SEQUENCE);
@@ -227,10 +265,14 @@ GLOBAL void AppPeriodTask_StateMachineProcess(void)
 	case MASTER_STATE_WAIT_NEW_SEQUENCE:
 		if (TRUE == bNewSequenceFlag)	// Timer 2
 		{
+#if defined(SLAVE_1_ENA)
 			AppCommUART_SendMsg(UART_NODE_SLAVE_1, UART_MSG_MOTOR_DATA);
-//			AppCommUART_SendMsg(UART_NODE_SLAVE_2, UART_MSG_MOTOR_DATA);
 			_slave1HandleFlag = FALSE;
-//			_slave2HandleFlag = FALSE;
+#endif
+#if defined(SLAVE_2_ENA)
+			AppCommUART_SendMsg(UART_NODE_SLAVE_2, UART_MSG_MOTOR_DATA);
+			_slave2HandleFlag = FALSE;
+#endif
 			AppDataSet_MasterState(MASTER_STATE_WAIT_SLAVE_FEEDBACK);
 		}
 		else
@@ -244,10 +286,18 @@ GLOBAL void AppPeriodTask_StateMachineProcess(void)
 				AppDataSet_UartRxMsgCnt(UART_NODE_SLAVE_1);
 				AppDataSet_UartRxNewFlag(UART_NODE_SLAVE_1, FALSE);
 			}
+
+			if (TRUE == AppDataGet_UartRxNewFlag(UART_NODE_SLAVE_2))
+			{
+				AppDataSet_UartRxErrCnt(UART_NODE_SLAVE_2);		// Receive un-support message ID in this Master state
+				AppDataSet_UartRxMsgCnt(UART_NODE_SLAVE_2);
+				AppDataSet_UartRxNewFlag(UART_NODE_SLAVE_2, FALSE);
+			}
 		}
 		break;
 
 	case MASTER_STATE_WAIT_SLAVE_FEEDBACK:
+#ifdef SLAVE_1_ENA
 		if ((TRUE == AppDataGet_UartRxNewFlag(UART_NODE_SLAVE_1)) && (FALSE == _slave1HandleFlag))
 		{
 			if (
@@ -276,9 +326,41 @@ GLOBAL void AppPeriodTask_StateMachineProcess(void)
 			AppDataSet_UartRxMsgCnt(UART_NODE_SLAVE_1);
 			AppDataSet_UartRxNewFlag(UART_NODE_SLAVE_1, FALSE);
 		}
+#endif
+#ifdef SLAVE_2_ENA
+		if ((TRUE == AppDataGet_UartRxNewFlag(UART_NODE_SLAVE_2)) && (FALSE == _slave2HandleFlag))
+		{
+			if (
+			(MSG_DATA_RESPOND_BYTE_0 == RxDataSlaveRight[0]) && \
+			(MSG_DATA_RESPOND_BYTE_1 == RxDataSlaveRight[1]) && \
+			(MSG_DATA_RESPOND_LENGTH == RxDataSlaveRight[2])
+			)
+			{
+				memcpy(&myRobotFeedback[RIGHT_ARM].Joint[0].Position, &RxDataSlaveRight[3],  sizeof(float));
+				memcpy(&myRobotFeedback[RIGHT_ARM].Joint[0].Speed,    &RxDataSlaveRight[7],  sizeof(float));
+				memcpy(&myRobotFeedback[RIGHT_ARM].Joint[0].Accel,    &RxDataSlaveRight[11], sizeof(float));
+				memcpy(&myRobotFeedback[RIGHT_ARM].Joint[1].Position, &RxDataSlaveRight[15], sizeof(float));
+				memcpy(&myRobotFeedback[RIGHT_ARM].Joint[1].Speed,    &RxDataSlaveRight[19], sizeof(float));
+				memcpy(&myRobotFeedback[RIGHT_ARM].Joint[1].Accel,    &RxDataSlaveRight[23], sizeof(float));
+				memcpy(&myRobotFeedback[RIGHT_ARM].Joint[2].Position, &RxDataSlaveRight[27], sizeof(float));
+				memcpy(&myRobotFeedback[RIGHT_ARM].Joint[2].Speed,    &RxDataSlaveRight[31], sizeof(float));
+				memcpy(&myRobotFeedback[RIGHT_ARM].Joint[2].Accel,    &RxDataSlaveRight[35], sizeof(float));
+				_slave2HandleFlag = TRUE;
+			}
+			else
+			{
+				AppDataSet_UartRxErrCnt(UART_NODE_SLAVE_2);		// Receive un-support message ID in this Master state
+				AppCommUart_RecvMsgStart(UART_NODE_SLAVE_2);	// Wait for another Master message
+			}
 
-		if (TRUE == _slave1HandleFlag)
-		{	// Exit WAIT SLAVE state
+			AppDataSet_UartRxMsgCnt(UART_NODE_SLAVE_2);
+			AppDataSet_UartRxNewFlag(UART_NODE_SLAVE_2, FALSE);
+		}
+#endif
+
+		// Exit WAIT SLAVE state
+		if (TRUE == _CheckAllSlaveFeedback())
+		{
 			AppDataSet_MasterState(MASTER_STATE_CAL_CONTROL);
 		}
 		break;
@@ -290,17 +372,24 @@ GLOBAL void AppPeriodTask_StateMachineProcess(void)
 	#if defined (MASTER_CONTROL_POS)
 		if (TRUE == AppDataGet_UserButtonEvent())	// 1 time every btn press
 		{
-//			AppPeriodTask_TrajectoryPlanning();
-//			AppControl_Pos_TestSquence();	// Calculate position value to be sent
+			/*AppControl_Pos_TestSquence(RIGHT_ARM, 10);	// Calculate position value to be sent
+			 * AppCommUART_SendMsg(UART_NODE_SLAVE_1, UART_MSG_MOTOR_CONTROL_POS);
+			AppCommUART_SendMsg(UART_NODE_SLAVE_2, UART_MSG_MOTOR_CONTROL_POS);	// Package and Send*/
+
 			if (0 == _btnSequence)
 			{
+		#ifdef SLAVE_1_ENA
 				AppControl_Pos_BackToHome(LEFT_ARM, HOME_SPEED);
 				AppCommUART_SendMsg(UART_NODE_SLAVE_1, UART_MSG_MOTOR_CONTROL_POS);	// Package and Send
+		#endif
+		#ifdef SLAVE_2_ENA
+				AppControl_Pos_BackToHome(RIGHT_ARM, HOME_SPEED);
+				AppCommUART_SendMsg(UART_NODE_SLAVE_2, UART_MSG_MOTOR_CONTROL_POS);	// Package and Send
+		#endif
 				_btnSequence = 1;
 			}
 			else if (1 == _btnSequence)
 			{
-
 				_btnSequence = 2;
 			}
 
@@ -308,8 +397,14 @@ GLOBAL void AppPeriodTask_StateMachineProcess(void)
 		}
 		else if (2 == _btnSequence)
 		{
-			AppControl_TP_SineWave(0.02f);	// Update tp
+		#ifdef SLAVE_1_ENA
+			AppControl_TP_SineWave(LEFT_ARM, 0.02f);
 			AppCommUART_SendMsg(UART_NODE_SLAVE_1, UART_MSG_MOTOR_CONTROL_POS);	// Package and Send
+		#endif
+		#ifdef SLAVE_2_ENA
+			AppControl_TP_SineWave(RIGHT_ARM, 0.02f);
+			AppCommUART_SendMsg(UART_NODE_SLAVE_2, UART_MSG_MOTOR_CONTROL_POS);	// Package and Send
+		#endif
 			AppDataSet_MasterState(MASTER_STATE_SEND_GUI);
 		}
 		else
@@ -339,10 +434,22 @@ GLOBAL void AppPeriodTask_StateMachineProcess(void)
 		else	// If PERIOD_CONTROL == PERIOD_GUI_SEND -> Send every PERIOD_CONTROL
 		{
 			u8GuiSendCnt = 0;
-			AppCommUART_SendMsg(UART_NODE_GUI, UART_MSG_GUI_DATA_1);
+		#if defined(SLAVE_1_ENA) && defined(SLAVE_2_ENA)
+			AppCommUART_SendMsg(UART_NODE_GUI, UART_MSG_GUI_DATA_1_DUAL);
+		#elif defined(SLAVE_1_ENA)
+			AppCommUART_SendMsg(UART_NODE_GUI, UART_MSG_GUI_DATA_1_LEFT);
+		#elif defined(SLAVE_2_ENA)
+			AppCommUART_SendMsg(UART_NODE_GUI, UART_MSG_GUI_DATA_1_RIGHT);
+		#endif
 		}
 	#else
-		AppCommUART_SendMsg(UART_NODE_GUI, UART_MSG_GUI_DATA_2);
+		#if defined(SLAVE_1_ENA) && defined(SLAVE_2_ENA)
+			AppCommUART_SendMsg(UART_NODE_GUI, UART_MSG_GUI_DATA_2_DUAL);
+		#elif defined(SLAVE_1_ENA)
+			AppCommUART_SendMsg(UART_NODE_GUI, UART_MSG_GUI_DATA_2_LEFT);
+		#elif defined(SLAVE_2_ENA)
+			AppCommUART_SendMsg(UART_NODE_GUI, UART_MSG_GUI_DATA_2_RIGHT);
+#endif
 	#endif
 #endif
 
@@ -355,6 +462,8 @@ GLOBAL void AppPeriodTask_StateMachineProcess(void)
 		_masterInitFlag = FALSE;
 		_slave1InitFlag = FALSE;
 		_slave1HandleFlag = FALSE;
+		_slave2InitFlag = FALSE;
+		_slave2HandleFlag = FALSE;
 		AppDataSet_MasterState(MASTER_STATE_INIT);
 		break;
 	}

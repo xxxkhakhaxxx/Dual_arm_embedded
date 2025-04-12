@@ -21,10 +21,7 @@
  ********************************************************************************/
 #define PROJECT_MCU		STM32F4XX_FW_1_28_1
 
-//#define TEST_UART_SEND				// Init-> Auto send and Receive: Used for checking which UART channel work with DMA and IT
-//#define TEST_UART_CYCLE_NO_FEEDBACK	// Init-> Send init -> Wait Slave -> Cal Control -> Wait Slave->...
-//#define TEST_UART_CYCLE_MOTOR_DATA	// Init-> ... -> Request data -> wait Slave -> Read motor data -> ...
-
+/* --------------- PROGRAM LOGIC MACRO --------------- */
 //#define MASTER_NO_CONTROL				// Master will not send control command
 //#define	MASTER_NO_GUI					// Master will not send data to GUI
 
@@ -32,17 +29,31 @@
 //#define MASTER_CONTROL_VEL
 //#define MASTER_CONTROL_TOR
 
-#define LEFT_ARM		(0)
-#define RIGHT_ARM		(1)
-#define DUAL_ARM		(2)			// Left arm and Right arm
+#define SLAVE_1_ENA		(TRUE)
+#define SLAVE_2_ENA		(TRUE)
 
+/* --------------- PROGRAM LOGIC MACRO --------------- */
+#define LEFT_ARM		(0)			// For array idx
+#define RIGHT_ARM		(1)			// For array idx
+#define DUAL_ARM		(2)			// For array init
+
+/* ------------- KINEMATICS PARAMS MACRO --------------- */
 #define JOINT_DIR_Z_POS	TRUE	// Positive direction in kinematics
 #define JOINT_DIR_Z_NEG	FALSE	// Negative direction in kinematics
-#define L1				((float)253.0) /* Length of 1st link - mm */
-#define L2				((float)253.0) /* Length of 2nd link - mm */
-#define L3				((float)139.0) /* Length of 3rd link - mm */
-#define D2R				(0.01745329F)
 
+#define BASE_PARAM_C	(0.224f)	// [m]
+#define L1				(0.223f)	// [m]
+#define L2				(0.233f)	// [m]
+#define L3				(0.138f)	// [m]
+#define M11				(0.368f)	// [Kg]
+#define M21				(0.356f)	// [Kg]
+#define M31				(0.040f)	// [Kg]
+#define M12				(0.368f)	// [Kg]
+#define M22				(0.330f)	// [Kg]
+#define M32				(0.042f)	// [Kg]
+
+
+/* ----------------- GUI PARAMS MACRO ---------------- */
 #define PERIOD_CONTROL		(20)	// Update this base on your timer 2 (Unit: ms)
 #define PERIOD_GUI_SEND		(20)	// Unit: ms
 #define GUI_SEND_CNT_MAX	(PERIOD_GUI_SEND/PERIOD_CONTROL - 1)

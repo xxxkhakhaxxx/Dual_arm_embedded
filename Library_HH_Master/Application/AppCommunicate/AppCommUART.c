@@ -179,16 +179,20 @@ GLOBAL void AppCommUART_SendMsg(enUartNode _node, enUartMsg _txMsgId)
 	// 3. Get UART target and data
 	switch (_node)
 	{
+#if SLAVE_1_ENA
 	case UART_NODE_SLAVE_1:
 		_arm = LEFT_ARM;
 		uartGoal = strUartSlaveLeft;
 		sourceTxData = TxDataSlaveLeft;
 		break;
+#endif
+#if SLAVE_2_ENA
 	case UART_NODE_SLAVE_2:
 		_arm = RIGHT_ARM;
 		uartGoal = strUartSlaveRight;
 		sourceTxData = TxDataSlaveRight;
 		break;
+#endif
 	case UART_NODE_GUI:
 		uartGoal = strUartGUI;
 		sourceTxData = TxDataGUI;

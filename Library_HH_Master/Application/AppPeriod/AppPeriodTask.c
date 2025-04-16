@@ -122,6 +122,8 @@ PRIVATE BOOL _CheckAllSlaveFeedback(void)
 PRIVATE void _MasterStateControl(void)
 {
 #if defined (MASTER_CONTROL_POS)
+	static BOOL isHome = FALSE;			// Home position
+
 	// 1. Change cmd if button is pressed
 	if (TRUE == AppDataGet_UserButtonEvent())
 	{
@@ -143,33 +145,31 @@ PRIVATE void _MasterStateControl(void)
 	switch (_btnSequence)
 	{
 	case BTN_CTRL_HOME:
-		#if SLAVE_1_ENA
-		AppControl_Pos_BackToHome(LEFT_ARM, HOME_SPEED);
-		AppCommUART_SendMsg(UART_NODE_SLAVE_1, UART_MSG_MOTOR_CONTROL_POS);
-		#endif
-		#if SLAVE_2_ENA
-		AppControl_Pos_BackToHome(RIGHT_ARM, HOME_SPEED);
-		AppCommUART_SendMsg(UART_NODE_SLAVE_2, UART_MSG_MOTOR_CONTROL_POS);
-		#endif
+		if (FALSE == isHome)
+		{
+			AppControl_Pos_BackToHome(LEFT_ARM, HOME_SPEED);
+			AppControl_Pos_BackToHome(RIGHT_ARM, HOME_SPEED);
+			AppCommUART_SendMsg(UART_NODE_SLAVE_1, UART_MSG_MOTOR_CONTROL_POS);
+			AppCommUART_SendMsg(UART_NODE_SLAVE_2, UART_MSG_MOTOR_CONTROL_POS);
+			isHome = TRUE;
+		}
 		break;
 
 	case BTN_CTRL_PLANNING:
 #if 1
 		if (TRUE == AppControl_TP_CircleTool(PERIOD_TRAJECTORY_PLANNING))	// It's for both
 		{
-		#if SLAVE_1_ENA
 			AppControl_IK_Tool2EE(LEFT_ARM);
-			AppControl_IK_EE2Joints(LEFT_ARM);
-//			AppControl_Pos_UpdateTpData(LEFT_ARM);
-			//AppCommUART_SendMsg(UART_NODE_SLAVE_1, UART_MSG_MOTOR_CONTROL_POS);
-		#endif
-		#if SLAVE_2_ENA
 			AppControl_IK_Tool2EE(RIGHT_ARM);
+			AppControl_IK_EE2Joints(LEFT_ARM);
 			AppControl_IK_EE2Joints(RIGHT_ARM);
-//			AppControl_Pos_UpdateTpData(RIGHT_ARM);
+			AppControl_Pos_UpdateTpData(LEFT_ARM);
+			AppControl_Pos_UpdateTpData(RIGHT_ARM);
+
+			//AppCommUART_SendMsg(UART_NODE_SLAVE_1, UART_MSG_MOTOR_CONTROL_POS);
 			//AppCommUART_SendMsg(UART_NODE_SLAVE_2, UART_MSG_MOTOR_CONTROL_POS);
-		#endif
 		}
+
 #else
 		if (TRUE == AppControl_TP_SineWaveJoint(LEFT_ARM, PERIOD_TRAJECTORY_PLANNING))
 		{
@@ -265,18 +265,13 @@ GLOBAL void AppPeriodTask_StateMachineProcess(void)
 	case MASTER_STATE_INIT:
 		if (FALSE == _masterInitFlag)
 		{
-#ifdef SLAVE_1_ENA
 			AppCommUart_RecvMsgStart(UART_NODE_SLAVE_1);
-#endif
-#ifdef SLAVE_2_ENA
 			AppCommUart_RecvMsgStart(UART_NODE_SLAVE_2);
-#endif
 			_masterInitFlag = TRUE;
 			AppDataSet_LedState(LED_5_RED, TRUE);	// Init LED
 		}
 		else
 		{
-#ifdef SLAVE_1_ENA
 			if (FALSE == _slave1InitFlag)
 			{
 				if (TRUE == AppDataGet_UartRxNewFlag(UART_NODE_SLAVE_1))
@@ -305,8 +300,7 @@ GLOBAL void AppPeriodTask_StateMachineProcess(void)
 					// Wait for Slave 1 Tx
 				}
 			}
-#endif
-#ifdef SLAVE_2_ENA
+
 			if (FALSE == _slave2InitFlag)
 			{
 				if (TRUE == AppDataGet_UartRxNewFlag(UART_NODE_SLAVE_2))
@@ -335,7 +329,6 @@ GLOBAL void AppPeriodTask_StateMachineProcess(void)
 					// Wait for Slave 2 Tx
 				}
 			}
-#endif
 
 			// Exit INIT STATE
 			if (TRUE == _CheckAllSlaveInit())
@@ -350,14 +343,10 @@ GLOBAL void AppPeriodTask_StateMachineProcess(void)
 	case MASTER_STATE_WAIT_NEW_SEQUENCE:
 		if (TRUE == bNewSequenceFlag)	// Timer 2
 		{
-#if defined(SLAVE_1_ENA)
 			AppCommUART_SendMsg(UART_NODE_SLAVE_1, UART_MSG_MOTOR_DATA);
-			_slave1HandleFlag = FALSE;
-#endif
-#if defined(SLAVE_2_ENA)
 			AppCommUART_SendMsg(UART_NODE_SLAVE_2, UART_MSG_MOTOR_DATA);
+			_slave1HandleFlag = FALSE;
 			_slave2HandleFlag = FALSE;
-#endif
 			AppDataSet_MasterState(MASTER_STATE_WAIT_SLAVE_FEEDBACK);
 		}
 		else
@@ -382,7 +371,6 @@ GLOBAL void AppPeriodTask_StateMachineProcess(void)
 		break;
 
 	case MASTER_STATE_WAIT_SLAVE_FEEDBACK:
-#ifdef SLAVE_1_ENA
 		if ((TRUE == AppDataGet_UartRxNewFlag(UART_NODE_SLAVE_1)) && (FALSE == _slave1HandleFlag))
 		{
 			if (
@@ -411,8 +399,7 @@ GLOBAL void AppPeriodTask_StateMachineProcess(void)
 			AppDataSet_UartRxMsgCnt(UART_NODE_SLAVE_1);
 			AppDataSet_UartRxNewFlag(UART_NODE_SLAVE_1, FALSE);
 		}
-#endif
-#ifdef SLAVE_2_ENA
+
 		if ((TRUE == AppDataGet_UartRxNewFlag(UART_NODE_SLAVE_2)) && (FALSE == _slave2HandleFlag))
 		{
 			if (
@@ -441,7 +428,6 @@ GLOBAL void AppPeriodTask_StateMachineProcess(void)
 			AppDataSet_UartRxMsgCnt(UART_NODE_SLAVE_2);
 			AppDataSet_UartRxNewFlag(UART_NODE_SLAVE_2, FALSE);
 		}
-#endif
 
 		// Exit WAIT SLAVE state
 		if (TRUE == _CheckAllSlaveFeedback())

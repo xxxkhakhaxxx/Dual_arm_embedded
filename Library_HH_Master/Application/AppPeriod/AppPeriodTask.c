@@ -57,7 +57,7 @@ PRIVATE BOOL _slave1InitFlag = FALSE;
 PRIVATE BOOL _slave2InitFlag = FALSE;
 PRIVATE BOOL _slave1HandleFlag = FALSE;
 PRIVATE BOOL _slave2HandleFlag = FALSE;
-PRIVATE U08 _btnSequence = 0;
+PRIVATE enBtnCtrlSequence _btnSequence = BTN_CTRL_INIT;
 
 /********************************************************************************
  * GLOBAL VARIABLES
@@ -68,6 +68,7 @@ PRIVATE U08 _btnSequence = 0;
  ********************************************************************************/
 PRIVATE BOOL _CheckAllSlaveInit(void);
 PRIVATE BOOL _CheckAllSlaveFeedback(void);
+PRIVATE void _MasterStateControl(void);
 
 /********************************************************************************
  * PRIVATE FUNCTION IMPLEMENTATION
@@ -118,6 +119,90 @@ PRIVATE BOOL _CheckAllSlaveFeedback(void)
 	return FALSE;
 }
 
+PRIVATE void _MasterStateControl(void)
+{
+#if defined (MASTER_CONTROL_POS)
+	// 1. Change cmd if button is pressed
+	if (TRUE == AppDataGet_UserButtonEvent())
+	{
+		switch (_btnSequence)
+		{
+//			case BTN_CTRL_INIT:		_btnSequence = BTN_CTRL_TEST_POS_SEQUENCE;	break;
+		case BTN_CTRL_INIT:		_btnSequence = BTN_CTRL_HOME;		break;
+		case BTN_CTRL_HOME:		_btnSequence = BTN_CTRL_PLANNING;	break;
+		case BTN_CTRL_PLANNING:	_btnSequence = BTN_CTRL_IDLE;		break;
+		case BTN_CTRL_IDLE:
+		case BTN_CTRL_TEST_POS_SEQUENCE:
+		default:
+			// Do nothing
+			break;
+		}
+	}
+
+	// 2. Process based on the cmd
+	switch (_btnSequence)
+	{
+	case BTN_CTRL_HOME:
+		#if SLAVE_1_ENA
+		AppControl_Pos_BackToHome(LEFT_ARM, HOME_SPEED);
+		AppCommUART_SendMsg(UART_NODE_SLAVE_1, UART_MSG_MOTOR_CONTROL_POS);
+		#endif
+		#if SLAVE_2_ENA
+		AppControl_Pos_BackToHome(RIGHT_ARM, HOME_SPEED);
+		AppCommUART_SendMsg(UART_NODE_SLAVE_2, UART_MSG_MOTOR_CONTROL_POS);
+		#endif
+		break;
+
+	case BTN_CTRL_PLANNING:
+#if 1
+		if (TRUE == AppControl_TP_CircleTool(PERIOD_TRAJECTORY_PLANNING))	// It's for both
+		{
+		#if SLAVE_1_ENA
+			AppControl_IK_Tool2EE(LEFT_ARM);
+			AppControl_IK_EE2Joints(LEFT_ARM);
+//			AppControl_Pos_UpdateTpData(LEFT_ARM);
+			//AppCommUART_SendMsg(UART_NODE_SLAVE_1, UART_MSG_MOTOR_CONTROL_POS);
+		#endif
+		#if SLAVE_2_ENA
+			AppControl_IK_Tool2EE(RIGHT_ARM);
+			AppControl_IK_EE2Joints(RIGHT_ARM);
+//			AppControl_Pos_UpdateTpData(RIGHT_ARM);
+			//AppCommUART_SendMsg(UART_NODE_SLAVE_2, UART_MSG_MOTOR_CONTROL_POS);
+		#endif
+		}
+#else
+		if (TRUE == AppControl_TP_SineWaveJoint(LEFT_ARM, PERIOD_TRAJECTORY_PLANNING))
+		{
+			AppCommUART_SendMsg(UART_NODE_SLAVE_1, UART_MSG_MOTOR_CONTROL_POS);
+		}
+		if (TRUE == AppControl_TP_SineWaveJoint(RIGHT_ARM, PERIOD_TRAJECTORY_PLANNING))
+		{
+			AppCommUART_SendMsg(UART_NODE_SLAVE_2, UART_MSG_MOTOR_CONTROL_POS);
+		}
+		break;
+#endif
+	case BTN_CTRL_TEST_POS_SEQUENCE:
+
+		break;
+
+	case BTN_CTRL_INIT:
+	case BTN_CTRL_IDLE:
+	default:
+		// Do nothing
+		break;
+	}
+
+
+#elif defined (MASTER_CONTROL_VEL)
+	// TODO
+
+#elif defined (MASTER_CONTROL_TOR)
+	// TODO
+
+#endif	// MASTER_CONTROL_POS
+
+	return;
+}
 /********************************************************************************
  * GLOBAL FUNCTION IMPLEMENTATION
  ********************************************************************************/
@@ -366,60 +451,10 @@ GLOBAL void AppPeriodTask_StateMachineProcess(void)
 		break;
 
 	case MASTER_STATE_CAL_CONTROL:
-#if defined (MASTER_NO_CONTROL)
-		AppDataSet_MasterState(MASTER_STATE_SEND_GUI);
-#else
-	#if defined (MASTER_CONTROL_POS)
-		if (TRUE == AppDataGet_UserButtonEvent())	// 1 time every btn press
-		{
-			/*AppControl_Pos_TestSquence(RIGHT_ARM, 10);	// Calculate position value to be sent
-			 * AppCommUART_SendMsg(UART_NODE_SLAVE_1, UART_MSG_MOTOR_CONTROL_POS);
-			AppCommUART_SendMsg(UART_NODE_SLAVE_2, UART_MSG_MOTOR_CONTROL_POS);	// Package and Send*/
-
-			if (0 == _btnSequence)
-			{
-		#ifdef SLAVE_1_ENA
-				AppControl_Pos_BackToHome(LEFT_ARM, HOME_SPEED);
-				AppCommUART_SendMsg(UART_NODE_SLAVE_1, UART_MSG_MOTOR_CONTROL_POS);	// Package and Send
-		#endif
-		#ifdef SLAVE_2_ENA
-				AppControl_Pos_BackToHome(RIGHT_ARM, HOME_SPEED);
-				AppCommUART_SendMsg(UART_NODE_SLAVE_2, UART_MSG_MOTOR_CONTROL_POS);	// Package and Send
-		#endif
-				_btnSequence = 1;
-			}
-			else if (1 == _btnSequence)
-			{
-				_btnSequence = 2;
-			}
-
-			AppDataSet_MasterState(MASTER_STATE_SEND_GUI);
-		}
-		else if (2 == _btnSequence)
-		{
-		#ifdef SLAVE_1_ENA
-			AppControl_TP_SineWave(LEFT_ARM, 0.02f);
-			AppCommUART_SendMsg(UART_NODE_SLAVE_1, UART_MSG_MOTOR_CONTROL_POS);	// Package and Send
-		#endif
-		#ifdef SLAVE_2_ENA
-			AppControl_TP_SineWave(RIGHT_ARM, 0.02f);
-			AppCommUART_SendMsg(UART_NODE_SLAVE_2, UART_MSG_MOTOR_CONTROL_POS);	// Package and Send
-		#endif
-			AppDataSet_MasterState(MASTER_STATE_SEND_GUI);
-		}
-		else
-		{
-			AppDataSet_MasterState(MASTER_STATE_SEND_GUI);
-		}
-
-	#elif defined (MASTER_CONTROL_VEL)
-		// TODO
-	#elif defined (MASTER_CONTROL_TOR)
-		// TODO
-	#else	// No control
-		AppDataSet_MasterState(MASTER_STATE_SEND_GUI);
-	#endif
+#ifndef MASTER_NO_CONTROL
+		_MasterStateControl();
 #endif
+		AppDataSet_MasterState(MASTER_STATE_SEND_GUI);
 		break;
 
 	case MASTER_STATE_SEND_GUI:

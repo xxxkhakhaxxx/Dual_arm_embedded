@@ -310,6 +310,7 @@ GLOBAL void AppCommUART_SendMsg(enUartNode _node, enUartMsg _txMsgId)
 		// Cast sourceTxData to 32-bit pointer for direct access
 		U32* txData32Dual = (U32*)sourceTxData;
 
+#ifndef MASTER_GUI_TP_CHECK
 		txData32Dual[1] = *(U32*)&myRobotFeedback[LEFT_ARM].Joint[0].Position; // sourceTxData[4-7]
 		txData32Dual[2] = *(U32*)&myRobotFeedback[LEFT_ARM].Joint[0].Speed;    // sourceTxData[8-11]
 		txData32Dual[3] = *(U32*)&myRobotFeedback[LEFT_ARM].Joint[0].Accel;    // sourceTxData[12-15]
@@ -329,6 +330,46 @@ GLOBAL void AppCommUART_SendMsg(enUartNode _node, enUartMsg _txMsgId)
 		txData32Dual[16] = *(U32*)&myRobotFeedback[RIGHT_ARM].Joint[2].Position; // sourceTxData[64-67]
 		txData32Dual[17] = *(U32*)&myRobotFeedback[RIGHT_ARM].Joint[2].Speed;    // sourceTxData[68-71]
 		txData32Dual[18] = *(U32*)&myRobotFeedback[RIGHT_ARM].Joint[2].Accel;    // sourceTxData[72-75]
+#else
+		float Pos, Vel, Accel;
+		Pos   = RAD2DEG(myRobotTrajectory[LEFT_ARM].Joint[0].currPos);
+		Vel   = RAD2DEG(myRobotTrajectory[LEFT_ARM].Joint[0].currVel);
+		Accel = RAD2DEG(myRobotTrajectory[LEFT_ARM].Joint[0].currAccel);
+		txData32Dual[1] = *(U32*)&Pos;
+		txData32Dual[2] = *(U32*)&Vel;
+		txData32Dual[3] = *(U32*)&Accel;
+		Pos   = RAD2DEG(myRobotTrajectory[LEFT_ARM].Joint[1].currPos);
+		Vel   = RAD2DEG(myRobotTrajectory[LEFT_ARM].Joint[1].currVel);
+		Accel = RAD2DEG(myRobotTrajectory[LEFT_ARM].Joint[1].currAccel);
+		txData32Dual[4] = *(U32*)&Pos;
+		txData32Dual[5] = *(U32*)&Vel;
+		txData32Dual[6] = *(U32*)&Accel;
+		Pos   = RAD2DEG(myRobotTrajectory[LEFT_ARM].Joint[2].currPos);
+		Vel   = RAD2DEG(myRobotTrajectory[LEFT_ARM].Joint[2].currVel);
+		Accel = RAD2DEG(myRobotTrajectory[LEFT_ARM].Joint[2].currAccel);
+		txData32Dual[7] = *(U32*)&Pos;
+		txData32Dual[8] = *(U32*)&Vel;
+		txData32Dual[9] = *(U32*)&Accel;
+
+		Pos   = RAD2DEG(myRobotTrajectory[RIGHT_ARM].Joint[0].currPos);
+		Vel   = RAD2DEG(myRobotTrajectory[RIGHT_ARM].Joint[0].currVel);
+		Accel = RAD2DEG(myRobotTrajectory[RIGHT_ARM].Joint[0].currAccel);
+		txData32Dual[10] = *(U32*)&Pos;
+		txData32Dual[11] = *(U32*)&Vel;
+		txData32Dual[12] = *(U32*)&Accel;
+		Pos   = RAD2DEG(myRobotTrajectory[RIGHT_ARM].Joint[1].currPos);
+		Vel   = RAD2DEG(myRobotTrajectory[RIGHT_ARM].Joint[1].currVel);
+		Accel = RAD2DEG(myRobotTrajectory[RIGHT_ARM].Joint[1].currAccel);
+		txData32Dual[13] = *(U32*)&Pos;
+		txData32Dual[14] = *(U32*)&Vel;
+		txData32Dual[15] = *(U32*)&Accel;
+		Pos   = RAD2DEG(myRobotTrajectory[RIGHT_ARM].Joint[2].currPos);
+		Vel   = RAD2DEG(myRobotTrajectory[RIGHT_ARM].Joint[2].currVel);
+		Accel = RAD2DEG(myRobotTrajectory[RIGHT_ARM].Joint[2].currAccel);
+		txData32Dual[16] = *(U32*)&Pos;
+		txData32Dual[17] = *(U32*)&Vel;
+		txData32Dual[18] = *(U32*)&Accel;
+#endif /* MASTER_GUI_TP_CHECK */
 
 		 // Calculate checksum (payload only: byte 4-39)
 		for (int i = 4; i < MSG_GUI_DATA_1_DUAL_LENGTH; i++)

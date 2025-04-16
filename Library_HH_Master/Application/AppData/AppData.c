@@ -169,6 +169,21 @@ GLOBAL void AppDataCheck_UserButtonState(void)
 }
 
 
+PRIVATE BOOL isTpCalculated = FALSE;
+GLOBAL BOOL AppDataGet_TPCalculated(void)
+{
+	return isTpCalculated;
+}
+GLOBAL void AppDataSet_TPCalculated(BOOL _flag)
+{
+	if (_flag != isTpCalculated)
+	{
+		isTpCalculated = _flag;
+	}
+	return;
+}
+
+
 /************ UART TX MANAGE FUNCTION  ************/
 GLOBAL BOOL AppDataGet_UartTxWaitFlag(U08 _node)
 {

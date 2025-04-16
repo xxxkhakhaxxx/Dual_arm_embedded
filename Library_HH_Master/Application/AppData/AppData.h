@@ -149,6 +149,15 @@ typedef enum ENUM_ROBOT_MODE
 	ROBOT_MODE_MAX
 } enRobotMode;
 
+typedef enum ENUM_BTN_CTRL_SEQUENCE
+{
+	BTN_CTRL_INIT = 0,
+	BTN_CTRL_HOME,
+	BTN_CTRL_PLANNING,
+
+	BTN_CTRL_TEST_POS_SEQUENCE,
+	BTN_CTRL_IDLE
+} enBtnCtrlSequence;
 
 /********************************************************************************
  * GLOBAL VARIABLES
@@ -165,6 +174,9 @@ GLOBAL void AppDataSet_MasterState(enMasterStateList _state);
 GLOBAL void AppDataSet_LedState(uint16_t pin_name, BOOL _state);
 GLOBAL BOOL AppDataGet_UserButtonEvent(void);
 GLOBAL void AppDataCheck_UserButtonState(void);
+
+GLOBAL BOOL AppDataGet_TPCalculated(void);
+GLOBAL void AppDataSet_TPCalculated(BOOL _flag);
 
 /************ UART TX MANAGE FUNCTION  ************/
 GLOBAL BOOL AppDataGet_UartTxWaitFlag(U08 _node);				// if you don't want to use this flag, you should handle Tx success or not

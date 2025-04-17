@@ -162,7 +162,8 @@ PRIVATE void _MasterStateControl(void)
 #if 1
 		if (FALSE == isMovingToStart)
 		{
-			if (TRUE == AppControl_TP_CircleTool(PERIOD_TRAJECTORY_PLANNING))	// It's for both
+//			if (TRUE == AppControl_TP_CircleTool(PERIOD_TRAJECTORY_PLANNING))	// It's for both
+			if (TRUE == AppControl_TP_LineTool(PERIOD_TRAJECTORY_PLANNING))
 			{
 				AppControl_IK_Tool2EE(LEFT_ARM);
 				AppControl_IK_Tool2EE(RIGHT_ARM);
@@ -193,7 +194,8 @@ PRIVATE void _MasterStateControl(void)
 		break;
 
 	case BTN_CTRL_PLANNING:
-		if (TRUE == AppControl_TP_CircleTool(PERIOD_TRAJECTORY_PLANNING))	// It's for both
+//		if (TRUE == AppControl_TP_CircleTool(PERIOD_TRAJECTORY_PLANNING))	// It's for both
+		if (TRUE == AppControl_TP_LineTool(PERIOD_TRAJECTORY_PLANNING))
 		{
 			AppControl_IK_Tool2EE(LEFT_ARM);
 			AppControl_IK_Tool2EE(RIGHT_ARM);

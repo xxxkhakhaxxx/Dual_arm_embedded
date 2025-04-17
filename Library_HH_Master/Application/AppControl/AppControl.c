@@ -548,6 +548,60 @@ GLOBAL BOOL AppControl_TP_CircleTool(float _timeStep)
 	return isMoving;
 }
 
+GLOBAL BOOL AppControl_TP_LineTool(float _timeStep)
+{
+	static BOOL isInit = FALSE;
+	static BOOL isMoving = FALSE;
+	static float Xs, Ys, Gs, Xg, Yg, Gg, t, timePercent;
+
+	// 1. Init desired trajectory
+	if (FALSE == isInit)
+	{
+		myTaskTrajectory.Line.Setting.Start_X = 0.0f;
+		myTaskTrajectory.Line.Setting.Start_Y = 0.3f;
+		myTaskTrajectory.Line.Setting.Start_G = 0.0f;
+		myTaskTrajectory.Line.Setting.Goal_X = 0.0f;
+		myTaskTrajectory.Line.Setting.Goal_Y = 0.4f;
+		myTaskTrajectory.Line.Setting.Goal_G = 0.0f;
+
+		myTaskTrajectory.Line.Ctrl.MovedTime = 0.0f;
+		myTaskTrajectory.Line.Ctrl.TimeEnd   = 5.0f;
+		_timeStep = 0.0f;	// Start from 0.0s
+
+		isInit = TRUE;
+		isMoving = TRUE;
+	}
+
+	// 2. Check TP end or not
+	if (myTaskTrajectory.Line.Ctrl.MovedTime >= myTaskTrajectory.Line.Ctrl.TimeEnd)
+	{	// Finished
+		isMoving = FALSE;
+	}
+	else
+	{
+		// 3. Get params
+		t  = myTaskTrajectory.Line.Ctrl.MovedTime + _timeStep;
+		Xs = myTaskTrajectory.Line.Setting.Start_X;
+		Ys = myTaskTrajectory.Line.Setting.Start_Y;
+		Gs = myTaskTrajectory.Line.Setting.Start_G;
+		Xg = myTaskTrajectory.Line.Setting.Goal_X;
+		Yg = myTaskTrajectory.Line.Setting.Goal_Y;
+		Gg = myTaskTrajectory.Line.Setting.Goal_G;
+
+		// 4. Update trajectory
+		timePercent = t / myTaskTrajectory.Line.Ctrl.TimeEnd;
+
+		myTaskTrajectory.CurrTrajectory.Xm_t = Xs + timePercent*(Xg - Xs);
+		myTaskTrajectory.CurrTrajectory.Ym_t = Ys + timePercent*(Yg - Ys);
+		myTaskTrajectory.CurrTrajectory.Gm_t = Gs + timePercent*(Gg - Gs);
+
+		// 5. Update moved time
+		myTaskTrajectory.Line.Ctrl.MovedTime = t;
+	}
+
+	return isMoving;
+}
+
 GLOBAL void AppControl_IK_Tool2EE(U08 _arm)
 {
 	if ((LEFT_ARM != _arm) && (RIGHT_ARM != _arm))

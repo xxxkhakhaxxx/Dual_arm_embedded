@@ -26,7 +26,7 @@
 #define	SINGULAR_J22	(180.0f)
 #define	SINGULAR_J32	(180.0f)
 
-#define	HOME_SPEED		(20)
+#define	HOME_SPEED		(10)
 #define	HOME_SPEED_MAX	(40)
 #define	HOME_POS_J11	(90.0f)
 #define	HOME_POS_J21	(0.0f)
@@ -34,6 +34,9 @@
 #define	HOME_POS_J12	(90.0f)
 #define	HOME_POS_J22	(0.0f)
 #define	HOME_POS_J32	(0.0f)
+
+#define TP_START_SPEED		(10)
+#define	TP_START_SPEED_MAX	(30)
 
 #define TEST_SPEED_MAX	(20)
 
@@ -144,12 +147,13 @@ GLOBAL extern strJointSpacePlanning myRobotTrajectory[DUAL_ARM];
  ********************************************************************************/
 GLOBAL void AppControl_CalRobotIK(void);
 GLOBAL void AppControl_Pos_TestSquence(U08 _arm, U16 _speed);
-GLOBAL void AppControl_Pos_BackToHome(U08 _arm, U16 _speed);
+GLOBAL void AppControl_Pos_MoveToHome(U08 _arm, U16 _speed);
 GLOBAL BOOL AppControl_TP_SineWaveJoint(U08 _arm, float _timeStep);	// [s]
-GLOBAL BOOL AppControl_TP_CircleTool(float _timeStep);			// TP ➡ T_Mass_World
-GLOBAL void AppControl_IK_Tool2EE(U08 _arm);					// T_Mass_World ➡ T_4i_0i
-GLOBAL void AppControl_IK_EE2Joints(U08 _arm);					// T_4i_0i ➡ q1/q2/q3
-GLOBAL void AppControl_Pos_UpdateTpData(U08 _arm);
+GLOBAL BOOL AppControl_TP_CircleTool(float _timeStep);				// TP ➡ T_Mass_World
+GLOBAL void AppControl_IK_Tool2EE(U08 _arm);						// T_Mass_World ➡ T_4i_0i
+GLOBAL void AppControl_IK_EE2Joints(U08 _arm);						// T_4i_0i ➡ q1/q2/q3
+GLOBAL void AppControl_Pos_MoveToTpStart(U08 _arm, U16 _speed);
+GLOBAL void AppControl_Pos_FollowTpPos(U08 _arm);
 
 
 

@@ -122,17 +122,20 @@ PRIVATE BOOL _CheckAllSlaveFeedback(void)
 PRIVATE void _MasterStateControl(void)
 {
 #if defined (MASTER_CONTROL_POS)
-	static BOOL isHome = FALSE;			// Home position
+	static BOOL isMovingToHome = FALSE;		// Home position
+	static BOOL isMovingToStart = FALSE;		// TP start position
 
 	// 1. Change cmd if button is pressed
 	if (TRUE == AppDataGet_UserButtonEvent())
 	{
 		switch (_btnSequence)
 		{
-//			case BTN_CTRL_INIT:		_btnSequence = BTN_CTRL_TEST_POS_SEQUENCE;	break;
-		case BTN_CTRL_INIT:		_btnSequence = BTN_CTRL_HOME;		break;
-		case BTN_CTRL_HOME:		_btnSequence = BTN_CTRL_PLANNING;	break;
-		case BTN_CTRL_PLANNING:	_btnSequence = BTN_CTRL_IDLE;		break;
+//		case BTN_CTRL_INIT:				_btnSequence = BTN_CTRL_TEST_POS_SEQUENCE;	break;
+		case BTN_CTRL_INIT:				_btnSequence = BTN_CTRL_TO_HOME;			break;
+		case BTN_CTRL_TO_HOME:			_btnSequence = BTN_CTRL_TO_PLANNING_INIT;	break;
+		case BTN_CTRL_TO_PLANNING_INIT:	_btnSequence = BTN_CTRL_PLANNING;			break;
+		case BTN_CTRL_PLANNING:			_btnSequence = BTN_CTRL_IDLE;				break;
+
 		case BTN_CTRL_IDLE:
 		case BTN_CTRL_TEST_POS_SEQUENCE:
 		default:
@@ -144,32 +147,39 @@ PRIVATE void _MasterStateControl(void)
 	// 2. Process based on the cmd
 	switch (_btnSequence)
 	{
-	case BTN_CTRL_HOME:
-		if (FALSE == isHome)
+	case BTN_CTRL_TO_HOME:
+		if (FALSE == isMovingToHome)
 		{
-			AppControl_Pos_BackToHome(LEFT_ARM, HOME_SPEED);
-			AppControl_Pos_BackToHome(RIGHT_ARM, HOME_SPEED);
+			AppControl_Pos_MoveToHome(LEFT_ARM, HOME_SPEED);
+			AppControl_Pos_MoveToHome(RIGHT_ARM, HOME_SPEED);
 			AppCommUART_SendMsg(UART_NODE_SLAVE_1, UART_MSG_MOTOR_CONTROL_POS);
 			AppCommUART_SendMsg(UART_NODE_SLAVE_2, UART_MSG_MOTOR_CONTROL_POS);
-			isHome = TRUE;
+			isMovingToHome = TRUE;
 		}
 		break;
 
-	case BTN_CTRL_PLANNING:
+	case BTN_CTRL_TO_PLANNING_INIT:
 #if 1
-		if (TRUE == AppControl_TP_CircleTool(PERIOD_TRAJECTORY_PLANNING))	// It's for both
+		if (FALSE == isMovingToStart)
 		{
-			AppControl_IK_Tool2EE(LEFT_ARM);
-			AppControl_IK_Tool2EE(RIGHT_ARM);
-			AppControl_IK_EE2Joints(LEFT_ARM);
-			AppControl_IK_EE2Joints(RIGHT_ARM);
-			AppControl_Pos_UpdateTpData(LEFT_ARM);
-			AppControl_Pos_UpdateTpData(RIGHT_ARM);
+			if (TRUE == AppControl_TP_CircleTool(PERIOD_TRAJECTORY_PLANNING))	// It's for both
+			{
+				AppControl_IK_Tool2EE(LEFT_ARM);
+				AppControl_IK_Tool2EE(RIGHT_ARM);
+				AppControl_IK_EE2Joints(LEFT_ARM);
+				AppControl_IK_EE2Joints(RIGHT_ARM);
+				AppControl_Pos_MoveToTpStart(LEFT_ARM, TP_START_SPEED);
+				AppControl_Pos_MoveToTpStart(RIGHT_ARM, TP_START_SPEED);
 
-			//AppCommUART_SendMsg(UART_NODE_SLAVE_1, UART_MSG_MOTOR_CONTROL_POS);
-			//AppCommUART_SendMsg(UART_NODE_SLAVE_2, UART_MSG_MOTOR_CONTROL_POS);
+				AppCommUART_SendMsg(UART_NODE_SLAVE_1, UART_MSG_MOTOR_CONTROL_POS);
+				AppCommUART_SendMsg(UART_NODE_SLAVE_2, UART_MSG_MOTOR_CONTROL_POS);
+			}
+			isMovingToStart = TRUE;
 		}
-
+		else
+		{
+			// Moving to home and waiting for next button press
+		}
 #else
 		if (TRUE == AppControl_TP_SineWaveJoint(LEFT_ARM, PERIOD_TRAJECTORY_PLANNING))
 		{
@@ -179,8 +189,28 @@ PRIVATE void _MasterStateControl(void)
 		{
 			AppCommUART_SendMsg(UART_NODE_SLAVE_2, UART_MSG_MOTOR_CONTROL_POS);
 		}
-		break;
 #endif
+		break;
+
+	case BTN_CTRL_PLANNING:
+		if (TRUE == AppControl_TP_CircleTool(PERIOD_TRAJECTORY_PLANNING))	// It's for both
+		{
+			AppControl_IK_Tool2EE(LEFT_ARM);
+			AppControl_IK_Tool2EE(RIGHT_ARM);
+			AppControl_IK_EE2Joints(LEFT_ARM);
+			AppControl_IK_EE2Joints(RIGHT_ARM);
+			AppControl_Pos_FollowTpPos(LEFT_ARM);
+			AppControl_Pos_FollowTpPos(RIGHT_ARM);
+
+			AppCommUART_SendMsg(UART_NODE_SLAVE_1, UART_MSG_MOTOR_CONTROL_POS);
+			AppCommUART_SendMsg(UART_NODE_SLAVE_2, UART_MSG_MOTOR_CONTROL_POS);
+		}
+		else	// Finished
+		{
+			// Waiting for next btn press
+		}
+		break;
+
 	case BTN_CTRL_TEST_POS_SEQUENCE:
 
 		break;

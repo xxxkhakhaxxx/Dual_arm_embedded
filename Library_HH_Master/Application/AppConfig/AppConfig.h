@@ -24,7 +24,7 @@
 /* --------------- PROGRAM LOGIC MACRO --------------- */
 //#define MASTER_NO_CONTROL				// Master will not send control command
 //#define	MASTER_NO_GUI					// Master will not send data to GUI
-#define MASTER_GUI_TP_CHECK				// Check TP via GUI
+//#define MASTER_GUI_TP_CHECK				// Check TP via GUI
 
 #define	MASTER_CONTROL_POS
 //#define MASTER_CONTROL_VEL
@@ -46,9 +46,9 @@
 #define OBJ_HALF_HEIGHT_B	(0.05f)	// [m]
 #define BASE_PARAM_C	(0.224f)	// [m]
 #define BASE_PARAM_D	(0.000f)	// [m]
-#define L1				(0.233f)	// [m]
-#define L2				(0.233f)	// [m]
-#define L3				(0.138f)	// [m]
+#define L1				(0.233f)	// [m]	20 + 180 + 33
+#define L2				(0.233f)	// [m]	20 + 180 + 33
+#define L3				(0.138f)	// [m]  20 + 100 + 18
 #define M11				(0.368f)	// [Kg]
 #define M21				(0.356f)	// [Kg]
 #define M31				(0.040f)	// [Kg]

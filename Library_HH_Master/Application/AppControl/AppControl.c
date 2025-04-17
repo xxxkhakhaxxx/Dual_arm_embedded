@@ -113,7 +113,7 @@ PRIVATE void _TP_CalJointRefData(U08 _arm, float _q1, float _q2, float _q3)
 		return;
 	}
 
-	static float diffTime = PERIOD_TRAJECTORY_PLANNING / 1000.0f;	// Fix time
+	static float diffTime = PERIOD_TRAJECTORY_PLANNING;	// Fix time
 	float newPos[3] = {_q1, _q2, _q3};
 
 	// Process each of the three joints
@@ -377,7 +377,7 @@ GLOBAL void AppControl_Pos_TestSquence(U08 _arm, U16 _speed)
 	return;
 }
 
-GLOBAL void AppControl_Pos_BackToHome(U08 _arm, U16 _speed)
+GLOBAL void AppControl_Pos_MoveToHome(U08 _arm, U16 _speed)
 {
 	if (_speed > HOME_SPEED_MAX)
 	{
@@ -458,7 +458,7 @@ GLOBAL BOOL AppControl_TP_SineWaveJoint(U08 _arm, float _timeStep)
 		float rotateAngle = Amp*sinf(2*PI*Freq*t + Phase) + Bias;
 		float rotateSpeed = Amp*2*PI*Freq*cosf(2*PI*Freq*t + Phase);
 		U08   rotateDir   = (rotateSpeed > 0) ? JOINT_DIR_Z_POS : JOINT_DIR_Z_NEG;
-		rotateSpeed = fabs(rotateSpeed);
+		rotateSpeed = fabsf(rotateSpeed);
 
 		switch (_currJoint[_arm])
 		{
@@ -509,12 +509,12 @@ GLOBAL BOOL AppControl_TP_CircleTool(float _timeStep)
 		myTaskTrajectory.Circle.Setting.X_Org  = 0.0f;		// [m]
 		myTaskTrajectory.Circle.Setting.Y_Org  = 0.35f;		// [m]
 		myTaskTrajectory.Circle.Setting.Radius = 0.05f;		// [m]
-		myTaskTrajectory.Circle.Setting.Freq   = 0.1f;		// [Hz]
+		myTaskTrajectory.Circle.Setting.Freq   = 0.4f;		// [Hz]
 		myTaskTrajectory.Circle.Setting.Phase  = 0.0f;		// [Deg]
 		myTaskTrajectory.Circle.Setting.Gamma  = 0.0f;		// [Deg]
 
 		myTaskTrajectory.Circle.Ctrl.MovedTime =  0.0f;		// [s]
-		myTaskTrajectory.Circle.Ctrl.TimeEnd   = 10.0f;		// [s]
+		myTaskTrajectory.Circle.Ctrl.TimeEnd   = 20.0f;		// [s]
 		_timeStep = 0.0f;	// Start from 0.0s
 
 		isInit = TRUE;
@@ -637,10 +637,15 @@ GLOBAL void AppControl_IK_EE2Joints(U08 _arm)
 	return;
 }
 
-GLOBAL void AppControl_Pos_UpdateTpData(U08 _arm)
+GLOBAL void AppControl_Pos_MoveToTpStart(U08 _arm, U16 _speed)
 {
-	static U16 _speed = 10;
-	float q1, q2, q3;
+	static float q1, q2, q3;
+
+	if (_speed > TP_START_SPEED_MAX)
+	{
+		_speed = TP_START_SPEED_MAX;
+	}
+
 	if (LEFT_ARM == _arm)
 	{
 		q1 = RAD2DEG(myRobotTrajectory[LEFT_ARM].Joint[0].currPos);
@@ -677,4 +682,56 @@ GLOBAL void AppControl_Pos_UpdateTpData(U08 _arm)
 	return;
 }
 
+GLOBAL void AppControl_Pos_FollowTpPos(U08 _arm)
+{
+	static float q1, q2, q3, v1, v2, v3;
+	static U08 d1, d2, d3;
+
+	if (LEFT_ARM == _arm)
+	{
+		q1 = RAD2DEG(myRobotTrajectory[LEFT_ARM].Joint[0].currPos);
+		q2 = RAD2DEG(myRobotTrajectory[LEFT_ARM].Joint[1].currPos);
+		q3 = RAD2DEG(myRobotTrajectory[LEFT_ARM].Joint[2].currPos);
+		v1 = RAD2DEG(myRobotTrajectory[LEFT_ARM].Joint[0].currVel);
+		v2 = RAD2DEG(myRobotTrajectory[LEFT_ARM].Joint[1].currVel);
+		v3 = RAD2DEG(myRobotTrajectory[LEFT_ARM].Joint[2].currVel);
+		d1 = (v1 > 0) ? JOINT_DIR_Z_POS : JOINT_DIR_Z_NEG;
+		d2 = (v2 > 0) ? JOINT_DIR_Z_POS : JOINT_DIR_Z_NEG;
+		d3 = (v3 > 0) ? JOINT_DIR_Z_POS : JOINT_DIR_Z_NEG;
+
+		myRobotCommand[LEFT_ARM].JointPos[0].Angle = q1;
+		myRobotCommand[LEFT_ARM].JointPos[0].Speed = (U16)(fabsf(v1)+1);
+		myRobotCommand[LEFT_ARM].JointPos[0].Direction = d1;
+		myRobotCommand[LEFT_ARM].JointPos[1].Angle = q2;
+		myRobotCommand[LEFT_ARM].JointPos[1].Speed = (U16)(fabsf(v2)+1);
+		myRobotCommand[LEFT_ARM].JointPos[1].Direction = d2;
+		myRobotCommand[LEFT_ARM].JointPos[2].Angle = q3;
+		myRobotCommand[LEFT_ARM].JointPos[2].Speed = (U16)(fabsf(v3)+1);
+		myRobotCommand[LEFT_ARM].JointPos[2].Direction = d3;
+	}
+	else if (RIGHT_ARM == _arm)
+	{
+		q1 = RAD2DEG(myRobotTrajectory[RIGHT_ARM].Joint[0].currPos);
+		q2 = RAD2DEG(myRobotTrajectory[RIGHT_ARM].Joint[1].currPos);
+		q3 = RAD2DEG(myRobotTrajectory[RIGHT_ARM].Joint[2].currPos);
+		v1 = RAD2DEG(myRobotTrajectory[RIGHT_ARM].Joint[0].currVel);
+		v2 = RAD2DEG(myRobotTrajectory[RIGHT_ARM].Joint[1].currVel);
+		v3 = RAD2DEG(myRobotTrajectory[RIGHT_ARM].Joint[2].currVel);
+		d1 = (v1 > 0) ? JOINT_DIR_Z_POS : JOINT_DIR_Z_NEG;
+		d2 = (v2 > 0) ? JOINT_DIR_Z_POS : JOINT_DIR_Z_NEG;
+		d3 = (v3 > 0) ? JOINT_DIR_Z_POS : JOINT_DIR_Z_NEG;
+
+		myRobotCommand[RIGHT_ARM].JointPos[0].Angle = q1;
+		myRobotCommand[RIGHT_ARM].JointPos[0].Speed = (U16)(fabsf(v1)+1);
+		myRobotCommand[RIGHT_ARM].JointPos[0].Direction = d1;
+		myRobotCommand[RIGHT_ARM].JointPos[1].Angle = q2;
+		myRobotCommand[RIGHT_ARM].JointPos[1].Speed = (U16)(fabsf(v2)+1);
+		myRobotCommand[RIGHT_ARM].JointPos[1].Direction = d2;
+		myRobotCommand[RIGHT_ARM].JointPos[2].Angle = q3;
+		myRobotCommand[RIGHT_ARM].JointPos[2].Speed = (U16)(fabsf(v3)+1);
+		myRobotCommand[RIGHT_ARM].JointPos[2].Direction = d3;
+	}
+
+	return;
+}
 

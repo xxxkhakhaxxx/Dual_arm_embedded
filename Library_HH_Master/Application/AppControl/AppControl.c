@@ -497,112 +497,133 @@ GLOBAL BOOL AppControl_TP_SineWaveJoint(U08 _arm, float _timeStep)
 	return TRUE;	// Ok
 }
 
-GLOBAL BOOL AppControl_TP_CircleTool(float _timeStep)
+GLOBAL BOOL AppControl_TP_InitWorldTrajectory(enTpType _type)
 {
-	static BOOL isInit = FALSE;
-	static BOOL isMoving = FALSE;
-	static float t, Xo, Yo, Ro, Freq, Phase;
+	U08 isSupported = FALSE;
 
-	// 1. Init desired trajectory
-	if (FALSE == isInit)
+	switch (_type)
 	{
+	case TP_TYPE_CIRCLE:
 		myTaskTrajectory.Circle.Setting.X_Org  = 0.0f;		// [m]
 		myTaskTrajectory.Circle.Setting.Y_Org  = 0.35f;		// [m]
 		myTaskTrajectory.Circle.Setting.Radius = 0.05f;		// [m]
-		myTaskTrajectory.Circle.Setting.Freq   = 0.4f;		// [Hz]
+		myTaskTrajectory.Circle.Setting.Freq   = 0.2f;		// [Hz]
 		myTaskTrajectory.Circle.Setting.Phase  = 0.0f;		// [Deg]
 		myTaskTrajectory.Circle.Setting.Gamma  = 0.0f;		// [Deg]
+		myTaskTrajectory.Circle.Ctrl.TimeEnd   = 10.0f;		// [s]
+		myTaskTrajectory.Type = TP_TYPE_CIRCLE;
 
-		myTaskTrajectory.Circle.Ctrl.MovedTime =  0.0f;		// [s]
-		myTaskTrajectory.Circle.Ctrl.TimeEnd   = 20.0f;		// [s]
-		_timeStep = 0.0f;	// Start from 0.0s
-
-		isInit = TRUE;
-		isMoving = TRUE;
-	}
-
-	// 2. Check TP end or not
-	if (myTaskTrajectory.Circle.Ctrl.MovedTime >= myTaskTrajectory.Circle.Ctrl.TimeEnd)
-	{	// Finished
-		isMoving = FALSE;
-	}
-	else
-	{
-		// 3. Get params
-		t  = myTaskTrajectory.Circle.Ctrl.MovedTime + _timeStep;
-		Xo = myTaskTrajectory.Circle.Setting.X_Org;
-		Yo = myTaskTrajectory.Circle.Setting.Y_Org;
-		Ro = myTaskTrajectory.Circle.Setting.Radius;
-		Freq  = myTaskTrajectory.Circle.Setting.Freq;
-		Phase = DEG2RAD(myTaskTrajectory.Circle.Setting.Phase);
-
-		// 4. Update trajectory
-		myTaskTrajectory.CurrTrajectory.Xm_t = Ro*sinf(2*PI*Freq*t + Phase) + Xo;	// xm(t) = Ro*cos(2πft + φ) + Xo
-		myTaskTrajectory.CurrTrajectory.Ym_t = Ro*cosf(2*PI*Freq*t + Phase) + Yo;	// ym(t) = Ro*sin(2πft + φ) + Yo
-		myTaskTrajectory.CurrTrajectory.Gm_t = DEG2RAD(myTaskTrajectory.Circle.Setting.Gamma);	// Currently, keep it constant [Rad]
-
-		// 5. Update moved time
-		myTaskTrajectory.Circle.Ctrl.MovedTime = t;
-	}
-
-	return isMoving;
-}
-
-GLOBAL BOOL AppControl_TP_LineTool(float _timeStep)
-{
-	static BOOL isInit = FALSE;
-	static BOOL isMoving = FALSE;
-	static float Xs, Ys, Gs, Xg, Yg, Gg, t, timePercent;
-
-	// 1. Init desired trajectory
-	if (FALSE == isInit)
-	{
+		isSupported = TRUE;
+		break;
+	case TP_TYPE_LINE:
 		myTaskTrajectory.Line.Setting.Start_X = 0.0f;
 		myTaskTrajectory.Line.Setting.Start_Y = 0.3f;
 		myTaskTrajectory.Line.Setting.Start_G = 0.0f;
 		myTaskTrajectory.Line.Setting.Goal_X = 0.0f;
 		myTaskTrajectory.Line.Setting.Goal_Y = 0.4f;
 		myTaskTrajectory.Line.Setting.Goal_G = 0.0f;
-
-		myTaskTrajectory.Line.Ctrl.MovedTime = 0.0f;
 		myTaskTrajectory.Line.Ctrl.TimeEnd   = 5.0f;
-		_timeStep = 0.0f;	// Start from 0.0s
+		myTaskTrajectory.Type = TP_TYPE_LINE;
 
-		isInit = TRUE;
+		isSupported = TRUE;
+		break;
+
+	case TP_TYPE_LINES:
+	case TP_TYPE_CUBIC:
+	case TP_TYPE_QUINTIC:
+	default:
+		isSupported = FALSE;
+		break;
+	}
+
+	return isSupported;
+}
+
+GLOBAL BOOL AppControl_TP_UpdateWorldTrajectory(float _timeStep)
+{
+	static BOOL isMoving = FALSE;
+	static enTpType _type = TP_TYPE_NONE;
+
+	static float Xo, Yo, Ro, Go, Freq, Phase;				// Cicle
+	static float Xs, Ys, Gs, Xg, Yg, Gg, timePercent;	// Line
+
+	static float _endTime;
+	static float _movedTime = 0.0f;
+
+	// 1. Check if first time called
+	if (TP_TYPE_NONE == _type)
+	{
+		_type = myTaskTrajectory.Type;	// Get type, remember to use InitWorldTrajectory first
+
+		switch (_type)
+		{
+		case TP_TYPE_CIRCLE:
+			Xo = myTaskTrajectory.Circle.Setting.X_Org;
+			Yo = myTaskTrajectory.Circle.Setting.Y_Org;
+			Ro = myTaskTrajectory.Circle.Setting.Radius;
+			Freq  = myTaskTrajectory.Circle.Setting.Freq;
+			Go    = DEG2RAD(myTaskTrajectory.Circle.Setting.Gamma);
+			Phase = DEG2RAD(myTaskTrajectory.Circle.Setting.Phase);
+			_endTime = myTaskTrajectory.Circle.Ctrl.TimeEnd;
+			break;
+		case TP_TYPE_LINE:
+			Xs = myTaskTrajectory.Line.Setting.Start_X;
+			Ys = myTaskTrajectory.Line.Setting.Start_Y;
+			Xg = myTaskTrajectory.Line.Setting.Goal_X;
+			Yg = myTaskTrajectory.Line.Setting.Goal_Y;
+			Gs = DEG2RAD(myTaskTrajectory.Line.Setting.Start_G);
+			Gg = DEG2RAD(myTaskTrajectory.Line.Setting.Goal_G);
+			_endTime = myTaskTrajectory.Line.Ctrl.TimeEnd;
+			break;
+		case TP_TYPE_LINES:
+		case TP_TYPE_CUBIC:
+		case TP_TYPE_QUINTIC:
+		case TP_TYPE_NONE:
+		default:
+			isMoving = FALSE;
+			return isMoving;	// Exit
+		}
+
+		_timeStep = 0.0f;	// Start from 0.00s
 		isMoving = TRUE;
 	}
 
-	// 2. Check TP end or not
-	if (myTaskTrajectory.Line.Ctrl.MovedTime >= myTaskTrajectory.Line.Ctrl.TimeEnd)
+	// 2. Check end TP or still continue
+	if (_movedTime >= _endTime)
 	{	// Finished
 		isMoving = FALSE;
 	}
 	else
 	{
-		// 3. Get params
-		t  = myTaskTrajectory.Line.Ctrl.MovedTime + _timeStep;
-		Xs = myTaskTrajectory.Line.Setting.Start_X;
-		Ys = myTaskTrajectory.Line.Setting.Start_Y;
-		Gs = myTaskTrajectory.Line.Setting.Start_G;
-		Xg = myTaskTrajectory.Line.Setting.Goal_X;
-		Yg = myTaskTrajectory.Line.Setting.Goal_Y;
-		Gg = myTaskTrajectory.Line.Setting.Goal_G;
+		_movedTime  = _movedTime + _timeStep;
 
-		// 4. Update trajectory
-		timePercent = t / myTaskTrajectory.Line.Ctrl.TimeEnd;
+		// 3. Update trajectory
+		switch (_type)
+		{
+		case TP_TYPE_CIRCLE:
+			myTaskTrajectory.CurrTrajectory.Xm_t = Ro*sinf(2*PI*Freq*_movedTime + Phase) + Xo;	// xm(t) = Ro*cos(2πft + φ) + Xo
+			myTaskTrajectory.CurrTrajectory.Ym_t = Ro*cosf(2*PI*Freq*_movedTime + Phase) + Yo;	// ym(t) = Ro*sin(2πft + φ) + Yo
+			myTaskTrajectory.CurrTrajectory.Gm_t = Go;	// Currently, keep it constant [Rad]
+			break;
+		case TP_TYPE_LINE:
+			timePercent = _movedTime / myTaskTrajectory.Line.Ctrl.TimeEnd;
+			myTaskTrajectory.CurrTrajectory.Xm_t = Xs + timePercent*(Xg - Xs);
+			myTaskTrajectory.CurrTrajectory.Ym_t = Ys + timePercent*(Yg - Ys);
+			myTaskTrajectory.CurrTrajectory.Gm_t = Gs + timePercent*(Gg - Gs);
+			break;
+		case TP_TYPE_LINES:
+		case TP_TYPE_CUBIC:
+		case TP_TYPE_QUINTIC:
+		default:
 
-		myTaskTrajectory.CurrTrajectory.Xm_t = Xs + timePercent*(Xg - Xs);
-		myTaskTrajectory.CurrTrajectory.Ym_t = Ys + timePercent*(Yg - Ys);
-		myTaskTrajectory.CurrTrajectory.Gm_t = Gs + timePercent*(Gg - Gs);
-
-		// 5. Update moved time
-		myTaskTrajectory.Line.Ctrl.MovedTime = t;
+			break;;
+		}
 	}
 
 	return isMoving;
 }
 
-GLOBAL void AppControl_IK_Tool2EE(U08 _arm)
+GLOBAL void AppControl_IK_World2EE(U08 _arm)
 {
 	if ((LEFT_ARM != _arm) && (RIGHT_ARM != _arm))
 	{

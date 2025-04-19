@@ -162,20 +162,27 @@ PRIVATE void _MasterStateControl(void)
 #if 1
 		if (FALSE == isMovingToStart)
 		{
-//			if (TRUE == AppControl_TP_CircleTool(PERIOD_TRAJECTORY_PLANNING))	// It's for both
-			if (TRUE == AppControl_TP_LineTool(PERIOD_TRAJECTORY_PLANNING))
+			if (TRUE == AppControl_TP_InitWorldTrajectory(TP_TYPE_LINE))
 			{
-				AppControl_IK_Tool2EE(LEFT_ARM);
-				AppControl_IK_Tool2EE(RIGHT_ARM);
-				AppControl_IK_EE2Joints(LEFT_ARM);
-				AppControl_IK_EE2Joints(RIGHT_ARM);
-				AppControl_Pos_MoveToTpStart(LEFT_ARM, TP_START_SPEED);
-				AppControl_Pos_MoveToTpStart(RIGHT_ARM, TP_START_SPEED);
+				if (TRUE == AppControl_TP_UpdateWorldTrajectory(PERIOD_TRAJECTORY_PLANNING))
+				{
+					AppControl_IK_World2EE(LEFT_ARM);
+					AppControl_IK_World2EE(RIGHT_ARM);
+					AppControl_IK_EE2Joints(LEFT_ARM);
+					AppControl_IK_EE2Joints(RIGHT_ARM);
+					AppControl_Pos_MoveToTpStart(LEFT_ARM, TP_START_SPEED);
+					AppControl_Pos_MoveToTpStart(RIGHT_ARM, TP_START_SPEED);
 
-				AppCommUART_SendMsg(UART_NODE_SLAVE_1, UART_MSG_MOTOR_CONTROL_POS);
-				AppCommUART_SendMsg(UART_NODE_SLAVE_2, UART_MSG_MOTOR_CONTROL_POS);
+					AppCommUART_SendMsg(UART_NODE_SLAVE_1, UART_MSG_MOTOR_CONTROL_POS);
+					AppCommUART_SendMsg(UART_NODE_SLAVE_2, UART_MSG_MOTOR_CONTROL_POS);
+
+					isMovingToStart = TRUE;
+				}
 			}
-			isMovingToStart = TRUE;
+			else
+			{
+				// Not support
+			}
 		}
 		else
 		{
@@ -194,11 +201,10 @@ PRIVATE void _MasterStateControl(void)
 		break;
 
 	case BTN_CTRL_PLANNING:
-//		if (TRUE == AppControl_TP_CircleTool(PERIOD_TRAJECTORY_PLANNING))	// It's for both
-		if (TRUE == AppControl_TP_LineTool(PERIOD_TRAJECTORY_PLANNING))
+		if (TRUE == AppControl_TP_UpdateWorldTrajectory(PERIOD_TRAJECTORY_PLANNING))
 		{
-			AppControl_IK_Tool2EE(LEFT_ARM);
-			AppControl_IK_Tool2EE(RIGHT_ARM);
+			AppControl_IK_World2EE(LEFT_ARM);
+			AppControl_IK_World2EE(RIGHT_ARM);
 			AppControl_IK_EE2Joints(LEFT_ARM);
 			AppControl_IK_EE2Joints(RIGHT_ARM);
 			AppControl_Pos_FollowTpPos(LEFT_ARM);

@@ -43,6 +43,18 @@
 /********************************************************************************
  * TYPEDEFS AND ENUMS
  ********************************************************************************/
+typedef enum ENUM_TP_TYPE
+{
+	TP_TYPE_NONE = 0,
+
+	TP_TYPE_CIRCLE,
+	TP_TYPE_LINE,
+	TP_TYPE_LINES,
+	TP_TYPE_CUBIC,
+	TP_TYPE_QUINTIC
+} enTpType;
+
+
 typedef struct
 {
 	float Amp;		// Sine wave amplitude [Deg]
@@ -68,15 +80,9 @@ typedef struct
 		
 		struct
 		{
-			float MovedTime;	// [s]
 			float TimeEnd;		// [s]
 		} Ctrl;
 	} Line;
-
-	struct
-	{
-
-	} Lines;
 
 	struct
 	{
@@ -93,7 +99,6 @@ typedef struct
 
 		struct
 		{
-			float MovedTime;	// [s]
 			float TimeEnd;		// [s]
 		} Ctrl;
 	} Circle;
@@ -104,6 +109,8 @@ typedef struct
 		float Ym_t;		// [m]
 		float Gm_t;		// [Rad]
 	} CurrTrajectory;
+
+	enTpType Type;
 } strTaskSpacePlanning;
 
 typedef struct
@@ -145,9 +152,11 @@ GLOBAL void AppControl_CalRobotIK(void);
 GLOBAL void AppControl_Pos_TestSquence(U08 _arm, U16 _speed);
 GLOBAL void AppControl_Pos_MoveToHome(U08 _arm, U16 _speed);
 GLOBAL BOOL AppControl_TP_SineWaveJoint(U08 _arm, float _timeStep);	// [s]
+GLOBAL BOOL AppControl_TP_InitWorldTrajectory(enTpType _type);
+GLOBAL BOOL AppControl_TP_UpdateWorldTrajectory(float _timeStep);	// TP ➡ T_Mass_World
 GLOBAL BOOL AppControl_TP_CircleTool(float _timeStep);				// TP ➡ T_Mass_World
-GLOBAL BOOL AppControl_TP_LineTool(float _timeStep);
-GLOBAL void AppControl_IK_Tool2EE(U08 _arm);						// T_Mass_World ➡ T_4i_0i
+GLOBAL BOOL AppControl_TP_LineTool(float _timeStep);				// TP ➡ T_Mass_World
+GLOBAL void AppControl_IK_World2EE(U08 _arm);						// T_Mass_World ➡ T_4i_0i
 GLOBAL void AppControl_IK_EE2Joints(U08 _arm);						// T_4i_0i ➡ q1/q2/q3
 GLOBAL void AppControl_Pos_MoveToTpStart(U08 _arm, U16 _speed);
 GLOBAL void AppControl_Pos_FollowTpPos(U08 _arm);

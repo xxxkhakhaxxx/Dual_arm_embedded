@@ -26,29 +26,29 @@
 //#define CONVERT_DIR_KINE2REAL(_kineDir, _dirSetting)		((U08)(((_kineDir) ^ ((_dirSetting) == -1)) & 0x01))	// Faster
 
 // UART frame: 2 msg bytes + 1 length byte + 1 checksum byte (optional) + payload (optional)
-#define MSG_INIT_LENGTH	(3)				// 3 header + 0 checksum + 0 payloads
 #define MSG_INIT_BYTE_0	(0xA1)
 #define MSG_INIT_BYTE_1	(0x01)
+#define MSG_INIT_LENGTH	(3)				// 3 header + 0 checksum + 0 payloads
 
-#define MSG_DATA_REQUEST_LENGTH	(3)		// 3 header + 0 checksum + 0 payloads
 #define MSG_DATA_REQUEST_BYTE_0	(0xB2)
 #define MSG_DATA_REQUEST_BYTE_1	(0x02)
+#define MSG_DATA_REQUEST_LENGTH	(3)		// 3 header + 0 checksum + 0 payloads
 
-#define MSG_DATA_RESPOND_LENGTH	(40)	// 3 header + 1 checksum + 3*(4+4+4) payloads
 #define MSG_DATA_RESPOND_BYTE_0	(0xB2)
 #define MSG_DATA_RESPOND_BYTE_1	(0x02)
+#define MSG_DATA_RESPOND_LENGTH	(40)	// 3 header + 1 checksum + 3*(4+4+4) payloads
 
-#define MSG_CONTROL_POS_LENGTH	(25)	// 3 header + 1 checksum + 3*(4+2+1) payloads
 #define MSG_CONTROL_POS_BYTE_0	(0xC3)
 #define MSG_CONTROL_POS_BYTE_1	(0x03)
-/*
-#define MSG_CONTROL_VEL_LENGTH	()	// 3 header + 3*4 payloads
-#define MSG_CONTROL_VEL_BYTE_0	(0xD4)
-#define MSG_CONTROL_VEL_BYTE_1	(0x04)*/
+#define MSG_CONTROL_POS_LENGTH	(25)	// 3 header + 1 checksum + 3*(4+2+1) payloads
 
-#define MSG_CONTROL_TOR_LENGTH	(10)	// 3 header + 1 checksum + 3*(2) payloads
+//#define MSG_CONTROL_VEL_BYTE_0	(0xD4)
+//#define MSG_CONTROL_VEL_BYTE_1	(0x04)
+//#define MSG_CONTROL_VEL_LENGTH	()	// 3 header + 3*4 payloads
+
 #define MSG_CONTROL_TOR_BYTE_0	(0xE5)
 #define MSG_CONTROL_TOR_BYTE_1	(0x05)
+#define MSG_CONTROL_TOR_LENGTH	(16)	// 3 header + 1 checksum + 3*(4) payloads
 
 
 /********************************************************************************

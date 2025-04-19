@@ -52,7 +52,7 @@
 
 #define MSG_CONTROL_TOR_BYTE_0	(0xE5)
 #define MSG_CONTROL_TOR_BYTE_1	(0x05)
-#define MSG_CONTROL_TOR_LENGTH	(10)	// 3 header + 1 checksum + 3*(2) payloads
+#define MSG_CONTROL_TOR_LENGTH	(16)	// 3 header + 1 checksum + 3*(4) payloads
 
 #define MSG_GUI_DATA_1_SING_BYTE_0	(0xF6)
 #define MSG_GUI_DATA_1_SING_BYTE_1	(0x06)
@@ -110,7 +110,7 @@ typedef struct
 
 	struct
 	{
-		I16 CurrentTor;
+		float CurrentTor;
 	} JointTor[3];
 
 } strRobotDataCommand;

@@ -455,11 +455,11 @@ GLOBAL void ApiProtocolMotorMG_SetTorque(enMotorId _u8MotorId, I16 _i16Torque)
 	switch (_u8MotorId)
 	{
 	case MOTOR_1_ID:
-		strRobotArmMotorTx[_u8MotorId].Control.i16TorqueCurrent = CONSTRAIN(_i16Torque, MOTOR_MG_5010_TORQUE_CONSTRAINT_LOW, MOTOR_MG_5010_TORQUE_CONSTRAINT_HIGH);
+		strRobotArmMotorTx[_u8MotorId].Control.i16TorqueCurrent = CONSTRAIN(_i16Torque, -MOTOR_MG_5010_TORQUE_CONSTRAINT, MOTOR_MG_5010_TORQUE_CONSTRAINT);
 		break;
 	case MOTOR_2_ID:
 	case MOTOR_3_ID:
-		strRobotArmMotorTx[_u8MotorId].Control.i16TorqueCurrent = CONSTRAIN(_i16Torque, MOTOR_MG_4010_TORQUE_CONSTRAINT_LOW, MOTOR_MG_4010_TORQUE_CONSTRAINT_HIGH);
+		strRobotArmMotorTx[_u8MotorId].Control.i16TorqueCurrent = CONSTRAIN(_i16Torque, -MOTOR_MG_4010_TORQUE_CONSTRAINT, MOTOR_MG_4010_TORQUE_CONSTRAINT);
 		break;
 	default:
 		// Do nothing

@@ -51,7 +51,8 @@ volatile static U32 debug_cnt_Tx_ErrorInit = 0;
 /********************************************************************************
  * GLOBAL VARIABLES
  ********************************************************************************/
-GLOBAL strMotorData myMotor[MOTOR_NUMBER] = {0 };	// Motor's data using for communication with Master
+GLOBAL strMotorData myMotorToMaster[MOTOR_NUMBER] = {0, };	// Motor's data using for communication with Master
+GLOBAL strMotorCmd  myMasterToMotor[MOTOR_NUMBER] = {0, };	// Master's data using for controlling Motor
 
 /********************************************************************************
  * PRIVATE FUNCTION DECLARATION
@@ -61,7 +62,7 @@ PRIVATE void AppCommCAN_SetupRxInterrupt(void);
 PRIVATE void AppCommCAN_SetupTxFrame(void);
 PRIVATE void AppCommCAN_ClearTxMailBox(void);
 
-PRIVATE void AppCommCAN_UpdateMotorData(U08 _motorId, U16 _newEncoderValue);
+PRIVATE void AppCommCAN_UpdateMotorRecvData(U08 _motorId, U16 _newEncoderValue);
 /********************************************************************************
  * PRIVATE FUNCTION IMPLEMENTATION
  ********************************************************************************/
@@ -153,13 +154,13 @@ PRIVATE void AppCommCAN_ClearTxMailBox(void)
 	}
 }
 
-PRIVATE void AppCommCAN_UpdateMotorData(U08 _motorId, U16 _newEncoderValue)
+PRIVATE void AppCommCAN_UpdateMotorRecvData(U08 _motorId, U16 _newEncoderValue)
 {
 	// 1. Convert encoder value (0-65535) to degrees (0-360)
 	float newPosition = (float)_newEncoderValue * (360.0f / 65535.0f);
 
 	// 2. Handle encoder overflow (wrapping from 65535→0)
-	float positionDiff = newPosition - myMotor[_motorId].currPosition;
+	float positionDiff = newPosition - myMotorToMaster[_motorId].currPosition;
 	if (positionDiff > 180.0f)
 	{	// Check if position changed by more than 180° (adjust threshold if needed)
 		newPosition -= 360.0f; // Negative wrap (e.g., 350° → 10° becomes 350° → -350°)
@@ -176,30 +177,33 @@ PRIVATE void AppCommCAN_UpdateMotorData(U08 _motorId, U16 _newEncoderValue)
 	// 3. Get current time and calculate delta
 	U32 currentTime = HAL_GetTick();	// Unit: ms - timeout after ~49.7 days
 	float diffTime;
-	diffTime = (currentTime - myMotor[_motorId].currTime) / 1000.0f;	// Unit: seconds
+	diffTime = (currentTime - myMotorToMaster[_motorId].currTime) / 1000.0f;	// Unit: seconds
 
 	// 4. Save new previous values
-	myMotor[_motorId].prevTime     = myMotor[_motorId].currTime;
-	myMotor[_motorId].prevPosition = myMotor[_motorId].currPosition;
-	myMotor[_motorId].prevSpeed    = myMotor[_motorId].currSpeed;
+	myMotorToMaster[_motorId].prevTime     = myMotorToMaster[_motorId].currTime;
+	myMotorToMaster[_motorId].prevPosition = myMotorToMaster[_motorId].currPosition;
+	myMotorToMaster[_motorId].prevSpeed    = myMotorToMaster[_motorId].currSpeed;
 
 	// 5 Calculate current values
-	myMotor[_motorId].currTime     = currentTime;
-	myMotor[_motorId].currPosition = newPosition;
+	myMotorToMaster[_motorId].currTime     = currentTime;
+	myMotorToMaster[_motorId].currPosition = newPosition;
 	if (diffTime > 0.0001f)
 	{	// Protect against divide-by-zero on first run or rapid updates
-		myMotor[_motorId].currSpeed    = (newPosition - myMotor[_motorId].prevPosition) / diffTime;
-		myMotor[_motorId].currAccel    = (myMotor[_motorId].currSpeed - myMotor[_motorId].prevSpeed) / diffTime;
+		myMotorToMaster[_motorId].currSpeed    = (newPosition - myMotorToMaster[_motorId].prevPosition) / diffTime;
+		myMotorToMaster[_motorId].currAccel    = (myMotorToMaster[_motorId].currSpeed - myMotorToMaster[_motorId].prevSpeed) / diffTime;
 	}
 	else
 	{
 		// If time difference is too small, keep previous values
-		myMotor[_motorId].currSpeed = myMotor[_motorId].prevSpeed;
-		myMotor[_motorId].currAccel = 0.0f;
+		myMotorToMaster[_motorId].currSpeed = myMotorToMaster[_motorId].prevSpeed;
+		myMotorToMaster[_motorId].currAccel = 0.0f;
 	}
 
 	return;
 }
+
+
+
 /********************************************************************************
  * GLOBAL FUNCTION IMPLEMENTATION
  ********************************************************************************/
@@ -237,7 +241,7 @@ GLOBAL void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)	// When R
 	}
 }
 
-GLOBAL void AppCommCAN_SendMotorMessage(U08 _u8MotorMsgId, U08 _u8MsgDataCmd)
+GLOBAL void AppCommCAN_SendMotorMsg(U08 _u8MotorMsgId, U08 _u8MsgDataCmd)
 {
 	// Set Tx identifier
 	strCanTxMsgId.StdId = (U32)(MOTOR_PROTOCOL_GET_HEADER(_u8MotorMsgId));
@@ -265,7 +269,7 @@ GLOBAL void AppCommCAN_SendMotorMessage(U08 _u8MotorMsgId, U08 _u8MsgDataCmd)
 	}
 }
 
-GLOBAL void AppCommCAN_GetMotorMessage(void)	// Process data in "strCanRxMsgId" and "arrCanRxMsgData"
+GLOBAL void AppCommCAN_RecvMotorMsg(void)	// Process data in "strCanRxMsgId" and "arrCanRxMsgData"
 {
 	if ((MOTOR_HEADER_INIT >=strCanRxMsgId.StdId) \
 		|| ((MOTOR_HEADER_MAX <= strCanRxMsgId.StdId) && (MOTOR_HEADER_MULTI != strCanRxMsgId.StdId)))
@@ -278,9 +282,9 @@ GLOBAL void AppCommCAN_GetMotorMessage(void)	// Process data in "strCanRxMsgId" 
 
 	ApiProtocolMotorMG_RxHandler(_motorId, arrCanRxMsgData);	// Process CAN RX data
 
-	if (MOTOR_CMD_READ_MECHANICAL_STATE == arrCanRxMsgData[0])	// Calculate position - velocity - acceleration
-	{
-		AppCommCAN_UpdateMotorData(_motorId, strRobotArmMotorRx[_motorId].Data.u16Encoder14Bit);
+	if (MOTOR_CMD_READ_MECHANICAL_STATE == arrCanRxMsgData[0])	// Update only when it's respond of 0x9C command
+	{	// Calculate pos-vel-accel
+		AppCommCAN_UpdateMotorRecvData(_motorId, strRobotArmMotorRx[_motorId].Data.u16Encoder14Bit);
 	}
 
 	return;

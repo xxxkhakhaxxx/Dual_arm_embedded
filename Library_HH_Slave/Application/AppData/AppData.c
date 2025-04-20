@@ -101,7 +101,7 @@ GLOBAL void AppDataSet_SlaveState(enSlaveStateList _state)
 	return;
 }
 
-PRIVATE enRobotMode u8RobotMode = ROBOT_MODE_READ_ONLY;
+PRIVATE enRobotMode u8RobotMode = ROBOT_MODE_READ_DATA;
 GLOBAL U08  AppDataGet_RobotMode(void)
 {
 	return u8RobotMode;

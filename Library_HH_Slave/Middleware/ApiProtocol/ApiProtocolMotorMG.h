@@ -60,11 +60,9 @@
 #define	MOTOR_CMD_MULTI_FORCE					0xFE	// 3.1		Only support on CAN Tool
 
 /* Motor constraints */
-#define MOTOR_MG_5010_TORQUE_CONSTRAINT_LOW		(-430)	// ~-7A
-#define MOTOR_MG_5010_TORQUE_CONSTRAINT_HIGH	(430)	// ~ 7A
-#define MOTOR_MG_4010_TORQUE_CONSTRAINT_LOW		(-279)	// ~-4.5A
-#define MOTOR_MG_4010_TORQUE_CONSTRAINT_HIGH	(279)	// ~ 4.5A
-#define MOTOR_MG_SPEED_CONSTRAINT				(24000)
+#define MOTOR_MG_5010_TORQUE_CONSTRAINT			((I16)(430))	// ~-7A
+#define MOTOR_MG_4010_TORQUE_CONSTRAINT			((I16)(279))	// ~-4.5A
+#define MOTOR_MG_SPEED_CONSTRAINT				((I32)(24000))
 #define MOTOR_MG_MULTI_ANGLE_CONSTRAINT			(35999999)
 #define MOTOR_MG_SINGLE_ANGLE_CONSTRAINT		(35999)
 #define MOTOR_MG_JOG_ANGLE_CONSTRAINT			(35999999)
@@ -72,9 +70,9 @@
 
 #define MOTOR_MG_xx10_GEAR						(10)
 
-/* Motor move direction */
-#define MOTOR_MOVE_CW							(1)
-#define MOTOR_MOVE_CCW							(0)
+/* Motor move direction - Nhìn theo hướng mặt bích động cơ */
+#define MOTOR_FLANGE_MOVE_CW					(1)
+#define MOTOR_FLANGE_MOVE_CCW					(0)
 /********************************************************************************
  * TYPEDEFS AND ENUMS
  ********************************************************************************/

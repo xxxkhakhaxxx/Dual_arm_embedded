@@ -126,7 +126,6 @@ GLOBAL void AppCommUART_UserSetup(UART_HandleTypeDef* huart, enUartNode _node)
 /* Callback function when finished sending uart */
 GLOBAL void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 {
-	AppDataSet_LedState(LED_6_BLUE, TRUE);
 	if (huart->Instance == USART2)
 	{
 		AppDataSet_UartTxWaitFlag(UART_NODE_GUI, FALSE);	// Msg is send
@@ -173,19 +172,27 @@ GLOBAL void AppCommUART_SendMsg(enUartNode _node, enUartMsg _txMsgId)
 	static UART_HandleTypeDef* uartGoal;
 	static U08* sourceTxData;
 	U16 sizeSend = 0;	// if not set value, TxErrCnt++
+	U08 checksum = 0x00;
+	U08 _arm = LEFT_ARM;
 
 
 	// 3. Get UART target and data
 	switch (_node)
 	{
+#if SLAVE_1_ENA
 	case UART_NODE_SLAVE_1:
+		_arm = LEFT_ARM;
 		uartGoal = strUartSlaveLeft;
 		sourceTxData = TxDataSlaveLeft;
 		break;
+#endif
+#if SLAVE_2_ENA
 	case UART_NODE_SLAVE_2:
+		_arm = RIGHT_ARM;
 		uartGoal = strUartSlaveRight;
 		sourceTxData = TxDataSlaveRight;
 		break;
+#endif
 	case UART_NODE_GUI:
 		uartGoal = strUartGUI;
 		sourceTxData = TxDataGUI;
@@ -199,33 +206,186 @@ GLOBAL void AppCommUART_SendMsg(enUartNode _node, enUartMsg _txMsgId)
 	// 4. Prepare data
 	switch (_txMsgId)
 	{
+	/* --------- Message for SLAVE --------- */
 	case UART_MSG_INIT:
 		sourceTxData[0] = MSG_INIT_BYTE_0;
 		sourceTxData[1] = MSG_INIT_BYTE_1;
-		sourceTxData[2] = MSG_INIT_BYTE_2;
+		sourceTxData[2] = MSG_INIT_LENGTH;
 		sizeSend = MSG_INIT_LENGTH;
 		break;
 
 	case UART_MSG_MOTOR_DATA:
 		sourceTxData[0] = MSG_DATA_REQUEST_BYTE_0;
 		sourceTxData[1] = MSG_DATA_REQUEST_BYTE_1;
-		sourceTxData[2] = MSG_DATA_REQUEST_BYTE_2;
+		sourceTxData[2] = MSG_DATA_REQUEST_LENGTH;
 		sizeSend = MSG_DATA_REQUEST_LENGTH;
 		break;
 
 	case UART_MSG_MOTOR_CONTROL_POS:
-		// TODO
+		// Payload: q1-dq1-dir1 - q2-dq2-dir2 - q3-dq3-dir3
+		sourceTxData[0] = MSG_CONTROL_POS_BYTE_0;
+		sourceTxData[1] = MSG_CONTROL_POS_BYTE_1;
+		sourceTxData[2] = MSG_CONTROL_POS_LENGTH;
+		sizeSend = MSG_CONTROL_POS_LENGTH;
+
+		memcpy(&sourceTxData[4],  &myRobotCommand[_arm].JointPos[0].Angle,     sizeof(float));
+		memcpy(&sourceTxData[8],  &myRobotCommand[_arm].JointPos[0].Speed,     sizeof(U16));
+		memcpy(&sourceTxData[10], &myRobotCommand[_arm].JointPos[0].Direction, sizeof(U08));
+		memcpy(&sourceTxData[11], &myRobotCommand[_arm].JointPos[1].Angle,     sizeof(float));
+		memcpy(&sourceTxData[15], &myRobotCommand[_arm].JointPos[1].Speed,     sizeof(U16));
+		memcpy(&sourceTxData[17], &myRobotCommand[_arm].JointPos[1].Direction, sizeof(U08));
+		memcpy(&sourceTxData[18], &myRobotCommand[_arm].JointPos[2].Angle,     sizeof(float));
+		memcpy(&sourceTxData[22], &myRobotCommand[_arm].JointPos[2].Speed,     sizeof(U16));
+		memcpy(&sourceTxData[24], &myRobotCommand[_arm].JointPos[2].Direction, sizeof(U08));
+
+		 // Calculate checksum (payload only: byte 4-24)
+		for (int i = 4; i < MSG_CONTROL_POS_LENGTH; i++)
+		{
+			checksum ^= sourceTxData[i];  // XOR checksum
+		}
+		sourceTxData[3] = checksum;
 		break;;
 
 	case UART_MSG_MOTOR_CONTROL_TOR:
 		// TODO
 		break;
 
-	case UART_MSG_GUI_DATA_1:
-		// TODO
+	/* --------- Message for GUI --------- */
+	case UART_MSG_GUI_DATA_1_LEFT:
+		sourceTxData[0] = MSG_GUI_DATA_1_SING_BYTE_0;
+		sourceTxData[1] = MSG_GUI_DATA_1_SING_BYTE_1;
+		sourceTxData[2] = MSG_GUI_DATA_1_SING_LENGTH;
+		sizeSend = MSG_GUI_DATA_1_SING_LENGTH;
+
+		// Cast sourceTxData to 32-bit pointer for direct access
+		U32* txData32Left = (U32*)sourceTxData;
+
+		txData32Left[1] = *(U32*)&myRobotFeedback[LEFT_ARM].Joint[0].Position; // sourceTxData[4-7]
+		txData32Left[2] = *(U32*)&myRobotFeedback[LEFT_ARM].Joint[0].Speed;    // sourceTxData[8-11]
+		txData32Left[3] = *(U32*)&myRobotFeedback[LEFT_ARM].Joint[0].Accel;    // sourceTxData[12-15]
+		txData32Left[4] = *(U32*)&myRobotFeedback[LEFT_ARM].Joint[1].Position; // sourceTxData[16-19]
+		txData32Left[5] = *(U32*)&myRobotFeedback[LEFT_ARM].Joint[1].Speed;    // sourceTxData[20-23]
+		txData32Left[6] = *(U32*)&myRobotFeedback[LEFT_ARM].Joint[1].Accel;    // sourceTxData[24-27]
+		txData32Left[7] = *(U32*)&myRobotFeedback[LEFT_ARM].Joint[2].Position; // sourceTxData[28-31]
+		txData32Left[8] = *(U32*)&myRobotFeedback[LEFT_ARM].Joint[2].Speed;    // sourceTxData[32-35]
+		txData32Left[9] = *(U32*)&myRobotFeedback[LEFT_ARM].Joint[2].Accel;    // sourceTxData[36-39]
+
+		 // Calculate checksum (payload only: byte 4-39)
+		for (int i = 4; i < MSG_GUI_DATA_1_SING_LENGTH; i++)
+		{
+			checksum ^= sourceTxData[i];  // XOR checksum
+		}
+		sourceTxData[3] = checksum;
 		break;
 
-	case UART_MSG_GUI_DATA_2:
+	case UART_MSG_GUI_DATA_1_RIGHT:
+		sourceTxData[0] = MSG_GUI_DATA_1_SING_BYTE_0;
+		sourceTxData[1] = MSG_GUI_DATA_1_SING_BYTE_1;
+		sourceTxData[2] = MSG_GUI_DATA_1_SING_LENGTH;
+		sizeSend = MSG_GUI_DATA_1_SING_LENGTH;
+
+		// Cast sourceTxData to 32-bit pointer for direct access
+		U32* txData32Right = (U32*)sourceTxData;
+
+		txData32Right[1] = *(U32*)&myRobotFeedback[RIGHT_ARM].Joint[0].Position; // sourceTxData[4-7]
+		txData32Right[2] = *(U32*)&myRobotFeedback[RIGHT_ARM].Joint[0].Speed;    // sourceTxData[8-11]
+		txData32Right[3] = *(U32*)&myRobotFeedback[RIGHT_ARM].Joint[0].Accel;    // sourceTxData[12-15]
+		txData32Right[4] = *(U32*)&myRobotFeedback[RIGHT_ARM].Joint[1].Position; // sourceTxData[16-19]
+		txData32Right[5] = *(U32*)&myRobotFeedback[RIGHT_ARM].Joint[1].Speed;    // sourceTxData[20-23]
+		txData32Right[6] = *(U32*)&myRobotFeedback[RIGHT_ARM].Joint[1].Accel;    // sourceTxData[24-27]
+		txData32Right[7] = *(U32*)&myRobotFeedback[RIGHT_ARM].Joint[2].Position; // sourceTxData[28-31]
+		txData32Right[8] = *(U32*)&myRobotFeedback[RIGHT_ARM].Joint[2].Speed;    // sourceTxData[32-35]
+		txData32Right[9] = *(U32*)&myRobotFeedback[RIGHT_ARM].Joint[2].Accel;    // sourceTxData[36-39]
+
+		 // Calculate checksum (payload only: byte 4-39)
+		for (int i = 4; i < MSG_GUI_DATA_1_SING_LENGTH; i++)
+		{
+			checksum ^= sourceTxData[i];  // XOR checksum
+		}
+		sourceTxData[3] = checksum;
+		break;
+
+	case UART_MSG_GUI_DATA_1_DUAL:
+		sourceTxData[0] = MSG_GUI_DATA_1_DUAL_BYTE_0;
+		sourceTxData[1] = MSG_GUI_DATA_1_DUAL_BYTE_1;
+		sourceTxData[2] = MSG_GUI_DATA_1_DUAL_LENGTH;
+		sizeSend = MSG_GUI_DATA_1_DUAL_LENGTH;
+
+		// Cast sourceTxData to 32-bit pointer for direct access
+		U32* txData32Dual = (U32*)sourceTxData;
+
+#ifndef MASTER_GUI_TP_CHECK
+		txData32Dual[1] = *(U32*)&myRobotFeedback[LEFT_ARM].Joint[0].Position; // sourceTxData[4-7]
+		txData32Dual[2] = *(U32*)&myRobotFeedback[LEFT_ARM].Joint[0].Speed;    // sourceTxData[8-11]
+		txData32Dual[3] = *(U32*)&myRobotFeedback[LEFT_ARM].Joint[0].Accel;    // sourceTxData[12-15]
+		txData32Dual[4] = *(U32*)&myRobotFeedback[LEFT_ARM].Joint[1].Position; // sourceTxData[16-19]
+		txData32Dual[5] = *(U32*)&myRobotFeedback[LEFT_ARM].Joint[1].Speed;    // sourceTxData[20-23]
+		txData32Dual[6] = *(U32*)&myRobotFeedback[LEFT_ARM].Joint[1].Accel;    // sourceTxData[24-27]
+		txData32Dual[7] = *(U32*)&myRobotFeedback[LEFT_ARM].Joint[2].Position; // sourceTxData[28-31]
+		txData32Dual[8] = *(U32*)&myRobotFeedback[LEFT_ARM].Joint[2].Speed;    // sourceTxData[32-35]
+		txData32Dual[9] = *(U32*)&myRobotFeedback[LEFT_ARM].Joint[2].Accel;    // sourceTxData[36-39]
+
+		txData32Dual[10] = *(U32*)&myRobotFeedback[RIGHT_ARM].Joint[0].Position; // sourceTxData[40-43]
+		txData32Dual[11] = *(U32*)&myRobotFeedback[RIGHT_ARM].Joint[0].Speed;    // sourceTxData[44-47]
+		txData32Dual[12] = *(U32*)&myRobotFeedback[RIGHT_ARM].Joint[0].Accel;    // sourceTxData[48-51]
+		txData32Dual[13] = *(U32*)&myRobotFeedback[RIGHT_ARM].Joint[1].Position; // sourceTxData[52-55]
+		txData32Dual[14] = *(U32*)&myRobotFeedback[RIGHT_ARM].Joint[1].Speed;    // sourceTxData[56-59]
+		txData32Dual[15] = *(U32*)&myRobotFeedback[RIGHT_ARM].Joint[1].Accel;    // sourceTxData[60-63]
+		txData32Dual[16] = *(U32*)&myRobotFeedback[RIGHT_ARM].Joint[2].Position; // sourceTxData[64-67]
+		txData32Dual[17] = *(U32*)&myRobotFeedback[RIGHT_ARM].Joint[2].Speed;    // sourceTxData[68-71]
+		txData32Dual[18] = *(U32*)&myRobotFeedback[RIGHT_ARM].Joint[2].Accel;    // sourceTxData[72-75]
+#else
+		float Pos, Vel, Accel;
+		Pos   = RAD2DEG(myRobotTrajectory[LEFT_ARM].Joint[0].currPos);
+		Vel   = RAD2DEG(myRobotTrajectory[LEFT_ARM].Joint[0].currVel);
+		Accel = RAD2DEG(myRobotTrajectory[LEFT_ARM].Joint[0].currAccel);
+		txData32Dual[1] = *(U32*)&Pos;
+		txData32Dual[2] = *(U32*)&Vel;
+		txData32Dual[3] = *(U32*)&Accel;
+		Pos   = RAD2DEG(myRobotTrajectory[LEFT_ARM].Joint[1].currPos);
+		Vel   = RAD2DEG(myRobotTrajectory[LEFT_ARM].Joint[1].currVel);
+		Accel = RAD2DEG(myRobotTrajectory[LEFT_ARM].Joint[1].currAccel);
+		txData32Dual[4] = *(U32*)&Pos;
+		txData32Dual[5] = *(U32*)&Vel;
+		txData32Dual[6] = *(U32*)&Accel;
+		Pos   = RAD2DEG(myRobotTrajectory[LEFT_ARM].Joint[2].currPos);
+		Vel   = RAD2DEG(myRobotTrajectory[LEFT_ARM].Joint[2].currVel);
+		Accel = RAD2DEG(myRobotTrajectory[LEFT_ARM].Joint[2].currAccel);
+		txData32Dual[7] = *(U32*)&Pos;
+		txData32Dual[8] = *(U32*)&Vel;
+		txData32Dual[9] = *(U32*)&Accel;
+
+		Pos   = RAD2DEG(myRobotTrajectory[RIGHT_ARM].Joint[0].currPos);
+		Vel   = RAD2DEG(myRobotTrajectory[RIGHT_ARM].Joint[0].currVel);
+		Accel = RAD2DEG(myRobotTrajectory[RIGHT_ARM].Joint[0].currAccel);
+		txData32Dual[10] = *(U32*)&Pos;
+		txData32Dual[11] = *(U32*)&Vel;
+		txData32Dual[12] = *(U32*)&Accel;
+		Pos   = RAD2DEG(myRobotTrajectory[RIGHT_ARM].Joint[1].currPos);
+		Vel   = RAD2DEG(myRobotTrajectory[RIGHT_ARM].Joint[1].currVel);
+		Accel = RAD2DEG(myRobotTrajectory[RIGHT_ARM].Joint[1].currAccel);
+		txData32Dual[13] = *(U32*)&Pos;
+		txData32Dual[14] = *(U32*)&Vel;
+		txData32Dual[15] = *(U32*)&Accel;
+		Pos   = RAD2DEG(myRobotTrajectory[RIGHT_ARM].Joint[2].currPos);
+		Vel   = RAD2DEG(myRobotTrajectory[RIGHT_ARM].Joint[2].currVel);
+		Accel = RAD2DEG(myRobotTrajectory[RIGHT_ARM].Joint[2].currAccel);
+		txData32Dual[16] = *(U32*)&Pos;
+		txData32Dual[17] = *(U32*)&Vel;
+		txData32Dual[18] = *(U32*)&Accel;
+#endif /* MASTER_GUI_TP_CHECK */
+
+		 // Calculate checksum (payload only: byte 4-39)
+		for (int i = 4; i < MSG_GUI_DATA_1_DUAL_LENGTH; i++)
+		{
+			checksum ^= sourceTxData[i];  // XOR checksum
+		}
+		sourceTxData[3] = checksum;
+		break;
+
+	case UART_MSG_GUI_DATA_2_LEFT:
+	case UART_MSG_GUI_DATA_2_RIGHT:
+	case UART_MSG_GUI_DATA_2_DUAL:
 		// TODO
 		break;
 

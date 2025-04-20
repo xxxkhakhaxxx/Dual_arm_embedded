@@ -61,9 +61,17 @@
 #define U16_MAX (65535)
 
 /* MATHS */
-#define PI                  (3.14159265)
-#define RAD2DEG(x)          ((x)/PI*180)
-#define DEG2RAD(x)          ((x)*PI/180)
+#define PI                  (3.14159265f)
+#define D2R                 (0.01745329f)
+#define R2D                 (57.29577951f)
+#define RAD2DEG(x)          ((x)*R2D)
+#define DEG2RAD(x)          ((x)*D2R)
+
+#define DEG001_TO_DEG(x)    ((x)/100.0f)					// 0.01 degrees  →  degrees
+#define DEG_TO_DEG001(x)    (roundf((x)*100.0f))			// Degrees →  0.01 degrees
+#define RAD_TO_DEG001(x)    DEG_TO_DEG001(RAD2DEG(x))		// Radians → 0.01 degrees
+#define DEG001_TO_RAD(x)    (DEG001_TO_DEG(x)*(PI/180.0f))	// 0.01 degrees → radians
+
 #define ALIGNB(x, align)    (((x) + ((align) - 1)) & ~((align) - 1))
 #define ALIGN(x, align)     ((((x) + ((align) - 1)) / (align)) * (align))
 #define FLOORB(x, align)    ((x) & ~((align) - 1))

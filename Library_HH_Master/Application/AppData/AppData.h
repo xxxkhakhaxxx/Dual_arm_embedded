@@ -25,40 +25,107 @@
 #define LED_6_BLUE		GPIO_PIN_15
 #define LED_PORT		GPIOD
 
-#define MSG_INIT_LENGTH	(3)				// 3 header + 0 payloads
+#define BUTTON_DEBOUNCE_DELAY_MS	(50)
+#define BUTTON_PRESSED				(FALSE)
+#define BUTTON_RELEASED				(TRUE)
+
+// UART frame: 2 msg bytes + 1 length byte + 1 checksum byte (optional) + payload (optional)
 #define MSG_INIT_BYTE_0	(0xA1)
 #define MSG_INIT_BYTE_1	(0x01)
-#define MSG_INIT_BYTE_2	(0x01)
+#define MSG_INIT_LENGTH	(3)				// 3 header + 0 checksum + 0 payloads
 
-#define MSG_DATA_REQUEST_LENGTH	(3)		// 3 header + 0 payloads
 #define MSG_DATA_REQUEST_BYTE_0	(0xB2)
 #define MSG_DATA_REQUEST_BYTE_1	(0x02)
-#define MSG_DATA_REQUEST_BYTE_2	(0x02)
+#define MSG_DATA_REQUEST_LENGTH	(3)		// 3 header + 0 checksum + 0 payloads
 
-#define MSG_DATA_RESPOND_LENGTH	(39)	// 3 header + 3*(4+4+4) payloads
 #define MSG_DATA_RESPOND_BYTE_0	(0xB2)
 #define MSG_DATA_RESPOND_BYTE_1	(0x02)
-#define MSG_DATA_RESPOND_BYTE_2	(0x02)
+#define MSG_DATA_RESPOND_LENGTH	(40)	// 3 header + 1 checksum + 3*(4+4+4) payloads
 
-#define MSG_CONTROL_POS_LENGTH	(30)	// 3 header + 3*(4+2+1) payloads
 #define MSG_CONTROL_POS_BYTE_0	(0xC3)
 #define MSG_CONTROL_POS_BYTE_1	(0x03)
-#define MSG_CONTROL_POS_BYTE_2	(0x03)
-
-#define MSG_CONTROL_VEL_LENGTH	(15)	// 3 header + 3*4 payloads
+#define MSG_CONTROL_POS_LENGTH	(25)	// 3 header + 1 checksum + 3*(4+2+1) payloads
+/*
 #define MSG_CONTROL_VEL_BYTE_0	(0xD4)
-#define MSG_CONTROL_VEL_BYTE_1	(0x04)
-#define MSG_CONTROL_VEL_BYTE_2	(0x04)
+#define MSG_CONTROL_VEL_BYTE_1	(0x04)*/
+#define MSG_CONTROL_VEL_LENGTH	()	// 3 header + 3*4 payloads
 
-#define MSG_CONTROL_TOR_LENGTH	(15)	// 3 header + 3*4 payloads
 #define MSG_CONTROL_TOR_BYTE_0	(0xE5)
 #define MSG_CONTROL_TOR_BYTE_1	(0x05)
-#define MSG_CONTROL_TOR_BYTE_2	(0x05)
+#define MSG_CONTROL_TOR_LENGTH	(16)	// 3 header + 1 checksum + 3*(4) payloads
 
+#define MSG_GUI_DATA_1_SING_BYTE_0	(0xF6)
+#define MSG_GUI_DATA_1_SING_BYTE_1	(0x06)
+#define MSG_GUI_DATA_1_SING_LENGTH	(40)	// 3 header + 1 checksum + 3*(4+4+4) payloads
+
+#define MSG_GUI_DATA_1_DUAL_BYTE_0	(0xF7)
+#define MSG_GUI_DATA_1_DUAL_BYTE_1	(0x07)
+#define MSG_GUI_DATA_1_DUAL_LENGTH	(76)	// 3 header + 1 checksum + 2*3*(4+4+4) payloads
+
+#define MSG_GUI_DATA_2_SING_BYTE_0	(0xF8)
+#define MSG_GUI_DATA_2_SING_BYTE_1	(0x08)
+#define MSG_GUI_DATA_2_SING_LENGTH	(40)	// 3 header + 1 checksum + ...
+
+#define MSG_GUI_DATA_2_DUAL_BYTE_0	(0xF9)
+#define MSG_GUI_DATA_2_DUAL_BYTE_1	(0x09)
+#define MSG_GUI_DATA_2_DUAL_LENGTH	(40)	// 3 header + 1 checksum + ...
+
+
+#define CURR_POS_J11	((float)myRobotFeedback[LEFT_ARM].Joint[0].Position)
+#define CURR_POS_J21	((float)myRobotFeedback[LEFT_ARM].Joint[1].Position)
+#define CURR_POS_J31	((float)myRobotFeedback[LEFT_ARM].Joint[2].Position)
+#define CURR_VEL_J11	((float)myRobotFeedback[LEFT_ARM].Joint[0].Speed)
+#define CURR_VEL_J21	((float)myRobotFeedback[LEFT_ARM].Joint[1].Speed)
+#define CURR_VEL_J31	((float)myRobotFeedback[LEFT_ARM].Joint[2].Speed)
+#define CURR_ACCEL_J11	((float)myRobotFeedback[LEFT_ARM].Joint[0].Accel)
+#define CURR_ACCEL_J21	((float)myRobotFeedback[LEFT_ARM].Joint[1].Accel)
+#define CURR_ACCEL_J31	((float)myRobotFeedback[LEFT_ARM].Joint[2].Accel)
+
+#define CURR_POS_J12	((float)myRobotFeedback[RIGHT_ARM].Joint[0].Position)
+#define CURR_POS_J22	((float)myRobotFeedback[RIGHT_ARM].Joint[1].Position)
+#define CURR_POS_J32	((float)myRobotFeedback[RIGHT_ARM].Joint[2].Position)
+#define CURR_VEL_J12	((float)myRobotFeedback[RIGHT_ARM].Joint[0].Speed)
+#define CURR_VEL_J22	((float)myRobotFeedback[RIGHT_ARM].Joint[1].Speed)
+#define CURR_VEL_J32	((float)myRobotFeedback[RIGHT_ARM].Joint[2].Speed)
+#define CURR_ACCEL_J12	((float)myRobotFeedback[RIGHT_ARM].Joint[0].Accel)
+#define CURR_ACCEL_J22	((float)myRobotFeedback[RIGHT_ARM].Joint[1].Accel)
+#define CURR_ACCEL_J32	((float)myRobotFeedback[RIGHT_ARM].Joint[2].Accel)
 
 /********************************************************************************
  * TYPEDEFS AND ENUMS
  ********************************************************************************/
+typedef struct
+{
+	struct
+	{
+		float Angle;	// deg   per bit: range -360.0f ~ +360.0f
+		U16 Speed;		// deg/s per bit
+		U08 Direction;	// CC or CCW
+	} JointPos[3];
+
+/*	struct
+	{
+		I32 Speed;
+	} JointVel[3];*/
+
+	struct
+	{
+		float CurrentTor;
+	} JointTor[3];
+
+} strRobotDataCommand;
+
+typedef struct
+{
+	struct
+	{
+		float Position;	// deg     per bit
+		float Speed;	// deg/s   per bit
+		float Accel;	// deg/s^2 per bit
+	} Joint[3];
+} strRobotDataFeedback;
+
+
 typedef enum ENUM_MASTER_STATE_LIST
 {
 	MASTER_STATE_INIT = 0,		// Wait 2 SLAVEs init
@@ -74,7 +141,7 @@ typedef enum ENUM_MASTER_STATE_LIST
 typedef enum ENUM_ROBOT_MODE
 {
 	ROBOT_MODE_INIT = 0,
-	ROBOT_MODE_READ_ONLY,
+	ROBOT_MODE_READ_DATA,
 	ROBOT_MODE_POSITION,
 	ROBOT_MODE_VELOCITY,
 	ROBOT_MODE_TORQUE,
@@ -82,10 +149,23 @@ typedef enum ENUM_ROBOT_MODE
 	ROBOT_MODE_MAX
 } enRobotMode;
 
+typedef enum ENUM_BTN_CTRL_SEQUENCE
+{
+	BTN_CTRL_INIT = 0,
+	BTN_CTRL_TO_HOME,
+	BTN_CTRL_TO_PLANNING_INIT,
+	BTN_CTRL_PLANNING,
+
+	BTN_CTRL_TEST_POS_SEQUENCE,
+	BTN_CTRL_IDLE
+} enBtnCtrlSequence;
 
 /********************************************************************************
  * GLOBAL VARIABLES
  ********************************************************************************/
+extern GLOBAL strRobotDataCommand  myRobotCommand[DUAL_ARM];		// Trajectory Planning data to be sent to Slave
+extern GLOBAL strRobotDataFeedback myRobotFeedback[DUAL_ARM];		// Motors' data are received from Slave
+
 
 /********************************************************************************
  * GLOBAL FUNCTION DECLARATION
@@ -93,6 +173,11 @@ typedef enum ENUM_ROBOT_MODE
 GLOBAL enMasterStateList AppDataGet_MasterState(void);
 GLOBAL void AppDataSet_MasterState(enMasterStateList _state);
 GLOBAL void AppDataSet_LedState(uint16_t pin_name, BOOL _state);
+GLOBAL BOOL AppDataGet_UserButtonEvent(void);
+GLOBAL void AppDataCheck_UserButtonState(void);
+
+GLOBAL BOOL AppDataGet_TPCalculated(void);
+GLOBAL void AppDataSet_TPCalculated(BOOL _flag);
 
 /************ UART TX MANAGE FUNCTION  ************/
 GLOBAL BOOL AppDataGet_UartTxWaitFlag(U08 _node);				// if you don't want to use this flag, you should handle Tx success or not

@@ -24,30 +24,13 @@
 /********************************************************************************
  * TYPEDEFS AND ENUMS
  ********************************************************************************/
-typedef struct
-{
-    float q1;
-    float q2;
-    float q3;
-} strRobot;	// Unit: 1 degree/bit
-
-typedef struct
-{
-	struct
-	{
-		float Position;
-		float Speed;
-		float Accel;
-	} Joint[3];
-} strRobotRxData;
-
-
+ 
+ 
 /********************************************************************************
  * GLOBAL VARIABLES
  ********************************************************************************/
-extern GLOBAL strRobot strRobotDualArm;
-extern GLOBAL strRobotRxData myRobotRx[2];
-
+ 
+ 
 /********************************************************************************
  * GLOBAL FUNCTION DECLARATION
  ********************************************************************************/

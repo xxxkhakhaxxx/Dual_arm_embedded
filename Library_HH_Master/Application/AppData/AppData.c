@@ -71,6 +71,8 @@ PRIVATE strCommManager myUart[UART_NODE_MAX] = {0, };
 /********************************************************************************
  * GLOBAL VARIABLES
  ********************************************************************************/
+GLOBAL strRobotDataCommand  myRobotCommand[DUAL_ARM]  = {0, };
+GLOBAL strRobotDataFeedback myRobotFeedback[DUAL_ARM] = {0, };
 
 
 /********************************************************************************
@@ -120,6 +122,68 @@ GLOBAL void AppDataSet_LedState(uint16_t _ledName, BOOL _ledState)
 	return;
 }
 
+/************ BUTTON MANAGE FUNCTION  ************/
+PRIVATE volatile BOOL _userButtonEvent = FALSE;
+PRIVATE U08 btnPrevState = BUTTON_RELEASED; // Default to not pressed (pull-up)
+PRIVATE U32 lastChangeTime = 0;
+GLOBAL BOOL AppDataGet_UserButtonEvent(void)
+{
+	if (TRUE == _userButtonEvent)
+	{
+		_userButtonEvent = FALSE;
+		return TRUE;
+	}
+	return FALSE;
+}
+
+GLOBAL void AppDataCheck_UserButtonState(void)
+{
+	BOOL btnCurrState = HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_0) == GPIO_PIN_RESET ? BUTTON_RELEASED : BUTTON_PRESSED;
+	U32 currentTime = HAL_GetTick();
+
+	if (btnCurrState != btnPrevState)
+	{
+		if (currentTime - lastChangeTime >= BUTTON_DEBOUNCE_DELAY_MS)
+		{
+			// Stable state change detected
+			if (
+			(BUTTON_RELEASED == btnPrevState) && \
+			(BUTTON_PRESSED == btnCurrState))
+			{
+				// Pressed down (not setting event yet)
+			}
+			else if (
+			(BUTTON_PRESSED == btnPrevState) && \
+			(BUTTON_RELEASED == btnCurrState))
+			{
+				// Released - set event
+				_userButtonEvent = TRUE;
+			}
+			btnPrevState = btnCurrState;
+		}
+	}
+	else
+	{
+		lastChangeTime = currentTime;
+	}
+}
+
+
+PRIVATE BOOL isTpCalculated = FALSE;
+GLOBAL BOOL AppDataGet_TPCalculated(void)
+{
+	return isTpCalculated;
+}
+GLOBAL void AppDataSet_TPCalculated(BOOL _flag)
+{
+	if (_flag != isTpCalculated)
+	{
+		isTpCalculated = _flag;
+	}
+	return;
+}
+
+
 /************ UART TX MANAGE FUNCTION  ************/
 GLOBAL BOOL AppDataGet_UartTxWaitFlag(U08 _node)
 {
@@ -138,7 +202,6 @@ GLOBAL void AppDataSet_UartTxWaitFlag(U08 _node, BOOL _flag)
 		if (_flag != myUart[_node].Tx.IsWait)
 		{
 			myUart[_node].Tx.IsWait = _flag;
-			AppDataSet_LedState(LED_3_ORANGE, TRUE);
 		}
 	}
 
@@ -210,6 +273,14 @@ GLOBAL void AppDataSet_UartRxErrCnt(U08 _node)
 		if (U16_MAX >  myUart[_node].Rx.ErrCnt)
 		{
 			myUart[_node].Rx.ErrCnt++;
+		}
+
+		switch (_node)
+		{
+		case UART_NODE_SLAVE_1:		AppDataSet_LedState(LED_4_GREEN, TRUE);		break;
+		case UART_NODE_SLAVE_2:		AppDataSet_LedState(LED_6_BLUE, TRUE);		break;
+//		case UART_NODE_GUI:			AppDataSet_LedState(LED_5_RED, FALSE);		break;
+		default:	break;
 		}
 	}
 

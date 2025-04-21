@@ -60,8 +60,8 @@
 #define	MOTOR_CMD_MULTI_FORCE					0xFE	// 3.1		Only support on CAN Tool
 
 /* Motor constraints */
-#define MOTOR_MG_5010_TORQUE_CONSTRAINT			((I16)(430))	// ~-7A
-#define MOTOR_MG_4010_TORQUE_CONSTRAINT			((I16)(279))	// ~-4.5A
+#define MOTOR_MG_5010_TORQUE_CONSTRAINT			((I16)(413))	// ~-7A
+#define MOTOR_MG_4010_TORQUE_CONSTRAINT			((I16)(362))	// ~-4.5A
 #define MOTOR_MG_SPEED_CONSTRAINT				((I32)(24000))
 #define MOTOR_MG_MULTI_ANGLE_CONSTRAINT			(35999999)
 #define MOTOR_MG_SINGLE_ANGLE_CONSTRAINT		(35999)
@@ -73,6 +73,37 @@
 /* Motor move direction - Nhìn theo hướng mặt bích động cơ */
 #define MOTOR_FLANGE_MOVE_CW					(1)
 #define MOTOR_FLANGE_MOVE_CCW					(0)
+
+/****************** Torque Current calculate ******************
+ * I16 range: -2048 ~ +2048 == -33A ~ +33A  --> 1A ~ 62.06 bit
+ * - FOR MG4010-i10V3:
+ *      + max Curr = max Power / Voltage
+ *                 = 140W / 24V
+ *                 =   35/6 (A)
+ *      + max Torque = 4.5 Nm
+ *      --> I16 range for MG4010-i10V3: -362  ~ +362	[bit]				: 2048/33 * 35/6
+ *                                    = -35/6 ~ +35/6	[A]
+ *                                    = -4.5  ~ +4.5	[Nm]
+ *      --> Torque constant MG4010-i10V3 = 0.77143		[Nm/A] (after gearbox)
+ *                                       = 0.077143		[Nm/A] (before gearbox)
+ * - FOR MG5010-i10V3:
+ *      + max Curr = max Power / Voltage
+ *                 = 160 / 24V
+ *                 =  20/3 (A)
+ *      + max Torque = 7.0 Nm
+ *      --> I16 range for MG5010-i10V3: -413  ~ +413	[bit]				: 2048/33 * 20/3
+ *                                    = -20/3 ~ +20/3	[A]
+ *                                    = -7.0  ~ +7.0	[Nm]
+ *      --> Torque constant MG5010-i10V3 = 1.05			[Nm/A] (after gearbox)
+ *                                       = 0.105 		[Nm/A] (before gearbox)
+ **************************************************************/
+#define MOTOR_MG_5010_TOR2AMP(x)	((x)/(1.05f))
+#define MOTOR_MG_5010_AMP2BIT(x)	((x)*(2048.0f/33.0f))
+#define MOTOR_MG_5010_TOR2BIT		(59.105f)
+#define MOTOR_MG_4010_TOR2AMP(x)	((x)/(0.77142857f))
+#define MOTOR_MG_4010_AMP2BIT(x)	((x)*(2048.0f/33.0f))
+#define MOTOR_MG_4010_TOR2BIT		(80.449f)
+
 /********************************************************************************
  * TYPEDEFS AND ENUMS
  ********************************************************************************/

@@ -436,7 +436,7 @@ GLOBAL void AppControl_IK_EE2Joints(U08 _arm)
 	{	// Stop continue TP
 		invalidTrajectory = TRUE;
 		AppDataSet_TPCalculated(FALSE);
-//		AppDataSet_MasterState(MASTER_STATE_ERROR);	// TODO
+//		AppDataSet_MasterState(MASTER_STATE_ERROR);	// TODO Create error state
 		return;
 	}
 	q2 = atan2f(s2, c2);
@@ -459,14 +459,9 @@ GLOBAL void AppControl_IK_EE2Joints(U08 _arm)
 }
 
 
-GLOBAL void AppControl_Pos_TestSquence(U08 _arm, U16 _speed)
-{	// 1. Safety check
-	if ((LEFT_ARM != _arm) && (RIGHT_ARM != _arm))
-	{
-		return;
-	}
-
-	// 2. Test Speed constraints
+GLOBAL void AppControl_Pos_TestSequence(U16 _speed)
+{
+	// 1. Test Speed constraints
 	if (_speed > TEST_SPEED_MAX)	// For safety
 	{
 		_speed = TEST_SPEED_MAX;
@@ -681,6 +676,82 @@ GLOBAL void AppControl_Pos_FollowTpPos(U08 _arm)
 		myRobotCommand[RIGHT_ARM].JointPos[2].Angle = q3;
 		myRobotCommand[RIGHT_ARM].JointPos[2].Speed = (U16)(fabsf(v3)+1);
 		myRobotCommand[RIGHT_ARM].JointPos[2].Direction = d3;
+	}
+
+	return;
+}
+
+GLOBAL void AppControl_Tor_TestSequence(U08 _arm, U08 _joint)
+{
+	// 1. Safety check
+	if (
+	(LEFT_ARM != _arm) && (RIGHT_ARM != _arm) && \
+	(0 != _joint) && (1 != _joint) && (2 !=_joint))
+	{
+		return;
+	}
+
+	switch (_btnSequenceTest)
+	{
+	case 0:
+		myRobotCommand[_arm].JointTor[_joint].CurrentTor = 0.1f;
+		AppDataSet_LedState(LED_3_ORANGE, TRUE);
+		AppDataSet_LedState(LED_4_GREEN, FALSE);
+		AppDataSet_LedState(LED_6_BLUE, FALSE);
+		_btnSequenceTest = 1;
+		break;
+	case 1:
+		myRobotCommand[_arm].JointTor[_joint].CurrentTor = 0.2f;
+		AppDataSet_LedState(LED_3_ORANGE, FALSE);
+		AppDataSet_LedState(LED_4_GREEN, TRUE);
+		AppDataSet_LedState(LED_6_BLUE, FALSE);
+		_btnSequenceTest = 2;
+		break;
+	case 2:
+		myRobotCommand[_arm].JointTor[_joint].CurrentTor = 0.3f;
+		AppDataSet_LedState(LED_3_ORANGE, TRUE);
+		AppDataSet_LedState(LED_4_GREEN, TRUE);
+		AppDataSet_LedState(LED_6_BLUE, FALSE);
+		_btnSequenceTest = 3;
+		break;
+	case 3:
+		myRobotCommand[_arm].JointTor[_joint].CurrentTor = 0.4f;
+		AppDataSet_LedState(LED_3_ORANGE, FALSE);
+		AppDataSet_LedState(LED_4_GREEN, FALSE);
+		AppDataSet_LedState(LED_6_BLUE, TRUE);
+		_btnSequenceTest = 4;
+		break;
+	case 4:
+		myRobotCommand[_arm].JointTor[_joint].CurrentTor = 0.5f;
+		AppDataSet_LedState(LED_3_ORANGE, TRUE);
+		AppDataSet_LedState(LED_4_GREEN, FALSE);
+		AppDataSet_LedState(LED_6_BLUE, TRUE);
+		_btnSequenceTest = 5;
+		break;
+	case 5:
+		myRobotCommand[_arm].JointTor[_joint].CurrentTor = 0.6f;
+		AppDataSet_LedState(LED_3_ORANGE, FALSE);
+		AppDataSet_LedState(LED_4_GREEN, TRUE);
+		AppDataSet_LedState(LED_6_BLUE, TRUE);
+		_btnSequenceTest = 6;
+		break;
+	case 6:
+		myRobotCommand[_arm].JointTor[_joint].CurrentTor = 0.7f;
+		AppDataSet_LedState(LED_3_ORANGE, TRUE);
+		AppDataSet_LedState(LED_4_GREEN, TRUE);
+		AppDataSet_LedState(LED_6_BLUE, TRUE);
+		_btnSequenceTest = 7;
+		break;
+	case 7:
+		myRobotCommand[_arm].JointTor[_joint].CurrentTor = 0.8f;
+		AppDataSet_LedState(LED_3_ORANGE, FALSE);
+		AppDataSet_LedState(LED_4_GREEN, FALSE);
+		AppDataSet_LedState(LED_6_BLUE, FALSE);
+		_btnSequenceTest = 0;
+		break;
+	default:
+		_btnSequenceTest = 0;
+		break;
 	}
 
 	return;

@@ -39,6 +39,7 @@
 #define	TP_START_SPEED_MAX	(30)
 
 #define TEST_SPEED_MAX	(20)
+#define TEST_TORQUE_MAX	(2.0f)
 
 /********************************************************************************
  * TYPEDEFS AND ENUMS
@@ -153,10 +154,13 @@ GLOBAL BOOL AppControl_TP_InitWorldTrajectory(enTpType _type);
 GLOBAL BOOL AppControl_TP_UpdateWorldTrajectory(float _timeStep);	// TP ➡ T_Mass_World
 GLOBAL void AppControl_IK_World2EE(U08 _arm);						// T_Mass_World ➡ T_4i_0i
 GLOBAL void AppControl_IK_EE2Joints(U08 _arm);						// T_4i_0i ➡ q1/q2/q3
-GLOBAL void AppControl_Pos_TestSquence(U08 _arm, U16 _speed);
+
+GLOBAL void AppControl_Pos_TestSequence(U16 _speed);
 GLOBAL void AppControl_Pos_MoveToHome(U08 _arm, U16 _speed);
 GLOBAL void AppControl_Pos_MoveToTpStart(U08 _arm, U16 _speed);
 GLOBAL void AppControl_Pos_FollowTpPos(U08 _arm);
+
+GLOBAL void AppControl_Tor_TestSequence(U08 _arm, U08 _joint);
 
 
 

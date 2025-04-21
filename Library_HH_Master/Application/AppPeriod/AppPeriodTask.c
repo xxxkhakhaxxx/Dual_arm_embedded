@@ -121,7 +121,6 @@ PRIVATE BOOL _CheckAllSlaveFeedback(void)
 
 PRIVATE void _MasterStateControl(void)
 {
-#if defined (MASTER_CONTROL_POS)
 	static BOOL isMovingToHome = FALSE;		// Home position
 	static BOOL isMovingToStart = FALSE;		// TP start position
 
@@ -130,14 +129,24 @@ PRIVATE void _MasterStateControl(void)
 	{
 		switch (_btnSequence)
 		{
+		case BTN_CTRL_INIT:				_btnSequence = BTN_CTRL_TEST_TOR_SEQUENCE;	break;
 //		case BTN_CTRL_INIT:				_btnSequence = BTN_CTRL_TEST_POS_SEQUENCE;	break;
-		case BTN_CTRL_INIT:				_btnSequence = BTN_CTRL_TO_HOME;			break;
+//		case BTN_CTRL_INIT:				_btnSequence = BTN_CTRL_TO_HOME;			break;
+
 		case BTN_CTRL_TO_HOME:			_btnSequence = BTN_CTRL_TO_PLANNING_INIT;	break;
 		case BTN_CTRL_TO_PLANNING_INIT:	_btnSequence = BTN_CTRL_PLANNING;			break;
 		case BTN_CTRL_PLANNING:			_btnSequence = BTN_CTRL_IDLE;				break;
 
-		case BTN_CTRL_IDLE:
 		case BTN_CTRL_TEST_POS_SEQUENCE:
+			AppControl_Pos_TestSequence(10);
+			AppCommUART_SendMsg(UART_NODE_SLAVE_2, UART_MSG_MOTOR_CONTROL_POS);
+			break;
+		case BTN_CTRL_TEST_TOR_SEQUENCE:
+			AppControl_Tor_TestSequence(RIGHT_ARM, 2);
+			AppCommUART_SendMsg(UART_NODE_SLAVE_2, UART_MSG_MOTOR_CONTROL_TOR);
+			break;
+
+		case BTN_CTRL_IDLE:
 		default:
 			// Do nothing
 			break;
@@ -207,11 +216,20 @@ PRIVATE void _MasterStateControl(void)
 			AppControl_IK_World2EE(RIGHT_ARM);
 			AppControl_IK_EE2Joints(LEFT_ARM);
 			AppControl_IK_EE2Joints(RIGHT_ARM);
+
+#if defined (MASTER_CONTROL_POS)
 			AppControl_Pos_FollowTpPos(LEFT_ARM);
 			AppControl_Pos_FollowTpPos(RIGHT_ARM);
 
 			AppCommUART_SendMsg(UART_NODE_SLAVE_1, UART_MSG_MOTOR_CONTROL_POS);
 			AppCommUART_SendMsg(UART_NODE_SLAVE_2, UART_MSG_MOTOR_CONTROL_POS);
+#elif defined (MASTER_CONTROL_TOR)
+//			AppControl_Tor_Controller(LEFT_ARM, CONTROL_TYPE_PID);
+
+
+//			AppCommUART_SendMsg(UART_NODE_SLAVE_1, UART_MSG_MOTOR_CONTROL_TOR);
+//			AppCommUART_SendMsg(UART_NODE_SLAVE_2, UART_MSG_MOTOR_CONTROL_TOR);
+#endif	// MASTER_CONTROL_POS
 		}
 		else	// Finished
 		{
@@ -219,9 +237,8 @@ PRIVATE void _MasterStateControl(void)
 		}
 		break;
 
-	case BTN_CTRL_TEST_POS_SEQUENCE:
-
-		break;
+	case BTN_CTRL_TEST_POS_SEQUENCE:	break;
+	case BTN_CTRL_TEST_TOR_SEQUENCE:	break;
 
 	case BTN_CTRL_INIT:
 	case BTN_CTRL_IDLE:
@@ -229,15 +246,6 @@ PRIVATE void _MasterStateControl(void)
 		// Do nothing
 		break;
 	}
-
-
-#elif defined (MASTER_CONTROL_VEL)
-	// TODO
-
-#elif defined (MASTER_CONTROL_TOR)
-	// TODO
-
-#endif	// MASTER_CONTROL_POS
 
 	return;
 }

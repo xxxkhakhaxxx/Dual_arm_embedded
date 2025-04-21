@@ -247,7 +247,21 @@ GLOBAL void AppCommUART_SendMsg(enUartNode _node, enUartMsg _txMsgId)
 		break;;
 
 	case UART_MSG_MOTOR_CONTROL_TOR:
-		// TODO
+		sourceTxData[0] = MSG_CONTROL_TOR_BYTE_0;
+		sourceTxData[1] = MSG_CONTROL_TOR_BYTE_1;
+		sourceTxData[2] = MSG_CONTROL_TOR_LENGTH;
+		sizeSend = MSG_CONTROL_TOR_LENGTH;
+
+		memcpy(&sourceTxData[4],  &myRobotCommand[_arm].JointTor[0].CurrentTor, sizeof(float));
+		memcpy(&sourceTxData[8],  &myRobotCommand[_arm].JointTor[1].CurrentTor, sizeof(float));
+		memcpy(&sourceTxData[12], &myRobotCommand[_arm].JointTor[2].CurrentTor, sizeof(float));
+
+		 // Calculate checksum (payload only: byte 4-24)
+		for (int i = 4; i < MSG_CONTROL_TOR_LENGTH; i++)
+		{
+			checksum ^= sourceTxData[i];  // XOR checksum
+		}
+		sourceTxData[3] = checksum;
 		break;
 
 	/* --------- Message for GUI --------- */
@@ -386,7 +400,7 @@ GLOBAL void AppCommUART_SendMsg(enUartNode _node, enUartMsg _txMsgId)
 	case UART_MSG_GUI_DATA_2_LEFT:
 	case UART_MSG_GUI_DATA_2_RIGHT:
 	case UART_MSG_GUI_DATA_2_DUAL:
-		// TODO
+		// TODO Create GUI DATA 2 send message
 		break;
 
 //	case UART_MSG_MOTOR_CONTROL_VEL:

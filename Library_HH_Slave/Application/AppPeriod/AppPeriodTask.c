@@ -341,7 +341,18 @@ GLOBAL void AppPeriodTask_StateMachineProcess(void)
 				_sequenceEndFlag = FALSE;								// Received request -> Start motor comm sequence_
 				AppDataSet_SlaveState(SLAVE_STATE_SEND_MOTOR_SEQUENCE);	// Start control motors' position
 			}
-			else	// TODO: UART_MSG_MOTOR_CONTROL_TOR
+			else if (	// Master control torque message
+			(MSG_CONTROL_TOR_BYTE_0 == RxDataMaster[0]) && \
+			(MSG_CONTROL_TOR_BYTE_1 == RxDataMaster[1]) && \
+			(MSG_CONTROL_TOR_LENGTH == RxDataMaster[2]))
+			{
+				AppCommUart_RecvMasterMsg(UART_MSG_MOTOR_CONTROL_TOR);
+				_robotMode = ROBOT_MODE_TORQUE;
+				_canNode = CAN_NODE_MOTOR_1;
+				_sequenceEndFlag = FALSE;								// Received request -> Start motor comm sequence_
+				AppDataSet_SlaveState(SLAVE_STATE_SEND_MOTOR_SEQUENCE);	// Start control motors' torque
+			}
+			else
 			{
 				AppDataSet_UartRxErrCnt(UART_NODE_MASTER);		// Receive un-support message ID in this Slave state
 				AppCommUart_RecvMsgStart(UART_NODE_MASTER);		// Wait for another Master message

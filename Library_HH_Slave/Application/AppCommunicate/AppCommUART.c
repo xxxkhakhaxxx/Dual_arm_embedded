@@ -46,6 +46,7 @@ GLOBAL U08 TxDataMaster[UART_BUFFER_SIZE] = {0, };
  * PRIVATE FUNCTION DECLARATION
  ********************************************************************************/
 PRIVATE U32 _PosControl_ConvertKineUnit2MotorUnit(float _angleRxFromMaster, I32 _offset, I08 _dir);
+PRIVATE I16 _TorControl_ConvertNewtonUnit2BitUnit(float _torRxFromMaster, float _scale, I08 _dir);
 
 
 /********************************************************************************
@@ -70,6 +71,14 @@ PRIVATE U32 _PosControl_ConvertKineUnit2MotorUnit(float _angleRxFromMaster, I32 
 	// Wrap negative values and clamp to [0, 36000)
 	_angleTxToMotor = (_angleTxToMotor % 36000 + 36000) % 36000;
 	return (U32)_angleTxToMotor;
+}
+
+PRIVATE I16 _TorControl_ConvertNewtonUnit2BitUnit(float _torRxFromMaster, float _scale, I08 _dir)
+{
+	// Tor (Nm) --> Tor Current (A) --> Send value (bit)
+	float torBit = _torRxFromMaster * _scale * _dir;
+	
+	return (I16)roundf(torBit);
 }
 
 
@@ -291,21 +300,26 @@ GLOBAL void AppCommUart_RecvMsgStart(enUartNode _node)
 GLOBAL void AppCommUart_RecvMasterMsg(enUartMsg _rxMsgId)	// TODO: Return recv result
 {
 	// 1. Initialize variables
-	float _angleRx;
-	U32 _angleTx;
-	U16 _speed;
-	U08 _direction;	// 0 = CW, 1 = CCW
-	U08 checksum = 0x00;
+	static float _angleRx[3];
+	static U32 _angleTx[3];
+	static U16 _speed[3];
+	static U08 _direction[3];	// 0 = CW, 1 = CCW
+
+	static float _torqueRx[3];
+	static I16   _torqueTx[3];
+
+	 U08 checksum = 0x00;
 
 	// 2. Check checksum and save data
 	switch (_rxMsgId)
 	{
 	case UART_MSG_MOTOR_CONTROL_POS:
-		 // Check checksum correct or not(payload only: byte 4-24)
+		// Check checksum correct or not(payload only: byte 4-24)
 		for (int i = 4; i < MSG_CONTROL_POS_LENGTH; i++)
 		{
 			checksum ^= RxDataMaster[i];  // XOR checksum
 		}
+
 		if (checksum != RxDataMaster[3])
 		{
 			// Wrong checksum
@@ -313,31 +327,51 @@ GLOBAL void AppCommUart_RecvMasterMsg(enUartMsg _rxMsgId)	// TODO: Return recv r
 		}
 
 		// Payloads: q1-dq1-dir1 - q2-dq2-dir2 - q3-dq3-dir3
-		memcpy(&_angleRx,   &RxDataMaster[4],  sizeof(float));
-		memcpy(&_speed,     &RxDataMaster[8],  sizeof(U16));
-		memcpy(&_direction, &RxDataMaster[10], sizeof(U08));
-		_angleTx = _PosControl_ConvertKineUnit2MotorUnit(_angleRx, J1_OFFSET_KINE2REAL, J1_DIR_KINE2REAL);
-		_direction = CONVERT_DIR_KINE2REAL(_direction, J1_DIR_KINE2REAL);
-		ApiProtocolMotorMG_SetAngleSingle(MOTOR_1_ID, _angleTx, _speed, _direction);
-
-		memcpy(&_angleRx,   &RxDataMaster[11], sizeof(float));
-		memcpy(&_speed,     &RxDataMaster[15], sizeof(U16));
-		memcpy(&_direction, &RxDataMaster[17], sizeof(U08));
-		_angleTx = _PosControl_ConvertKineUnit2MotorUnit(_angleRx, J2_OFFSET_KINE2REAL, J2_DIR_KINE2REAL);
-		_direction = CONVERT_DIR_KINE2REAL(_direction, J2_DIR_KINE2REAL);
-		ApiProtocolMotorMG_SetAngleSingle(MOTOR_2_ID, _angleTx, _speed, _direction);
-
-		memcpy(&_angleRx,   &RxDataMaster[18], sizeof(float));
-		memcpy(&_speed,     &RxDataMaster[22], sizeof(U16));
-		memcpy(&_direction, &RxDataMaster[24], sizeof(U08));
-		_angleTx = _PosControl_ConvertKineUnit2MotorUnit(_angleRx, J3_OFFSET_KINE2REAL, J3_DIR_KINE2REAL);
-		_direction = CONVERT_DIR_KINE2REAL(_direction, J3_DIR_KINE2REAL);
-		ApiProtocolMotorMG_SetAngleSingle(MOTOR_3_ID, _angleTx, _speed, _direction);
+		memcpy(&_angleRx[0],   &RxDataMaster[4],  sizeof(float));
+		memcpy(&_speed[0],     &RxDataMaster[8],  sizeof(U16));
+		memcpy(&_direction[0], &RxDataMaster[10], sizeof(U08));
+		memcpy(&_angleRx[1],   &RxDataMaster[11], sizeof(float));
+		memcpy(&_speed[1],     &RxDataMaster[15], sizeof(U16));
+		memcpy(&_direction[1], &RxDataMaster[17], sizeof(U08));
+		memcpy(&_angleRx[2],   &RxDataMaster[18], sizeof(float));
+		memcpy(&_speed[2],     &RxDataMaster[22], sizeof(U16));
+		memcpy(&_direction[2], &RxDataMaster[24], sizeof(U08));
+		_angleTx[0] = _PosControl_ConvertKineUnit2MotorUnit(_angleRx[0], J1_OFFSET_KINE2REAL, J1_DIR_KINE2REAL); // TODO: Combine all motor setting into 1 structure
+		_angleTx[1] = _PosControl_ConvertKineUnit2MotorUnit(_angleRx[1], J2_OFFSET_KINE2REAL, J2_DIR_KINE2REAL);
+		_angleTx[2] = _PosControl_ConvertKineUnit2MotorUnit(_angleRx[2], J3_OFFSET_KINE2REAL, J3_DIR_KINE2REAL);
+		_direction[0] = CONVERT_DIR_KINE2REAL(_direction[0], J1_DIR_KINE2REAL);
+		_direction[1] = CONVERT_DIR_KINE2REAL(_direction[1], J2_DIR_KINE2REAL);
+		_direction[2] = CONVERT_DIR_KINE2REAL(_direction[2], J3_DIR_KINE2REAL);
+		ApiProtocolMotorMG_SetAngleSingle(MOTOR_1_ID, _angleTx[0], _speed[0], _direction[0]);
+		ApiProtocolMotorMG_SetAngleSingle(MOTOR_2_ID, _angleTx[1], _speed[1], _direction[1]);
+		ApiProtocolMotorMG_SetAngleSingle(MOTOR_3_ID, _angleTx[2], _speed[2], _direction[2]);
 		break;
 
 	case UART_MSG_MOTOR_CONTROL_TOR:
-		// TODO
+		// Check checksum correct or not(payload only: byte 4-15)
+		for (int i = 4; i < MSG_CONTROL_TOR_LENGTH; i++)
+		{
+			checksum ^= RxDataMaster[i];  // XOR checksum
+		}
+
+		if (checksum != RxDataMaster[3])
+		{
+			// Wrong checksum
+			return;
+		}
+
+		// Payloads: t1-t2-t3
+		memcpy(&_torqueRx[0], &RxDataMaster[4],  sizeof(float));
+		memcpy(&_torqueRx[1], &RxDataMaster[8],  sizeof(float));
+		memcpy(&_torqueRx[2], &RxDataMaster[12], sizeof(float));
+		_torqueTx[0] = _TorControl_ConvertNewtonUnit2BitUnit(_torqueRx[0], MOTOR_MG_5010_TOR2BIT, J1_DIR_KINE2REAL);
+		_torqueTx[1] = _TorControl_ConvertNewtonUnit2BitUnit(_torqueRx[1], MOTOR_MG_4010_TOR2BIT, J2_DIR_KINE2REAL);
+		_torqueTx[2] = _TorControl_ConvertNewtonUnit2BitUnit(_torqueRx[2], MOTOR_MG_4010_TOR2BIT, J3_DIR_KINE2REAL);
+		ApiProtocolMotorMG_SetTorque(MOTOR_1_ID, _torqueTx[0]);
+		ApiProtocolMotorMG_SetTorque(MOTOR_2_ID, _torqueTx[1]);
+		ApiProtocolMotorMG_SetTorque(MOTOR_3_ID, _torqueTx[2]);
 		break;
+
 	case UART_MSG_INIT:
 	case UART_MSG_MOTOR_DATA:
 	default:

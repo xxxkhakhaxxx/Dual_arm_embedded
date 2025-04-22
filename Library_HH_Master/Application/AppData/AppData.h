@@ -64,11 +64,11 @@
 
 #define MSG_GUI_DATA_2_SING_BYTE_0	(0xF8)
 #define MSG_GUI_DATA_2_SING_BYTE_1	(0x08)
-#define MSG_GUI_DATA_2_SING_LENGTH	(40)	// 3 header + 1 checksum + ...
+#define MSG_GUI_DATA_2_SING_LENGTH	(40)	// 3 header + 1 checksum + 3*(4+4+4) payloads
 
 #define MSG_GUI_DATA_2_DUAL_BYTE_0	(0xF9)
 #define MSG_GUI_DATA_2_DUAL_BYTE_1	(0x09)
-#define MSG_GUI_DATA_2_DUAL_LENGTH	(40)	// 3 header + 1 checksum + ...
+#define MSG_GUI_DATA_2_DUAL_LENGTH	(76)	// 3 header + 1 checksum + 2*3*(4+4+4) payloads
 
 
 #define CURR_POS_J11	((float)myRobotFeedback[LEFT_ARM].Joint[0].Position)
@@ -110,7 +110,7 @@ typedef struct
 
 	struct
 	{
-		float CurrentTor;
+		float Tor;		// [Nm]
 	} JointTor[3];
 
 } strRobotDataCommand;

@@ -55,6 +55,15 @@ typedef enum ENUM_TP_TYPE
 	TP_TYPE_QUINTIC
 } enTpType;
 
+typedef enum ENUM_TOR_CONTROLLER
+{
+	TOR_CTRL_NONE = 0,
+
+	TOR_CTRL_PD,
+	TOR_CTRL_SPD,
+	TOR_CTRL_SMC,
+	TOR_CTRL_SSMC
+} enTorController;
 
 typedef struct
 {
@@ -138,12 +147,44 @@ typedef struct
 	} Ctrl;
 } strJointSpacePlanning;
 
+typedef struct
+{
+	struct
+	{
+		struct
+		{
+			float Kp[3];
+			float Kd[3];
+			float Alpha[3];
+		} Setting;
+	} PD;
 
+	struct
+	{
+		struct
+		{
+			float Lamda[3];
+			float K[3];
+			float Eta[3];
+			float Alpha[3];
+		} Setting;
+	} SMC;
+
+	struct
+	{
+		BOOL isInit;
+	} Ctrl;
+
+
+	enTorController Type;
+} strTorControl;
 /********************************************************************************
  * GLOBAL VARIABLES
  ********************************************************************************/
 GLOBAL extern strTaskSpacePlanning  myTaskTrajectory;
 GLOBAL extern strJointSpacePlanning myRobotTrajectory[DUAL_ARM];
+
+GLOBAL extern strTorControl myController;
 
 
 /********************************************************************************
@@ -161,6 +202,8 @@ GLOBAL void AppControl_Pos_MoveToTpStart(U08 _arm, U16 _speed);
 GLOBAL void AppControl_Pos_FollowTpPos(U08 _arm);
 
 GLOBAL void AppControl_Tor_TestSequence(U08 _arm, U08 _joint);
+GLOBAL BOOL AppControl_Tor_InitController(enTorController _type);
+GLOBAL BOOL AppControl_Tor_ControlUpdate(U08 _arm, U08 _joint);
 
 
 

@@ -54,6 +54,8 @@ PRIVATE U08 _btnSequenceTest = 0;
 GLOBAL strTaskSpacePlanning  myTaskTrajectory = { 0, };
 GLOBAL strJointSpacePlanning myRobotTrajectory[DUAL_ARM] = { 0, };
 
+GLOBAL strTorControl myController = { 0, };
+
 
 /********************************************************************************
  * PRIVATE FUNCTION DECLARATION
@@ -253,7 +255,7 @@ GLOBAL BOOL AppControl_TP_InitWorldTrajectory(enTpType _type)
 		myTaskTrajectory.Circle.Setting.X_Org  = 0.0f;		// [m]
 		myTaskTrajectory.Circle.Setting.Y_Org  = 0.35f;		// [m]
 		myTaskTrajectory.Circle.Setting.Radius = 0.05f;		// [m]
-		myTaskTrajectory.Circle.Setting.Freq   = 0.2f;		// [Hz]
+		myTaskTrajectory.Circle.Setting.Freq   = 0.1f;		// [Hz]
 		myTaskTrajectory.Circle.Setting.Phase  = 0.0f;		// [Deg]
 		myTaskTrajectory.Circle.Setting.Gamma  = 0.0f;		// [Deg]
 		myTaskTrajectory.Circle.Ctrl.TimeEnd   = 10.0f;		// [s]
@@ -277,6 +279,7 @@ GLOBAL BOOL AppControl_TP_InitWorldTrajectory(enTpType _type)
 	case TP_TYPE_LINES:
 	case TP_TYPE_CUBIC:
 	case TP_TYPE_QUINTIC:
+	case TP_TYPE_NONE:
 	default:
 		isSupported = FALSE;
 		break;
@@ -290,7 +293,7 @@ GLOBAL BOOL AppControl_TP_UpdateWorldTrajectory(float _timeStep)
 	static BOOL isMoving = FALSE;
 	static enTpType _type = TP_TYPE_NONE;
 
-	static float Xo, Yo, Ro, Go, Freq, Phase;				// Cicle
+	static float Xo, Yo, Ro, Go, Freq, Phase;			// Cicle
 	static float Xs, Ys, Gs, Xg, Yg, Gg, timePercent;	// Line
 
 	static float _endTime;
@@ -694,56 +697,56 @@ GLOBAL void AppControl_Tor_TestSequence(U08 _arm, U08 _joint)
 	switch (_btnSequenceTest)
 	{
 	case 0:
-		myRobotCommand[_arm].JointTor[_joint].CurrentTor = 0.1f;
+		myRobotCommand[_arm].JointTor[_joint].Tor = 0.1f;
 		AppDataSet_LedState(LED_3_ORANGE, TRUE);
 		AppDataSet_LedState(LED_4_GREEN, FALSE);
 		AppDataSet_LedState(LED_6_BLUE, FALSE);
 		_btnSequenceTest = 1;
 		break;
 	case 1:
-		myRobotCommand[_arm].JointTor[_joint].CurrentTor = 0.2f;
+		myRobotCommand[_arm].JointTor[_joint].Tor = 0.2f;
 		AppDataSet_LedState(LED_3_ORANGE, FALSE);
 		AppDataSet_LedState(LED_4_GREEN, TRUE);
 		AppDataSet_LedState(LED_6_BLUE, FALSE);
 		_btnSequenceTest = 2;
 		break;
 	case 2:
-		myRobotCommand[_arm].JointTor[_joint].CurrentTor = 0.3f;
+		myRobotCommand[_arm].JointTor[_joint].Tor = 0.3f;
 		AppDataSet_LedState(LED_3_ORANGE, TRUE);
 		AppDataSet_LedState(LED_4_GREEN, TRUE);
 		AppDataSet_LedState(LED_6_BLUE, FALSE);
 		_btnSequenceTest = 3;
 		break;
 	case 3:
-		myRobotCommand[_arm].JointTor[_joint].CurrentTor = 0.4f;
+		myRobotCommand[_arm].JointTor[_joint].Tor = 0.4f;
 		AppDataSet_LedState(LED_3_ORANGE, FALSE);
 		AppDataSet_LedState(LED_4_GREEN, FALSE);
 		AppDataSet_LedState(LED_6_BLUE, TRUE);
 		_btnSequenceTest = 4;
 		break;
 	case 4:
-		myRobotCommand[_arm].JointTor[_joint].CurrentTor = 0.5f;
+		myRobotCommand[_arm].JointTor[_joint].Tor = 0.5f;
 		AppDataSet_LedState(LED_3_ORANGE, TRUE);
 		AppDataSet_LedState(LED_4_GREEN, FALSE);
 		AppDataSet_LedState(LED_6_BLUE, TRUE);
 		_btnSequenceTest = 5;
 		break;
 	case 5:
-		myRobotCommand[_arm].JointTor[_joint].CurrentTor = 0.6f;
+		myRobotCommand[_arm].JointTor[_joint].Tor = 0.6f;
 		AppDataSet_LedState(LED_3_ORANGE, FALSE);
 		AppDataSet_LedState(LED_4_GREEN, TRUE);
 		AppDataSet_LedState(LED_6_BLUE, TRUE);
 		_btnSequenceTest = 6;
 		break;
 	case 6:
-		myRobotCommand[_arm].JointTor[_joint].CurrentTor = 0.7f;
+		myRobotCommand[_arm].JointTor[_joint].Tor = 0.7f;
 		AppDataSet_LedState(LED_3_ORANGE, TRUE);
 		AppDataSet_LedState(LED_4_GREEN, TRUE);
 		AppDataSet_LedState(LED_6_BLUE, TRUE);
 		_btnSequenceTest = 7;
 		break;
 	case 7:
-		myRobotCommand[_arm].JointTor[_joint].CurrentTor = 0.8f;
+		myRobotCommand[_arm].JointTor[_joint].Tor = 0.8f;
 		AppDataSet_LedState(LED_3_ORANGE, FALSE);
 		AppDataSet_LedState(LED_4_GREEN, FALSE);
 		AppDataSet_LedState(LED_6_BLUE, FALSE);
@@ -757,3 +760,98 @@ GLOBAL void AppControl_Tor_TestSequence(U08 _arm, U08 _joint)
 	return;
 }
 
+GLOBAL BOOL AppControl_Tor_InitController(enTorController _type)
+{
+	U08 isSupported = FALSE;
+
+	switch (_type)
+	{
+	case TOR_CTRL_PD:
+		myController.PD.Setting.Kp[0] = 0.0f;
+		myController.PD.Setting.Kp[1] = 0.0f;
+		myController.PD.Setting.Kp[2] = 8.0f;
+
+		myController.PD.Setting.Kd[0] = 0.0f;
+		myController.PD.Setting.Kd[1] = 0.0f;
+		myController.PD.Setting.Kd[2] = 0.02f;
+
+		myController.PD.Setting.Alpha[0] = 0.0f;
+		myController.PD.Setting.Alpha[1] = 0.0f;
+		myController.PD.Setting.Alpha[2] = 0.0f;
+		myController.Type = TOR_CTRL_PD;
+
+		isSupported = TRUE;
+		break;
+	case TOR_CTRL_SPD:
+	case TOR_CTRL_SMC:
+	case TOR_CTRL_SSMC:
+	case TOR_CTRL_NONE:
+	default:
+		isSupported = FALSE;
+		break;
+	}
+
+	return isSupported;
+}
+
+GLOBAL BOOL AppControl_Tor_ControlUpdate(U08 _arm, U08 _joint)
+{
+	static enTorController _type = TOR_CTRL_NONE;
+	static BOOL isControlling = FALSE;
+
+	// Params
+	static float Kp_i, Kd_i, Al_i;
+	// Inputs
+	static float q_r_i, dq_r_i, q_i, dq_i, e_i, de_i;
+	// Outputs
+	static float torque_i;
+
+	if (TOR_CTRL_NONE == _type)
+	{
+		_type = myController.Type;
+
+		switch (_type)
+		{
+		case TOR_CTRL_PD:
+			Kp_i = myController.PD.Setting.Kp[_joint];
+			Kd_i = myController.PD.Setting.Kd[_joint];
+			Al_i = myController.PD.Setting.Alpha[_joint];
+			isControlling = TRUE;
+			break;
+		case TOR_CTRL_SPD:
+		case TOR_CTRL_SMC:
+		case TOR_CTRL_SSMC:
+		case TOR_CTRL_NONE:
+			isControlling = FALSE;
+			return isControlling;
+		}
+	}
+
+	switch (_type)
+	{
+	case TOR_CTRL_PD:
+		 q_r_i = myRobotTrajectory[_arm].Joint[_joint].currPos;
+		dq_r_i = myRobotTrajectory[_arm].Joint[_joint].currVel;
+		 q_i = DEG2RAD(myRobotFeedback[_arm].Joint[_joint].Position);
+		dq_i = DEG2RAD(myRobotFeedback[_arm].Joint[_joint].Speed);
+
+		 e_i =  q_r_i -  q_i;
+		de_i = dq_r_i - dq_i;
+
+		torque_i = Kp_i*e_i + Kd_i*de_i;
+
+		myRobotCommand[_arm].JointTor[_joint].Tor = CONSTRAIN(torque_i, -2.0f, 2.0f);
+		break;
+	case TOR_CTRL_SPD:
+	case TOR_CTRL_SMC:
+	case TOR_CTRL_SSMC:
+	case TOR_CTRL_NONE:
+
+		break;
+	}
+
+
+
+
+	return isControlling;
+}

@@ -23,7 +23,7 @@
 
 /* --------------- PROGRAM LOGIC MACRO --------------- */
 //#define MASTER_NO_CONTROL				// Master will not send control command
-//#define	MASTER_NO_GUI					// Master will not send data to GUI
+//#define MASTER_NO_GUI					// Master will not send data to GUI
 //#define MASTER_GUI_TP_CHECK				// Check TP via GUI
 
 //#define	MASTER_CONTROL_POS

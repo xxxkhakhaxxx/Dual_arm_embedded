@@ -252,9 +252,9 @@ GLOBAL void AppCommUART_SendMsg(enUartNode _node, enUartMsg _txMsgId)
 		sourceTxData[2] = MSG_CONTROL_TOR_LENGTH;
 		sizeSend = MSG_CONTROL_TOR_LENGTH;
 
-		memcpy(&sourceTxData[4],  &myRobotCommand[_arm].JointTor[0].CurrentTor, sizeof(float));
-		memcpy(&sourceTxData[8],  &myRobotCommand[_arm].JointTor[1].CurrentTor, sizeof(float));
-		memcpy(&sourceTxData[12], &myRobotCommand[_arm].JointTor[2].CurrentTor, sizeof(float));
+		memcpy(&sourceTxData[4],  &myRobotCommand[_arm].JointTor[0].Tor, sizeof(float));
+		memcpy(&sourceTxData[8],  &myRobotCommand[_arm].JointTor[1].Tor, sizeof(float));
+		memcpy(&sourceTxData[12], &myRobotCommand[_arm].JointTor[2].Tor, sizeof(float));
 
 		 // Calculate checksum (payload only: byte 4-24)
 		for (int i = 4; i < MSG_CONTROL_TOR_LENGTH; i++)
@@ -398,9 +398,93 @@ GLOBAL void AppCommUART_SendMsg(enUartNode _node, enUartMsg _txMsgId)
 		break;
 
 	case UART_MSG_GUI_DATA_2_LEFT:
+		sourceTxData[0] = MSG_GUI_DATA_2_SING_BYTE_0;
+		sourceTxData[1] = MSG_GUI_DATA_2_SING_BYTE_1;
+		sourceTxData[2] = MSG_GUI_DATA_2_SING_LENGTH;
+		sizeSend = MSG_GUI_DATA_2_SING_LENGTH;
+
+		// Cast sourceTxData to 32-bit pointer for direct access
+		U32* txData32Left2 = (U32*)sourceTxData;
+
+		txData32Left2[1] = *(U32*)&myRobotTrajectory[LEFT_ARM].Joint[0].currPos; // sourceTxData[4-7]
+		txData32Left2[2] = *(U32*)&myRobotFeedback[LEFT_ARM].Joint[0].Position;  // sourceTxData[8-11]
+		txData32Left2[3] = *(U32*)&myRobotCommand[LEFT_ARM].JointTor[0].Tor;     // sourceTxData[12-15]
+		txData32Left2[4] = *(U32*)&myRobotTrajectory[LEFT_ARM].Joint[1].currPos; // sourceTxData[16-19]
+		txData32Left2[5] = *(U32*)&myRobotFeedback[LEFT_ARM].Joint[1].Position;  // sourceTxData[20-23]
+		txData32Left2[6] = *(U32*)&myRobotCommand[LEFT_ARM].JointTor[1].Tor;     // sourceTxData[24-27]
+		txData32Left2[7] = *(U32*)&myRobotTrajectory[LEFT_ARM].Joint[2].currPos; // sourceTxData[28-31]
+		txData32Left2[8] = *(U32*)&myRobotFeedback[LEFT_ARM].Joint[2].Position;  // sourceTxData[32-35]
+		txData32Left2[9] = *(U32*)&myRobotCommand[LEFT_ARM].JointTor[2].Tor;     // sourceTxData[36-39]
+
+		 // Calculate checksum (payload only: byte 4-39)
+		for (int i = 4; i < MSG_GUI_DATA_2_SING_LENGTH; i++)
+		{
+			checksum ^= sourceTxData[i];  // XOR checksum
+		}
+		sourceTxData[3] = checksum;
+		break;
+
 	case UART_MSG_GUI_DATA_2_RIGHT:
+		sourceTxData[0] = MSG_GUI_DATA_2_SING_BYTE_0;
+		sourceTxData[1] = MSG_GUI_DATA_2_SING_BYTE_1;
+		sourceTxData[2] = MSG_GUI_DATA_2_SING_LENGTH;
+		sizeSend = MSG_GUI_DATA_2_SING_LENGTH;
+
+		// Cast sourceTxData to 32-bit pointer for direct access
+		U32* txData32Right2 = (U32*)sourceTxData;
+
+		txData32Right2[1] = *(U32*)&myRobotTrajectory[RIGHT_ARM].Joint[0].currPos; // sourceTxData[4-7]
+		txData32Right2[2] = *(U32*)&myRobotFeedback[RIGHT_ARM].Joint[0].Position;  // sourceTxData[8-11]
+		txData32Right2[3] = *(U32*)&myRobotCommand[RIGHT_ARM].JointTor[0].Tor;     // sourceTxData[12-15]
+		txData32Right2[4] = *(U32*)&myRobotTrajectory[RIGHT_ARM].Joint[1].currPos; // sourceTxData[16-19]
+		txData32Right2[5] = *(U32*)&myRobotFeedback[RIGHT_ARM].Joint[1].Position;  // sourceTxData[20-23]
+		txData32Right2[6] = *(U32*)&myRobotCommand[RIGHT_ARM].JointTor[1].Tor;     // sourceTxData[24-27]
+		txData32Right2[7] = *(U32*)&myRobotTrajectory[RIGHT_ARM].Joint[2].currPos; // sourceTxData[28-31]
+		txData32Right2[8] = *(U32*)&myRobotFeedback[RIGHT_ARM].Joint[2].Position;  // sourceTxData[32-35]
+		txData32Right2[9] = *(U32*)&myRobotCommand[RIGHT_ARM].JointTor[2].Tor;     // sourceTxData[36-39]
+
+		 // Calculate checksum (payload only: byte 4-39)
+		for (int i = 4; i < MSG_GUI_DATA_2_SING_LENGTH; i++)
+		{
+			checksum ^= sourceTxData[i];  // XOR checksum
+		}
+		sourceTxData[3] = checksum;
+		break;
+
 	case UART_MSG_GUI_DATA_2_DUAL:
-		// TODO Create GUI DATA 2 send message
+		sourceTxData[0] = MSG_GUI_DATA_2_DUAL_BYTE_0;
+		sourceTxData[1] = MSG_GUI_DATA_2_DUAL_BYTE_0;
+		sourceTxData[2] = MSG_GUI_DATA_2_DUAL_LENGTH;
+		sizeSend = MSG_GUI_DATA_2_DUAL_LENGTH;
+
+		// Cast sourceTxData to 32-bit pointer for direct access
+		U32* txData32Dual2 = (U32*)sourceTxData;
+
+		txData32Dual2[1] = *(U32*)&myRobotTrajectory[LEFT_ARM].Joint[0].currPos;
+		txData32Dual2[2] = *(U32*)&myRobotFeedback[LEFT_ARM].Joint[0].Position;
+		txData32Dual2[3] = *(U32*)&myRobotCommand[LEFT_ARM].JointTor[0].Tor;
+		txData32Dual2[4] = *(U32*)&myRobotTrajectory[LEFT_ARM].Joint[1].currPos;
+		txData32Dual2[5] = *(U32*)&myRobotFeedback[LEFT_ARM].Joint[1].Position;
+		txData32Dual2[6] = *(U32*)&myRobotCommand[LEFT_ARM].JointTor[1].Tor;
+		txData32Dual2[7] = *(U32*)&myRobotTrajectory[LEFT_ARM].Joint[2].currPos;
+		txData32Dual2[8] = *(U32*)&myRobotFeedback[LEFT_ARM].Joint[2].Position;
+		txData32Dual2[9] = *(U32*)&myRobotCommand[LEFT_ARM].JointTor[2].Tor;
+		txData32Dual2[10] = *(U32*)&myRobotTrajectory[RIGHT_ARM].Joint[0].currPos;
+		txData32Dual2[11] = *(U32*)&myRobotFeedback[RIGHT_ARM].Joint[0].Position;
+		txData32Dual2[12] = *(U32*)&myRobotCommand[RIGHT_ARM].JointTor[0].Tor;
+		txData32Dual2[13] = *(U32*)&myRobotTrajectory[RIGHT_ARM].Joint[1].currPos;
+		txData32Dual2[14] = *(U32*)&myRobotFeedback[RIGHT_ARM].Joint[1].Position;
+		txData32Dual2[15] = *(U32*)&myRobotCommand[RIGHT_ARM].JointTor[1].Tor;
+		txData32Dual2[16] = *(U32*)&myRobotTrajectory[RIGHT_ARM].Joint[2].currPos;
+		txData32Dual2[17] = *(U32*)&myRobotFeedback[RIGHT_ARM].Joint[2].Position;
+		txData32Dual2[18] = *(U32*)&myRobotCommand[RIGHT_ARM].JointTor[2].Tor;
+
+		 // Calculate checksum (payload only: byte 4-39)
+		for (int i = 4; i < MSG_GUI_DATA_2_DUAL_LENGTH; i++)
+		{
+			checksum ^= sourceTxData[i];  // XOR checksum
+		}
+		sourceTxData[3] = checksum;
 		break;
 
 //	case UART_MSG_MOTOR_CONTROL_VEL:

@@ -129,9 +129,9 @@ PRIVATE void _MasterStateControl(void)
 	{
 		switch (_btnSequence)
 		{
-		case BTN_CTRL_INIT:				_btnSequence = BTN_CTRL_TEST_TOR_SEQUENCE;	break;
+//		case BTN_CTRL_INIT:				_btnSequence = BTN_CTRL_TEST_TOR_SEQUENCE;	break;
 //		case BTN_CTRL_INIT:				_btnSequence = BTN_CTRL_TEST_POS_SEQUENCE;	break;
-//		case BTN_CTRL_INIT:				_btnSequence = BTN_CTRL_TO_HOME;			break;
+		case BTN_CTRL_INIT:				_btnSequence = BTN_CTRL_TO_HOME;			break;
 
 		case BTN_CTRL_TO_HOME:			_btnSequence = BTN_CTRL_TO_PLANNING_INIT;	break;
 		case BTN_CTRL_TO_PLANNING_INIT:	_btnSequence = BTN_CTRL_PLANNING;			break;
@@ -171,7 +171,7 @@ PRIVATE void _MasterStateControl(void)
 #if 1
 		if (FALSE == isMovingToStart)
 		{
-			if (TRUE == AppControl_TP_InitWorldTrajectory(TP_TYPE_LINE))
+			if (TRUE == AppControl_TP_InitWorldTrajectory(TP_TYPE_CIRCLE))
 			{
 				if (TRUE == AppControl_TP_UpdateWorldTrajectory(PERIOD_TRAJECTORY_PLANNING))
 				{
@@ -186,6 +186,10 @@ PRIVATE void _MasterStateControl(void)
 					AppCommUART_SendMsg(UART_NODE_SLAVE_2, UART_MSG_MOTOR_CONTROL_POS);
 
 					isMovingToStart = TRUE;
+
+#if defined (MASTER_CONTROL_TOR)
+					AppControl_Tor_InitController(TOR_CTRL_PD);
+#endif
 				}
 			}
 			else
@@ -223,18 +227,22 @@ PRIVATE void _MasterStateControl(void)
 
 			AppCommUART_SendMsg(UART_NODE_SLAVE_1, UART_MSG_MOTOR_CONTROL_POS);
 			AppCommUART_SendMsg(UART_NODE_SLAVE_2, UART_MSG_MOTOR_CONTROL_POS);
-#elif defined (MASTER_CONTROL_TOR)
-//			AppControl_Tor_Controller(LEFT_ARM, CONTROL_TYPE_PID);
-
-
-//			AppCommUART_SendMsg(UART_NODE_SLAVE_1, UART_MSG_MOTOR_CONTROL_TOR);
-//			AppCommUART_SendMsg(UART_NODE_SLAVE_2, UART_MSG_MOTOR_CONTROL_TOR);
-#endif	// MASTER_CONTROL_POS
 		}
 		else	// Finished
 		{
 			// Waiting for next btn press
 		}
+#elif defined (MASTER_CONTROL_TOR)
+		}
+
+		// It should still update the torque when finished TP
+		if (TRUE == AppControl_Tor_ControlUpdate(RIGHT_ARM, 2))
+		{
+//			AppCommUART_SendMsg(UART_NODE_SLAVE_1, UART_MSG_MOTOR_CONTROL_TOR);
+			AppCommUART_SendMsg(UART_NODE_SLAVE_2, UART_MSG_MOTOR_CONTROL_TOR);
+		}
+#endif	// MASTER_CONTROL_POS
+
 		break;
 
 	case BTN_CTRL_TEST_POS_SEQUENCE:	break;

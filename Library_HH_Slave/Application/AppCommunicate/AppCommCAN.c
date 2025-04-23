@@ -62,7 +62,8 @@ PRIVATE void AppCommCAN_SetupRxInterrupt(void);
 PRIVATE void AppCommCAN_SetupTxFrame(void);
 PRIVATE void AppCommCAN_ClearTxMailBox(void);
 
-PRIVATE void AppCommCAN_UpdateMotorRecvData(U08 _motorId, U16 _newEncoderValue);
+PRIVATE void _UpdateMotorRecvData(U08 _motorId, U16 _newEncoderValue);
+PRIVATE void _ButterworthFilter_FirstOrder(U08 _motorId, float _velCutOffFreq, float _accelCutOffFreq);
 /********************************************************************************
  * PRIVATE FUNCTION IMPLEMENTATION
  ********************************************************************************/
@@ -154,55 +155,87 @@ PRIVATE void AppCommCAN_ClearTxMailBox(void)
 	}
 }
 
-PRIVATE void AppCommCAN_UpdateMotorRecvData(U08 _motorId, U16 _newEncoderValue)
+PRIVATE void _UpdateMotorRecvData(U08 _motorId, U16 _newEncoderValue)
 {
-	// 1. Convert encoder value (0-65535) to degrees (0-360)
-	float newPosition = (float)_newEncoderValue * (360.0f / 65535.0f);
+	static BOOL isInit = FALSE;
+	static float diffTime = PERIOD_MOTOR_COMM;
+	static float newPosition, positionDiff;
 
-	// 2. Handle encoder overflow (wrapping from 65535→0)
-	float positionDiff = newPosition - myMotorToMaster[_motorId].currPosition;
+	/* Step do update motor data: pos - vel - accel
+	 *		1. Convert encoder value (0-65535) to degrees (0-360), and Handle encoder overflow (wrapping from 360→0)
+	 *		2. Save old value
+	 *		3. Calculate new value
+	 *		4. Filter new value
+	*/
+
+	// 1.
+	newPosition = (float)_newEncoderValue * (360.0f / 65535.0f);
+	positionDiff = newPosition - myMotorToMaster[_motorId].currPosition;
 	if (positionDiff > 180.0f)
-	{	// Check if position changed by more than 180° (adjust threshold if needed)
+	{
 		newPosition -= 360.0f; // Negative wrap (e.g., 350° → 10° becomes 350° → -350°)
 	}
 	else if (positionDiff < -180.0f)
 	{
 		newPosition += 360.0f; // Positive wrap (e.g., 10° → 350° becomes 370° → 350°)
 	}
-	else
-	{
-		// Do nothing
-	}
 
-	// 3. Get current time and calculate delta
-	U32 currentTime = HAL_GetTick();	// Unit: ms - timeout after ~49.7 days
-	float diffTime;
-	diffTime = (currentTime - myMotorToMaster[_motorId].currTime) / 1000.0f;	// Unit: seconds
-
-	// 4. Save new previous values
-	myMotorToMaster[_motorId].prevTime     = myMotorToMaster[_motorId].currTime;
+	// 2.
 	myMotorToMaster[_motorId].prevPosition = myMotorToMaster[_motorId].currPosition;
 	myMotorToMaster[_motorId].prevSpeed    = myMotorToMaster[_motorId].currSpeed;
 
-	// 5 Calculate current values
-	myMotorToMaster[_motorId].currTime     = currentTime;
+	// 3.
 	myMotorToMaster[_motorId].currPosition = newPosition;
-	if (diffTime > 0.0001f)
-	{	// Protect against divide-by-zero on first run or rapid updates
-		myMotorToMaster[_motorId].currSpeed    = (newPosition - myMotorToMaster[_motorId].prevPosition) / diffTime;
-		myMotorToMaster[_motorId].currAccel    = (myMotorToMaster[_motorId].currSpeed - myMotorToMaster[_motorId].prevSpeed) / diffTime;
+	if (FALSE == isInit)
+	{
+		// First call: No valid previous data, set speed and accel to 0
+		myMotorToMaster[_motorId].currSpeed = 0.0f;
+		myMotorToMaster[_motorId].currAccel = 0.0f;
+		isInit = TRUE;
 	}
 	else
 	{
-		// If time difference is too small, keep previous values
-		myMotorToMaster[_motorId].currSpeed = myMotorToMaster[_motorId].prevSpeed;
-		myMotorToMaster[_motorId].currAccel = 0.0f;
+		myMotorToMaster[_motorId].currSpeed    = (newPosition - myMotorToMaster[_motorId].prevPosition) / diffTime;
+		myMotorToMaster[_motorId].currAccel    = (myMotorToMaster[_motorId].currSpeed - myMotorToMaster[_motorId].prevSpeed) / diffTime;
 	}
 
+	// 4. Apply Butterworth filter
+	_ButterworthFilter_FirstOrder(_motorId, 5.0f, 2.0f);
 	return;
 }
 
+PRIVATE void _ButterworthFilter_FirstOrder(U08 _motorId, float _velCutOffFreq, float _accelCutOffFreq)
+{
+	static BOOL isInit = FALSE;
+	static float Ts;
+	static float v_omega_c, v_alpha, v_inputGain;
+	static float a_omega_c, a_alpha, a_inputGain;
+	// Sampling period (20ms = 0.02s)
+	if (FALSE == isInit)
+	{
+		Ts = 0.02f;
 
+		v_omega_c   = 2.0f*PI*_velCutOffFreq;	// Angular cutoff frequency [rad/s]
+		v_alpha     = expf(-v_omega_c*Ts);		// Filter coefficient
+		v_inputGain = 1.0f - v_alpha;			// Gain for input
+
+		a_omega_c   = 2.0f*PI*_accelCutOffFreq;
+		a_alpha     = expf(-a_omega_c*Ts);
+		a_inputGain = 1.0f - a_alpha;
+
+		isInit = TRUE;
+	}
+
+	// Filter speed and acceleration
+	myMotorToMaster[_motorId].currFiltSpeed = v_inputGain*myMotorToMaster[_motorId].currSpeed + v_alpha*myMotorToMaster[_motorId].prevFiltSpeed;
+	myMotorToMaster[_motorId].currFiltAccel = a_inputGain*myMotorToMaster[_motorId].currAccel + a_alpha*myMotorToMaster[_motorId].prevFiltAccel;
+
+	// Update previous filtered values
+	myMotorToMaster[_motorId].prevFiltSpeed = myMotorToMaster[_motorId].currFiltSpeed;
+	myMotorToMaster[_motorId].prevFiltAccel = myMotorToMaster[_motorId].currFiltAccel;
+
+	return;
+}
 
 /********************************************************************************
  * GLOBAL FUNCTION IMPLEMENTATION
@@ -284,7 +317,7 @@ GLOBAL void AppCommCAN_RecvMotorMsg(void)	// Process data in "strCanRxMsgId" and
 
 	if (MOTOR_CMD_READ_MECHANICAL_STATE == arrCanRxMsgData[0])	// Update only when it's respond of 0x9C command
 	{	// Calculate pos-vel-accel
-		AppCommCAN_UpdateMotorRecvData(_motorId, strRobotArmMotorRx[_motorId].Data.u16Encoder14Bit);
+		_UpdateMotorRecvData(_motorId, strRobotArmMotorRx[_motorId].Data.u16Encoder14Bit);
 	}
 
 	return;

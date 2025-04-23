@@ -27,13 +27,16 @@
  ********************************************************************************/
 typedef struct	STRUCT_MOTOR_DATA
 {
-	U32 prevTime;		// Previous time - ms
-	U32 currTime;		// Current time - ms
-	float currPosition;		// Current position
-	float prevPosition;		// Previous position
-	float currSpeed;		// Current speed
-	float prevSpeed;		// Previous speed
-	float currAccel;		// Current acceleration
+	float currPosition;		// Current position		[Deg]
+	float prevPosition;		// Previous position	[Deg]
+	float currSpeed;		// Current speed		[Deg/s]
+	float prevSpeed;		// Previous speed		[Deg/s]
+	float currAccel;		// Current acceleration	[Deg/s2]
+
+	float currFiltSpeed;	// Filtered speed			[Deg/s]
+	float prevFiltSpeed;	// Previous filtered speed	[Deg/s2]
+	float currFiltAccel;	// Filtered acceleration
+	float prevFiltAccel;	// Previous filtered acceleration
 } strMotorData;
 
 typedef struct STRUCT_MOTOR_COMMAND

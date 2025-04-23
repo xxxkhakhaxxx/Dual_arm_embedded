@@ -320,6 +320,7 @@ GLOBAL void AppCommUART_SendMsg(enUartNode _node, enUartMsg _txMsgId)
 		break;
 
 	case UART_MSG_GUI_DATA_1_DUAL:
+#ifndef TEST_MOTOR_FILTER
 		sourceTxData[0] = MSG_GUI_DATA_1_DUAL_BYTE_0;
 		sourceTxData[1] = MSG_GUI_DATA_1_DUAL_BYTE_1;
 		sourceTxData[2] = MSG_GUI_DATA_1_DUAL_LENGTH;
@@ -395,6 +396,59 @@ GLOBAL void AppCommUART_SendMsg(enUartNode _node, enUartMsg _txMsgId)
 			checksum ^= sourceTxData[i];  // XOR checksum
 		}
 		sourceTxData[3] = checksum;
+
+#else	/* TEST_MOTOR_FILTER */
+		sourceTxData[0] = MSG_GUI_DATA_3_DUAL_BYTE_0;
+		sourceTxData[1] = MSG_GUI_DATA_3_DUAL_BYTE_1;
+		sourceTxData[2] = MSG_GUI_DATA_3_DUAL_LENGTH;
+		sizeSend = MSG_GUI_DATA_3_DUAL_LENGTH;
+
+		// Cast sourceTxData to 32-bit pointer for direct access
+		U32* txData32Dual = (U32*)sourceTxData;
+
+		txData32Dual[1] = *(U32*)&myRobotFeedback[LEFT_ARM].Joint[0].Position;
+		txData32Dual[2] = *(U32*)&myRobotFeedback[LEFT_ARM].Joint[0].Speed;
+		txData32Dual[3] = *(U32*)&myRobotFeedback[LEFT_ARM].Joint[0].Accel;
+		txData32Dual[4] = *(U32*)&myRobotFeedback[LEFT_ARM].Joint[0].Speedf;
+		txData32Dual[5] = *(U32*)&myRobotFeedback[LEFT_ARM].Joint[0].Accelf;
+
+		txData32Dual[6] = *(U32*)&myRobotFeedback[LEFT_ARM].Joint[1].Position;
+		txData32Dual[7] = *(U32*)&myRobotFeedback[LEFT_ARM].Joint[1].Speed;
+		txData32Dual[8] = *(U32*)&myRobotFeedback[LEFT_ARM].Joint[1].Accel;
+		txData32Dual[9] = *(U32*)&myRobotFeedback[LEFT_ARM].Joint[1].Speedf;
+		txData32Dual[10]= *(U32*)&myRobotFeedback[LEFT_ARM].Joint[1].Accelf;
+
+		txData32Dual[11] = *(U32*)&myRobotFeedback[LEFT_ARM].Joint[2].Position;
+		txData32Dual[12] = *(U32*)&myRobotFeedback[LEFT_ARM].Joint[2].Speed;
+		txData32Dual[13] = *(U32*)&myRobotFeedback[LEFT_ARM].Joint[2].Accel;
+		txData32Dual[14] = *(U32*)&myRobotFeedback[LEFT_ARM].Joint[2].Speedf;
+		txData32Dual[15] = *(U32*)&myRobotFeedback[LEFT_ARM].Joint[2].Accelf;
+
+		txData32Dual[16] = *(U32*)&myRobotFeedback[RIGHT_ARM].Joint[0].Position;
+		txData32Dual[17] = *(U32*)&myRobotFeedback[RIGHT_ARM].Joint[0].Speed;
+		txData32Dual[18] = *(U32*)&myRobotFeedback[RIGHT_ARM].Joint[0].Accel;
+		txData32Dual[19] = *(U32*)&myRobotFeedback[RIGHT_ARM].Joint[0].Speedf;
+		txData32Dual[20] = *(U32*)&myRobotFeedback[RIGHT_ARM].Joint[0].Accelf;
+
+		txData32Dual[21] = *(U32*)&myRobotFeedback[RIGHT_ARM].Joint[1].Position;
+		txData32Dual[22] = *(U32*)&myRobotFeedback[RIGHT_ARM].Joint[1].Speed;
+		txData32Dual[23] = *(U32*)&myRobotFeedback[RIGHT_ARM].Joint[1].Accel;
+		txData32Dual[24] = *(U32*)&myRobotFeedback[RIGHT_ARM].Joint[1].Speedf;
+		txData32Dual[25] = *(U32*)&myRobotFeedback[RIGHT_ARM].Joint[1].Accelf;
+
+		txData32Dual[26] = *(U32*)&myRobotFeedback[RIGHT_ARM].Joint[2].Position;
+		txData32Dual[27] = *(U32*)&myRobotFeedback[RIGHT_ARM].Joint[2].Speed;
+		txData32Dual[28] = *(U32*)&myRobotFeedback[RIGHT_ARM].Joint[2].Accel;
+		txData32Dual[29] = *(U32*)&myRobotFeedback[RIGHT_ARM].Joint[2].Speedf;
+		txData32Dual[30] = *(U32*)&myRobotFeedback[RIGHT_ARM].Joint[2].Accelf;
+
+		 // Calculate checksum (payload only: byte 4-39)
+		for (int i = 4; i < MSG_GUI_DATA_3_DUAL_LENGTH; i++)
+		{
+			checksum ^= sourceTxData[i];  // XOR checksum
+		}
+		sourceTxData[3] = checksum;
+#endif
 		break;
 
 	case UART_MSG_GUI_DATA_2_LEFT:
@@ -579,7 +633,7 @@ GLOBAL void AppCommUart_RecvMsgStart(enUartNode _node)
 	return;
 }
 
-GLOBAL BOOL AppCommUart_RecvSlaveMsg(enUartNode _slaveNode)	// TODO: Return recv result
+GLOBAL BOOL AppCommUart_RecvSlaveMsg(enUartNode _slaveNode)
 {
 	// 1. Initialize variables
 	if ((UART_NODE_SLAVE_1 != _slaveNode) && (UART_NODE_SLAVE_2 != _slaveNode))
@@ -589,7 +643,7 @@ GLOBAL BOOL AppCommUart_RecvSlaveMsg(enUartNode _slaveNode)	// TODO: Return recv
 
 	// 2. Initialize variables
 	static U08* sourceRxData;
-//	U08 checksum = 0x00;
+	U08 checksum = 0x00;
 	U08 _arm = LEFT_ARM;
 	BOOL result = FALSE;
 
@@ -620,16 +674,29 @@ GLOBAL BOOL AppCommUart_RecvSlaveMsg(enUartNode _slaveNode)	// TODO: Return recv
 	(MSG_DATA_RESPOND_LENGTH == sourceRxData[2])
 	)
 	{
-		memcpy(&myRobotFeedback[_arm].Joint[0].Position, &sourceRxData[3],  sizeof(float));
-		memcpy(&myRobotFeedback[_arm].Joint[0].Speed,    &sourceRxData[7],  sizeof(float));
-		memcpy(&myRobotFeedback[_arm].Joint[0].Accel,    &sourceRxData[11], sizeof(float));
-		memcpy(&myRobotFeedback[_arm].Joint[1].Position, &sourceRxData[15], sizeof(float));
-		memcpy(&myRobotFeedback[_arm].Joint[1].Speed,    &sourceRxData[19], sizeof(float));
-		memcpy(&myRobotFeedback[_arm].Joint[1].Accel,    &sourceRxData[23], sizeof(float));
-		memcpy(&myRobotFeedback[_arm].Joint[2].Position, &sourceRxData[27], sizeof(float));
-		memcpy(&myRobotFeedback[_arm].Joint[2].Speed,    &sourceRxData[31], sizeof(float));
-		memcpy(&myRobotFeedback[_arm].Joint[2].Accel,    &sourceRxData[35], sizeof(float));
-		result = TRUE;
+		for (int i = 4; i < MSG_DATA_RESPOND_LENGTH; i++)
+		{
+			checksum ^= sourceRxData[i];  // XOR checksum
+		}
+
+		if (checksum != sourceRxData[3])
+		{
+			// Wrong checksum
+			result = FALSE;
+		}
+		else
+		{
+			memcpy(&myRobotFeedback[_arm].Joint[0].Position, &sourceRxData[4],  sizeof(float));
+			memcpy(&myRobotFeedback[_arm].Joint[0].Speed,    &sourceRxData[8],  sizeof(float));
+			memcpy(&myRobotFeedback[_arm].Joint[0].Accel,    &sourceRxData[12], sizeof(float));
+			memcpy(&myRobotFeedback[_arm].Joint[1].Position, &sourceRxData[16], sizeof(float));
+			memcpy(&myRobotFeedback[_arm].Joint[1].Speed,    &sourceRxData[20], sizeof(float));
+			memcpy(&myRobotFeedback[_arm].Joint[1].Accel,    &sourceRxData[24], sizeof(float));
+			memcpy(&myRobotFeedback[_arm].Joint[2].Position, &sourceRxData[28], sizeof(float));
+			memcpy(&myRobotFeedback[_arm].Joint[2].Speed,    &sourceRxData[32], sizeof(float));
+			memcpy(&myRobotFeedback[_arm].Joint[2].Accel,    &sourceRxData[36], sizeof(float));
+			result = TRUE;
+		}
 	}
 	else if (
 	(MSG_DATA_RESPOND_F_BYTE_0 == sourceRxData[0]) && \
@@ -637,8 +704,37 @@ GLOBAL BOOL AppCommUart_RecvSlaveMsg(enUartNode _slaveNode)	// TODO: Return recv
 	(MSG_DATA_RESPOND_F_LENGTH == sourceRxData[2])
 	)
 	{
-		// TODO:
-		result = FALSE;
+		for (int i = 4; i < MSG_DATA_RESPOND_F_LENGTH; i++)
+		{
+			checksum ^= sourceRxData[i];  // XOR checksum
+		}
+
+		if (checksum != sourceRxData[3])
+		{
+			// Wrong checksum
+			result = FALSE;
+		}
+		else
+		{
+			memcpy(&myRobotFeedback[_arm].Joint[0].Position, &sourceRxData[4],  sizeof(float));
+			memcpy(&myRobotFeedback[_arm].Joint[0].Speed,    &sourceRxData[8],  sizeof(float));
+			memcpy(&myRobotFeedback[_arm].Joint[0].Accel,    &sourceRxData[12], sizeof(float));
+			memcpy(&myRobotFeedback[_arm].Joint[0].Speedf,   &sourceRxData[16], sizeof(float));
+			memcpy(&myRobotFeedback[_arm].Joint[0].Accelf,   &sourceRxData[20], sizeof(float));
+
+			memcpy(&myRobotFeedback[_arm].Joint[1].Position, &sourceRxData[24], sizeof(float));
+			memcpy(&myRobotFeedback[_arm].Joint[1].Speed,    &sourceRxData[28], sizeof(float));
+			memcpy(&myRobotFeedback[_arm].Joint[1].Accel,    &sourceRxData[32], sizeof(float));
+			memcpy(&myRobotFeedback[_arm].Joint[1].Speedf,   &sourceRxData[36], sizeof(float));
+			memcpy(&myRobotFeedback[_arm].Joint[1].Accelf,   &sourceRxData[40], sizeof(float));
+
+			memcpy(&myRobotFeedback[_arm].Joint[2].Position, &sourceRxData[44], sizeof(float));
+			memcpy(&myRobotFeedback[_arm].Joint[2].Speed,    &sourceRxData[48], sizeof(float));
+			memcpy(&myRobotFeedback[_arm].Joint[2].Accel,    &sourceRxData[52], sizeof(float));
+			memcpy(&myRobotFeedback[_arm].Joint[2].Speedf,   &sourceRxData[56], sizeof(float));
+			memcpy(&myRobotFeedback[_arm].Joint[2].Accelf,   &sourceRxData[60], sizeof(float));
+			result = TRUE;
+		}
 	}
 	else
 	{

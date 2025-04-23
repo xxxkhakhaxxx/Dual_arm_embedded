@@ -21,9 +21,13 @@
  ********************************************************************************/
 #define PROJECT_MCU		STM32F1XX_FW_1_8_6
 
+//#define SLAVE_NO_MOTOR_COMM
+#define TEST_MOTOR_FILTER
+#define PERIOD_MOTOR_COMM	(0.02f)	// [s]
+
 #define DUAL_ARM_LEFT	1
 #define DUAL_ARM_RIGHT	2
-#define THIS_IS_ARM 	DUAL_ARM_RIGHT
+#define THIS_IS_ARM 	DUAL_ARM_LEFT
 
 #define JOINT_DIR_Z_POS		TRUE	// Positive direction in kinematics
 #define JOINT_DIR_Z_NEG		FALSE	// Negative direction in kinematics
@@ -64,12 +68,6 @@
 #else
 	#error "Choose arm: DUAL_ARM_LEFT or DUAL_ARM_RIGHT"
 #endif
-
-
-//#define TEST_UART_SEND				// Init-> Auto send and Receive: Used for checking which UART channel work with DMA and IT
-//#define TEST_UART_CYCLE_NO_FEEDBACK	// Init-> Wait Master-> FeedBack Master-> Wait Master-> Control Motor-> Motor Feedback-> Feedback Master
-//#define TEST_UART_CYCLE_MOTOR_DATA	// Init-> ... -> wait Master -> Read motor data -> Cal speed + accel -> Feedback  motor data -> wait Master.
-//#define SLAVE_NO_MOTOR_COMM
 
 #define TOTAL_MOTOR_FOR_ONE_ARM	(3)
 #define MOTOR_1		LINGKONG_MG5010E_i10

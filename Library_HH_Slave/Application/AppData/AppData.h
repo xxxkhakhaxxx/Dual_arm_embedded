@@ -38,6 +38,10 @@
 #define MSG_DATA_RESPOND_BYTE_1	(0x02)
 #define MSG_DATA_RESPOND_LENGTH	(40)	// 3 header + 1 checksum + 3*(4+4+4) payloads
 
+#define MSG_DATA_RESPOND_F_BYTE_0 (0xB3) // Check 1st order filter effect
+#define MSG_DATA_RESPOND_F_BYTE_1 (0x02)
+#define MSG_DATA_RESPOND_F_LENGTH (64)	// 3 header + 1 checksum + 3*(4+4+4+4+4) payloads: pos-vel-velf-accel-accelf
+
 #define MSG_CONTROL_POS_BYTE_0	(0xC3)
 #define MSG_CONTROL_POS_BYTE_1	(0x03)
 #define MSG_CONTROL_POS_LENGTH	(25)	// 3 header + 1 checksum + 3*(4+2+1) payloads

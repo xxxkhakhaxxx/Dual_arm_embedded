@@ -42,6 +42,10 @@
 #define MSG_DATA_RESPOND_BYTE_1	(0x02)
 #define MSG_DATA_RESPOND_LENGTH	(40)	// 3 header + 1 checksum + 3*(4+4+4) payloads
 
+#define MSG_DATA_RESPOND_F_BYTE_0 (0xB3) // Check 1st order filter effect
+#define MSG_DATA_RESPOND_F_BYTE_1 (0x02)
+#define MSG_DATA_RESPOND_F_LENGTH (64)	// 3 header + 1 checksum + 3*(4+4+4+4+4) payloads: pos-vel-velf-accel-accelf
+
 #define MSG_CONTROL_POS_BYTE_0	(0xC3)
 #define MSG_CONTROL_POS_BYTE_1	(0x03)
 #define MSG_CONTROL_POS_LENGTH	(25)	// 3 header + 1 checksum + 3*(4+2+1) payloads
@@ -69,6 +73,10 @@
 #define MSG_GUI_DATA_2_DUAL_BYTE_0	(0xF9)
 #define MSG_GUI_DATA_2_DUAL_BYTE_1	(0x09)
 #define MSG_GUI_DATA_2_DUAL_LENGTH	(76)	// 3 header + 1 checksum + 2*3*(4+4+4) payloads
+
+#define MSG_GUI_DATA_3_DUAL_BYTE_0	(0xFA)  // Filter data
+#define MSG_GUI_DATA_3_DUAL_BYTE_1	(0x10)
+#define MSG_GUI_DATA_3_DUAL_LENGTH	(124)	// 3 header + 1 checksum + 2*3*(4+4+4+4+4) payloads
 
 
 #define CURR_POS_J11	((float)myRobotFeedback[LEFT_ARM].Joint[0].Position)
@@ -122,6 +130,9 @@ typedef struct
 		float Position;	// deg     per bit
 		float Speed;	// deg/s   per bit
 		float Accel;	// deg/s^2 per bit
+
+		float Speedf;
+		float Accelf;
 	} Joint[3];
 } strRobotDataFeedback;
 

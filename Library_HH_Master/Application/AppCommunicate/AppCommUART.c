@@ -579,6 +579,75 @@ GLOBAL void AppCommUart_RecvMsgStart(enUartNode _node)
 	return;
 }
 
+GLOBAL BOOL AppCommUart_RecvSlaveMsg(enUartNode _slaveNode)	// TODO: Return recv result
+{
+	// 1. Initialize variables
+	if ((UART_NODE_SLAVE_1 != _slaveNode) && (UART_NODE_SLAVE_2 != _slaveNode))
+	{
+		return FALSE;
+	}
+
+	// 2. Initialize variables
+	static U08* sourceRxData;
+//	U08 checksum = 0x00;
+	U08 _arm = LEFT_ARM;
+	BOOL result = FALSE;
+
+	switch (_slaveNode)
+	{
+#if SLAVE_1_ENA
+	case UART_NODE_SLAVE_1:
+		_arm = LEFT_ARM;
+		sourceRxData = RxDataSlaveLeft;
+		break;
+#endif
+#if SLAVE_2_ENA
+	case UART_NODE_SLAVE_2:
+		_arm = RIGHT_ARM;
+		sourceRxData = RxDataSlaveRight;
+		break;
+#endif
+	case UART_NODE_GUI:
+	default:
+		// Do nothing and return
+		return FALSE;
+	}
+
+
+	if (
+	(MSG_DATA_RESPOND_BYTE_0 == sourceRxData[0]) && \
+	(MSG_DATA_RESPOND_BYTE_1 == sourceRxData[1]) && \
+	(MSG_DATA_RESPOND_LENGTH == sourceRxData[2])
+	)
+	{
+		memcpy(&myRobotFeedback[_arm].Joint[0].Position, &sourceRxData[3],  sizeof(float));
+		memcpy(&myRobotFeedback[_arm].Joint[0].Speed,    &sourceRxData[7],  sizeof(float));
+		memcpy(&myRobotFeedback[_arm].Joint[0].Accel,    &sourceRxData[11], sizeof(float));
+		memcpy(&myRobotFeedback[_arm].Joint[1].Position, &sourceRxData[15], sizeof(float));
+		memcpy(&myRobotFeedback[_arm].Joint[1].Speed,    &sourceRxData[19], sizeof(float));
+		memcpy(&myRobotFeedback[_arm].Joint[1].Accel,    &sourceRxData[23], sizeof(float));
+		memcpy(&myRobotFeedback[_arm].Joint[2].Position, &sourceRxData[27], sizeof(float));
+		memcpy(&myRobotFeedback[_arm].Joint[2].Speed,    &sourceRxData[31], sizeof(float));
+		memcpy(&myRobotFeedback[_arm].Joint[2].Accel,    &sourceRxData[35], sizeof(float));
+		result = TRUE;
+	}
+	else if (
+	(MSG_DATA_RESPOND_F_BYTE_0 == sourceRxData[0]) && \
+	(MSG_DATA_RESPOND_F_BYTE_1 == sourceRxData[1]) && \
+	(MSG_DATA_RESPOND_F_LENGTH == sourceRxData[2])
+	)
+	{
+		// TODO:
+		result = FALSE;
+	}
+	else
+	{
+		result = FALSE;
+	}
+
+	return result;
+}
+
 /************ UART ERROR MANAGE FUNCTION  ************/
 GLOBAL void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
 {

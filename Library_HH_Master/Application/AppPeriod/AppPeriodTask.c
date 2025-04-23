@@ -427,21 +427,8 @@ GLOBAL void AppPeriodTask_StateMachineProcess(void)
 	case MASTER_STATE_WAIT_SLAVE_FEEDBACK:
 		if ((TRUE == AppDataGet_UartRxNewFlag(UART_NODE_SLAVE_1)) && (FALSE == _slave1HandleFlag))
 		{
-			if (
-			(MSG_DATA_RESPOND_BYTE_0 == RxDataSlaveLeft[0]) && \
-			(MSG_DATA_RESPOND_BYTE_1 == RxDataSlaveLeft[1]) && \
-			(MSG_DATA_RESPOND_LENGTH == RxDataSlaveLeft[2])
-			)
-			{
-				memcpy(&myRobotFeedback[LEFT_ARM].Joint[0].Position, &RxDataSlaveLeft[3],  sizeof(float));
-				memcpy(&myRobotFeedback[LEFT_ARM].Joint[0].Speed,    &RxDataSlaveLeft[7],  sizeof(float));
-				memcpy(&myRobotFeedback[LEFT_ARM].Joint[0].Accel,    &RxDataSlaveLeft[11], sizeof(float));
-				memcpy(&myRobotFeedback[LEFT_ARM].Joint[1].Position, &RxDataSlaveLeft[15], sizeof(float));
-				memcpy(&myRobotFeedback[LEFT_ARM].Joint[1].Speed,    &RxDataSlaveLeft[19], sizeof(float));
-				memcpy(&myRobotFeedback[LEFT_ARM].Joint[1].Accel,    &RxDataSlaveLeft[23], sizeof(float));
-				memcpy(&myRobotFeedback[LEFT_ARM].Joint[2].Position, &RxDataSlaveLeft[27], sizeof(float));
-				memcpy(&myRobotFeedback[LEFT_ARM].Joint[2].Speed,    &RxDataSlaveLeft[31], sizeof(float));
-				memcpy(&myRobotFeedback[LEFT_ARM].Joint[2].Accel,    &RxDataSlaveLeft[35], sizeof(float));
+			if (TRUE == AppCommUart_RecvSlaveMsg(UART_NODE_SLAVE_1))
+			{	// Received slave 1 data
 				_slave1HandleFlag = TRUE;
 			}
 			else
@@ -456,21 +443,8 @@ GLOBAL void AppPeriodTask_StateMachineProcess(void)
 
 		if ((TRUE == AppDataGet_UartRxNewFlag(UART_NODE_SLAVE_2)) && (FALSE == _slave2HandleFlag))
 		{
-			if (
-			(MSG_DATA_RESPOND_BYTE_0 == RxDataSlaveRight[0]) && \
-			(MSG_DATA_RESPOND_BYTE_1 == RxDataSlaveRight[1]) && \
-			(MSG_DATA_RESPOND_LENGTH == RxDataSlaveRight[2])
-			)
+			if (TRUE == AppCommUart_RecvSlaveMsg(UART_NODE_SLAVE_2))
 			{
-				memcpy(&myRobotFeedback[RIGHT_ARM].Joint[0].Position, &RxDataSlaveRight[3],  sizeof(float));
-				memcpy(&myRobotFeedback[RIGHT_ARM].Joint[0].Speed,    &RxDataSlaveRight[7],  sizeof(float));
-				memcpy(&myRobotFeedback[RIGHT_ARM].Joint[0].Accel,    &RxDataSlaveRight[11], sizeof(float));
-				memcpy(&myRobotFeedback[RIGHT_ARM].Joint[1].Position, &RxDataSlaveRight[15], sizeof(float));
-				memcpy(&myRobotFeedback[RIGHT_ARM].Joint[1].Speed,    &RxDataSlaveRight[19], sizeof(float));
-				memcpy(&myRobotFeedback[RIGHT_ARM].Joint[1].Accel,    &RxDataSlaveRight[23], sizeof(float));
-				memcpy(&myRobotFeedback[RIGHT_ARM].Joint[2].Position, &RxDataSlaveRight[27], sizeof(float));
-				memcpy(&myRobotFeedback[RIGHT_ARM].Joint[2].Speed,    &RxDataSlaveRight[31], sizeof(float));
-				memcpy(&myRobotFeedback[RIGHT_ARM].Joint[2].Accel,    &RxDataSlaveRight[35], sizeof(float));
 				_slave2HandleFlag = TRUE;
 			}
 			else

@@ -24,20 +24,21 @@
 /* --------------- PROGRAM LOGIC MACRO --------------- */
 //#define MASTER_NO_CONTROL				// Master will not send control command
 //#define MASTER_NO_GUI					// Master will not send data to GUI
-//#define MASTER_GUI_TP_CHECK				// Check TP via GUI
+#define MASTER_GUI_TP_CHECK				// Check TP via GUI - only use in Pos control
 //#define TEST_MOTOR_FILTER
 
-//#define MASTER_CONTROL_POS
+#define MASTER_CONTROL_POS
 //#define MASTER_CONTROL_VEL
-#define MASTER_CONTROL_TOR
+//#define MASTER_CONTROL_TOR
 
-//#define SLAVE_1_ENA		(TRUE)
+#define SLAVE_1_ENA		(TRUE)
 #define SLAVE_2_ENA		(TRUE)
 
 /* --------------- PROGRAM LOGIC MACRO --------------- */
 #define LEFT_ARM		(0)			// For array idx
 #define RIGHT_ARM		(1)			// For array idx
 #define DUAL_ARM		(2)			// For array init
+#define JOINTS_PER_ARM	(3)
 
 /* ------------- KINEMATICS PARAMS MACRO --------------- */
 #define JOINT_DIR_Z_POS	TRUE	// Positive direction in kinematics

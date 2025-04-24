@@ -48,11 +48,13 @@ typedef enum ENUM_TP_TYPE
 {
 	TP_TYPE_NONE = 0,
 
-	TP_TYPE_CIRCLE,
-	TP_TYPE_LINE,
-	TP_TYPE_LINES,
-	TP_TYPE_CUBIC,
-	TP_TYPE_QUINTIC
+	TP_TYPE_TASK_CIRCLE,
+	TP_TYPE_TASK_LINE,
+	TP_TYPE_TASK_LINES,
+	TP_TYPE_TASK_CUBIC,
+	TP_TYPE_TASK_QUINTIC,
+
+	TP_TYPE_JOINT_SINEWAVE
 } enTpType;
 
 typedef enum ENUM_TOR_CONTROLLER
@@ -76,52 +78,89 @@ typedef struct
 
 typedef struct
 {
+// TASK SPACE PLANNING
 	struct
 	{
 		struct
 		{
-			float Start_X;		// [m]
-			float Start_Y;		// [m]
-			float Start_G;		// [Deg]
-			float Goal_X;		// [m]
-			float Goal_Y;		// [m]
-			float Goal_G;		// [Deg]
-		} Setting;	// Y = X
-		
+			struct
+			{
+				float Start_X;		// [m]
+				float Start_Y;		// [m]
+				float Start_G;		// [Deg]
+				float Goal_X;		// [m]
+				float Goal_Y;		// [m]
+				float Goal_G;		// [Deg]
+			} Setting;	// Y = X
+
+			struct
+			{
+				float TimeEnd;		// [s]
+			} Ctrl;
+		} Line;
+
 		struct
 		{
-			float TimeEnd;		// [s]
-		} Ctrl;
-	} Line;
+			struct
+			{
+				float X_Org;		// [m]
+				float Y_Org;		// [m]
+				float Radius;		// [m]
+				float Freq;			// [Hz]
+				float Phase;		// [Deg]
 
+				float Gamma;		// [Deg]
+			} Setting;
+
+			struct
+			{
+				float TimeEnd;		// [s]
+			} Ctrl;
+		} Circle;
+
+		struct
+		{
+			float Xm_t;		// [m]
+			float Ym_t;		// [m]
+			float Gm_t;		// [Rad]
+		} CurrentPos;
+	} TaskSpace;
+
+// JOINT SPACE PLANNING
 	struct
 	{
 		struct
 		{
-			float X_Org;		// [m]
-			float Y_Org;		// [m]
-			float Radius;		// [m]
-			float Freq;			// [Hz]
-			float Phase;		// [Deg]
+			struct
+			{
+				struct
+				{
+					float Amp;		// [Deg]
+					float Freq;		// [Hz]
+					float Phase;	// [Deg]
+					float Bias;		// [Deg]
+				} Setting;
 
-			float Gamma;		// [Deg]
-		} Setting;
+				struct
+				{
+					float TimeStart;
+					float TimeEnd;
+					float MovedTime;
+				} Ctrl;
+			} Joint[JOINTS_PER_ARM];
+		} SineWave[DUAL_ARM];
 
 		struct
 		{
-			float TimeEnd;		// [s]
-		} Ctrl;
-	} Circle;
-
-	struct
-	{
-		float Xm_t;		// [m]
-		float Ym_t;		// [m]
-		float Gm_t;		// [Rad]
-	} CurrTrajectory;
+			struct
+			{
+				float Pos;	// [Rad]
+			} Joint[JOINTS_PER_ARM];
+		} CurrentPos[DUAL_ARM];
+	} JointSpace;
 
 	enTpType Type;
-} strTaskSpacePlanning;
+} strTrajectoryPlanning;
 
 typedef struct
 {
@@ -132,7 +171,7 @@ typedef struct
 		float G_t;	// [Rad]
 	} EndEffector;
 
-	struct
+	struct	// GUI and Controller will use this value
 	{
 		float currPos;		// [Rad]
 		float prevPos;		// [Rad]
@@ -181,18 +220,19 @@ typedef struct
 /********************************************************************************
  * GLOBAL VARIABLES
  ********************************************************************************/
-GLOBAL extern strTaskSpacePlanning  myTaskTrajectory;
+GLOBAL extern strTrajectoryPlanning myTrajectory;
 GLOBAL extern strJointSpacePlanning myRobotTrajectory[DUAL_ARM];
-
-GLOBAL extern strTorControl myController;
+GLOBAL extern strTorControl myControl;
 
 
 /********************************************************************************
  * GLOBAL FUNCTION DECLARATION
  ********************************************************************************/
 GLOBAL BOOL AppControl_TP_SineWaveJoint(U08 _arm, float _timeStep);	// [s]
-GLOBAL BOOL AppControl_TP_InitWorldTrajectory(enTpType _type);
-GLOBAL BOOL AppControl_TP_UpdateWorldTrajectory(float _timeStep);	// TP ➡ T_Mass_World
+GLOBAL BOOL AppControl_TP_JointTrajectoryInit(enTpType _type);
+GLOBAL BOOL AppControl_TP_JointTrajectoryUpdate(float _timeStep);
+GLOBAL BOOL AppControl_TP_TaskTrajectoryInit(enTpType _type);
+GLOBAL BOOL AppControl_TP_TaskTrajectoryUpdate(float _timeStep);	// TP ➡ T_Mass_World
 GLOBAL void AppControl_IK_World2EE(U08 _arm);						// T_Mass_World ➡ T_4i_0i
 GLOBAL void AppControl_IK_EE2Joints(U08 _arm);						// T_4i_0i ➡ q1/q2/q3
 
@@ -202,7 +242,7 @@ GLOBAL void AppControl_Pos_MoveToTpStart(U08 _arm, U16 _speed);
 GLOBAL void AppControl_Pos_FollowTpPos(U08 _arm);
 
 GLOBAL void AppControl_Tor_TestSequence(U08 _arm, U08 _joint);
-GLOBAL BOOL AppControl_Tor_InitController(enTorController _type);
+GLOBAL BOOL AppControl_Tor_ControllerInit(enTorController _type);
 GLOBAL BOOL AppControl_Tor_ControlUpdate(U08 _arm, U08 _joint);
 
 

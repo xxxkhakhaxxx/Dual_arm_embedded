@@ -175,8 +175,8 @@ typedef enum ENUM_BTN_CTRL_SEQUENCE
 /********************************************************************************
  * GLOBAL VARIABLES
  ********************************************************************************/
-extern GLOBAL strRobotDataCommand  myRobotCommand[DUAL_ARM];		// Trajectory Planning data to be sent to Slave
-extern GLOBAL strRobotDataFeedback myRobotFeedback[DUAL_ARM];		// Motors' data are received from Slave
+GLOBAL extern strRobotDataCommand  myRobotCommand[DUAL_ARM];		// Trajectory Planning data to be sent to Slave
+GLOBAL extern strRobotDataFeedback myRobotFeedback[DUAL_ARM];		// Motors' data are received from Slave
 
 
 /********************************************************************************

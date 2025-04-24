@@ -41,23 +41,21 @@ typedef enum ENUM_TASK_LIST
 /********************************************************************************
  * PRIVATE VARIABLES
  ********************************************************************************/
-PRIVATE enTaskList enTaskId = TASK_NONE;
-
+PRIVATE enBtnCtrlSequence _btnSequence = BTN_CTRL_INIT;
+PRIVATE BOOL _masterInitFlag = FALSE;
+PRIVATE BOOL _slave1InitFlag = FALSE;
+PRIVATE BOOL _slave2InitFlag = FALSE;
+PRIVATE BOOL _slave1HandleFlag = FALSE;
+PRIVATE BOOL _slave2HandleFlag = FALSE;
+PRIVATE U08  _guiSendCnt = 0;
 volatile static BOOL bNewSequenceFlag = FALSE;
+
 
 /* Debug variables */
 volatile static U32 u32TaskTimerCnt_1ms = 0;
 volatile static U32 debug_cnt_task_duplicate = 0;
 volatile static U32 debug_cnt_task_override = 0;
 
-PRIVATE U08 u8GuiSendCnt = 0;
-
-PRIVATE BOOL _masterInitFlag = FALSE;
-PRIVATE BOOL _slave1InitFlag = FALSE;
-PRIVATE BOOL _slave2InitFlag = FALSE;
-PRIVATE BOOL _slave1HandleFlag = FALSE;
-PRIVATE BOOL _slave2HandleFlag = FALSE;
-PRIVATE enBtnCtrlSequence _btnSequence = BTN_CTRL_INIT;
 
 /********************************************************************************
  * GLOBAL VARIABLES
@@ -69,6 +67,8 @@ PRIVATE enBtnCtrlSequence _btnSequence = BTN_CTRL_INIT;
 PRIVATE BOOL _CheckAllSlaveInit(void);
 PRIVATE BOOL _CheckAllSlaveFeedback(void);
 PRIVATE void _MasterStateControl(void);
+PRIVATE void _MasterStateGUIComm(void);
+
 
 /********************************************************************************
  * PRIVATE FUNCTION IMPLEMENTATION
@@ -169,19 +169,17 @@ PRIVATE void _MasterStateControl(void)
 		break;
 
 	case BTN_CTRL_TO_PLANNING_INIT:
-#if 1
+#if 0	// WORLD SPACE PLANNING
 		// If not moving to start, successfully init the selected trajectory type
 		if (
 		(FALSE == isMovingToStart) && \
-		(TRUE == AppControl_TP_InitWorldTrajectory(TP_TYPE_CIRCLE)) && \
-		(TRUE == AppControl_TP_UpdateWorldTrajectory(PERIOD_TRAJECTORY_PLANNING)))
+		(TRUE == AppControl_TP_InitWorldTrajectory(TP_TYPE_TASK_CIRCLE)) && \
+		(TRUE == AppControl_TP_TaskTrajectoryUpdate(PERIOD_TRAJECTORY_PLANNING)))
 		{
 			AppControl_IK_World2EE(LEFT_ARM);
 			AppControl_IK_World2EE(RIGHT_ARM);
 			AppControl_IK_EE2Joints(LEFT_ARM);
 			AppControl_IK_EE2Joints(RIGHT_ARM);
-			AppControl_Pos_MoveToTpStart(LEFT_ARM, TP_START_SPEED);
-			AppControl_Pos_MoveToTpStart(RIGHT_ARM, TP_START_SPEED);
 			isSendControl = TRUE;
 		}
 		else
@@ -191,18 +189,19 @@ PRIVATE void _MasterStateControl(void)
 
 		if (TRUE == isSendControl)
 		{
-			// Using pos control moving to Home
-			AppCommUART_SendMsg(UART_NODE_SLAVE_1, UART_MSG_MOTOR_CONTROL_POS);
+			// Control position of each joint to the Start of trajectory
+			AppControl_Pos_MoveToTpStart(LEFT_ARM, TP_START_SPEED);
+			AppControl_Pos_MoveToTpStart(RIGHT_ARM, TP_START_SPEED);
+			AppCommUART_SendMsg(UART_NODE_SLAVE_1, UART_MSG_MOTOR_CONTROL_POS);	// Send cmd
 			AppCommUART_SendMsg(UART_NODE_SLAVE_2, UART_MSG_MOTOR_CONTROL_POS);
+			isMovingToStart = TRUE;
 
 			// If using Tor, init the selected controller
 	#if defined (MASTER_CONTROL_TOR)
-			AppControl_Tor_InitController(TOR_CTRL_PD);
+			AppControl_Tor_ControllerInit(TOR_CTRL_PD);
 	#endif
-
-			isMovingToStart = TRUE;
 		}
-#else
+#elif 0 // JOINT SPACE PLANNING - OLD
 
 		if (TRUE == AppControl_TP_SineWaveJoint(LEFT_ARM, PERIOD_TRAJECTORY_PLANNING))
 		{
@@ -212,11 +211,39 @@ PRIVATE void _MasterStateControl(void)
 		{
 			AppCommUART_SendMsg(UART_NODE_SLAVE_2, UART_MSG_MOTOR_CONTROL_POS);
 		}
+#else	// JOINT SPACE PLANNING - NEW
+		if (
+		(FALSE == isMovingToStart) && \
+		(TRUE == AppControl_TP_JointTrajectoryInit(TP_TYPE_JOINT_SINEWAVE)) && \
+		(TRUE == AppControl_TP_JointTrajectoryUpdate(PERIOD_TRAJECTORY_PLANNING))
+		)
+		{
+			isSendControl = TRUE;
+		}
+		else
+		{
+			isSendControl = FALSE;
+		}
+
+		if (TRUE == isSendControl)
+		{
+			AppControl_Pos_MoveToTpStart(LEFT_ARM, TP_START_SPEED);
+			AppControl_Pos_MoveToTpStart(RIGHT_ARM, TP_START_SPEED);
+			AppCommUART_SendMsg(UART_NODE_SLAVE_1, UART_MSG_MOTOR_CONTROL_POS);
+			AppCommUART_SendMsg(UART_NODE_SLAVE_2, UART_MSG_MOTOR_CONTROL_POS);
+			isMovingToStart = TRUE;
+
+			// If using Tor, init the selected controller
+	#if defined (MASTER_CONTROL_TOR)
+			AppControl_Tor_ControllerInit(TOR_CTRL_PD);
+	#endif
+		}
 #endif
 		break;
 
 	case BTN_CTRL_PLANNING:
-		if (TRUE == AppControl_TP_UpdateWorldTrajectory(PERIOD_TRAJECTORY_PLANNING))
+#if 0	// WORLD SPACE PLANNING
+		if (TRUE == AppControl_TP_TaskTrajectoryUpdate(PERIOD_TRAJECTORY_PLANNING))
 		{
 			AppControl_IK_World2EE(LEFT_ARM);
 			AppControl_IK_World2EE(RIGHT_ARM);
@@ -229,14 +256,18 @@ PRIVATE void _MasterStateControl(void)
 		{
 			isSendControl = FALSE;
 		}
+#else	// JOINT SPACE PLANNING
+		AppControl_TP_JointTrajectoryUpdate(PERIOD_TRAJECTORY_PLANNING);
+		isSendControl = TRUE;
 
+#endif
 #if defined (MASTER_CONTROL_POS)
 		if (TRUE == isSendControl)
 		{
 			AppControl_Pos_FollowTpPos(LEFT_ARM);
 			AppControl_Pos_FollowTpPos(RIGHT_ARM);
-			AppCommUART_SendMsg(UART_NODE_SLAVE_1, UART_MSG_MOTOR_CONTROL_POS);
-			AppCommUART_SendMsg(UART_NODE_SLAVE_2, UART_MSG_MOTOR_CONTROL_POS);
+//			AppCommUART_SendMsg(UART_NODE_SLAVE_1, UART_MSG_MOTOR_CONTROL_POS);
+//			AppCommUART_SendMsg(UART_NODE_SLAVE_2, UART_MSG_MOTOR_CONTROL_POS);
 		}
 #endif
 
@@ -263,6 +294,39 @@ PRIVATE void _MasterStateControl(void)
 
 	return;
 }
+
+PRIVATE void _MasterStateGUIComm(void)
+{
+	if (_guiSendCnt < GUI_SEND_CNT_MAX)
+	{
+		_guiSendCnt++;
+	}
+	else	// If PERIOD_CONTROL == PERIOD_GUI_SEND -> Send every PERIOD_CONTROL
+	{
+		_guiSendCnt = 0;
+#if defined (MASTER_NO_CONTROL) || defined (MASTER_CONTROL_POS)
+	#if defined(SLAVE_1_ENA) && defined(SLAVE_2_ENA)
+		AppCommUART_SendMsg(UART_NODE_GUI, UART_MSG_GUI_DATA_1_DUAL);
+	#elif defined(SLAVE_1_ENA)
+		AppCommUART_SendMsg(UART_NODE_GUI, UART_MSG_GUI_DATA_1_LEFT);
+	#elif defined(SLAVE_2_ENA)
+		AppCommUART_SendMsg(UART_NODE_GUI, UART_MSG_GUI_DATA_1_RIGHT);
+	#endif
+#elif defined (MASTER_CONTROL_TOR)
+	#if defined(SLAVE_1_ENA) && defined(SLAVE_2_ENA)
+		AppCommUART_SendMsg(UART_NODE_GUI, UART_MSG_GUI_DATA_2_DUAL);
+	#elif defined(SLAVE_1_ENA)
+		AppCommUART_SendMsg(UART_NODE_GUI, UART_MSG_GUI_DATA_2_LEFT);
+	#elif defined(SLAVE_2_ENA)
+		AppCommUART_SendMsg(UART_NODE_GUI, UART_MSG_GUI_DATA_2_RIGHT);
+	#endif
+#endif
+	}
+
+	return;
+}
+
+
 /********************************************************************************
  * GLOBAL FUNCTION IMPLEMENTATION
  ********************************************************************************/
@@ -291,31 +355,8 @@ GLOBAL void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 	return;
 }
 
-GLOBAL void AppPeriodTask_TaskCall(void)	/* Performing the corresponding task */
-{
-	switch(enTaskId)
-	{
-	case TASK_10MS_ROBOT_IK:
-//		_RobotCalculateIK();
-		break;
-	case TASK_10MS_SLAVE_1_COMM:
-
-		break;
-	default:
-		// None task
-		break;
-	}
-
-	enTaskId = TASK_NONE;	// Clear task flag
-
-	return;
-}
-
-
 GLOBAL void AppPeriodTask_StateMachineProcess(void)
 {
-//	static BOOL _slave2HandleFlag = FALSE;
-//	static enRobotMode _robotMode = ROBOT_MODE_READ_DATA;		// The mode that you want to use
 	// Full sequence: Init ➩ wait Slave init ➩ Send init to confirm ➩ ...
 	//            ... ➩ Wait 20ms Flag ➩ Request data ➩ Handle data feedback ➩ Calculate control ➩ Send control
 	//                          ↖	⇦   ⇦   ⇦   ⇦   ⇦   ⇦   ⇦   ⇦   ⇦   ⇦   ⇦   ⇦   ⇦   ⇦  GUI feedback ↩
@@ -478,47 +519,23 @@ GLOBAL void AppPeriodTask_StateMachineProcess(void)
 		break;
 
 	case MASTER_STATE_SEND_GUI:
-#if defined (MASTER_NO_GUI)
-		// Do nothing
-#else
-	#if defined (MASTER_NO_CONTROL) || defined (MASTER_CONTROL_POS)
-		if (u8GuiSendCnt < GUI_SEND_CNT_MAX)// 100ms
-		{
-			u8GuiSendCnt++;
-		}
-		else	// If PERIOD_CONTROL == PERIOD_GUI_SEND -> Send every PERIOD_CONTROL
-		{
-			u8GuiSendCnt = 0;
-		#if defined(SLAVE_1_ENA) && defined(SLAVE_2_ENA)
-			AppCommUART_SendMsg(UART_NODE_GUI, UART_MSG_GUI_DATA_1_DUAL);
-		#elif defined(SLAVE_1_ENA)
-			AppCommUART_SendMsg(UART_NODE_GUI, UART_MSG_GUI_DATA_1_LEFT);
-		#elif defined(SLAVE_2_ENA)
-			AppCommUART_SendMsg(UART_NODE_GUI, UART_MSG_GUI_DATA_1_RIGHT);
-		#endif
-		}
-	#else
-		#if defined(SLAVE_1_ENA) && defined(SLAVE_2_ENA)
-			AppCommUART_SendMsg(UART_NODE_GUI, UART_MSG_GUI_DATA_2_DUAL);
-		#elif defined(SLAVE_1_ENA)
-			AppCommUART_SendMsg(UART_NODE_GUI, UART_MSG_GUI_DATA_2_LEFT);
-		#elif defined(SLAVE_2_ENA)
-			AppCommUART_SendMsg(UART_NODE_GUI, UART_MSG_GUI_DATA_2_RIGHT);
+#ifndef MASTER_NO_GUI
+		_MasterStateGUIComm();
 #endif
-	#endif
-#endif
-
 		bNewSequenceFlag = FALSE;	// Sequence end
 		AppDataSet_MasterState(MASTER_STATE_WAIT_NEW_SEQUENCE);
 		break;
 
 	default:
 		// if any abnormal, reset variables and back to init state
+		_btnSequence = BTN_CTRL_INIT;
 		_masterInitFlag = FALSE;
 		_slave1InitFlag = FALSE;
-		_slave1HandleFlag = FALSE;
 		_slave2InitFlag = FALSE;
+		_slave1HandleFlag = FALSE;
 		_slave2HandleFlag = FALSE;
+		bNewSequenceFlag  = FALSE;
+		_guiSendCnt = 0;
 		AppDataSet_MasterState(MASTER_STATE_INIT);
 		break;
 	}

@@ -131,8 +131,8 @@ typedef struct
 		float Speed;	// deg/s   per bit
 		float Accel;	// deg/s^2 per bit
 
-		float Speedf;
-		float Accelf;
+		float Speedf;	// [Deg/s]
+		float Accelf;	// [Deg/s2]
 	} Joint[3];
 } strRobotDataFeedback;
 

@@ -122,7 +122,8 @@ PRIVATE BOOL _CheckAllSlaveFeedback(void)
 PRIVATE void _MasterStateControl(void)
 {
 	static BOOL isMovingToHome = FALSE;		// Home position
-	static BOOL isMovingToStart = FALSE;		// TP start position
+	static BOOL isMovingToStart = FALSE;	// TP start position
+	static BOOL isSendControl = FALSE;		// Allow send control signal or not
 
 	// 1. Change cmd if button is pressed
 	if (TRUE == AppDataGet_UserButtonEvent())
@@ -169,39 +170,40 @@ PRIVATE void _MasterStateControl(void)
 
 	case BTN_CTRL_TO_PLANNING_INIT:
 #if 1
-		if (FALSE == isMovingToStart)
+		// If not moving to start, successfully init the selected trajectory type
+		if (
+		(FALSE == isMovingToStart) && \
+		(TRUE == AppControl_TP_InitWorldTrajectory(TP_TYPE_CIRCLE)) && \
+		(TRUE == AppControl_TP_UpdateWorldTrajectory(PERIOD_TRAJECTORY_PLANNING)))
 		{
-			if (TRUE == AppControl_TP_InitWorldTrajectory(TP_TYPE_CIRCLE))
-			{
-				if (TRUE == AppControl_TP_UpdateWorldTrajectory(PERIOD_TRAJECTORY_PLANNING))
-				{
-					AppControl_IK_World2EE(LEFT_ARM);
-					AppControl_IK_World2EE(RIGHT_ARM);
-					AppControl_IK_EE2Joints(LEFT_ARM);
-					AppControl_IK_EE2Joints(RIGHT_ARM);
-					AppControl_Pos_MoveToTpStart(LEFT_ARM, TP_START_SPEED);
-					AppControl_Pos_MoveToTpStart(RIGHT_ARM, TP_START_SPEED);
-
-					AppCommUART_SendMsg(UART_NODE_SLAVE_1, UART_MSG_MOTOR_CONTROL_POS);
-					AppCommUART_SendMsg(UART_NODE_SLAVE_2, UART_MSG_MOTOR_CONTROL_POS);
-
-					isMovingToStart = TRUE;
-
-#if defined (MASTER_CONTROL_TOR)
-					AppControl_Tor_InitController(TOR_CTRL_PD);
-#endif
-				}
-			}
-			else
-			{
-				// Not support
-			}
+			AppControl_IK_World2EE(LEFT_ARM);
+			AppControl_IK_World2EE(RIGHT_ARM);
+			AppControl_IK_EE2Joints(LEFT_ARM);
+			AppControl_IK_EE2Joints(RIGHT_ARM);
+			AppControl_Pos_MoveToTpStart(LEFT_ARM, TP_START_SPEED);
+			AppControl_Pos_MoveToTpStart(RIGHT_ARM, TP_START_SPEED);
+			isSendControl = TRUE;
 		}
 		else
 		{
-			// Moving to home and waiting for next button press
+			isSendControl = FALSE;
+		}
+
+		if (TRUE == isSendControl)
+		{
+			// Using pos control moving to Home
+			AppCommUART_SendMsg(UART_NODE_SLAVE_1, UART_MSG_MOTOR_CONTROL_POS);
+			AppCommUART_SendMsg(UART_NODE_SLAVE_2, UART_MSG_MOTOR_CONTROL_POS);
+
+			// If using Tor, init the selected controller
+	#if defined (MASTER_CONTROL_TOR)
+			AppControl_Tor_InitController(TOR_CTRL_PD);
+	#endif
+
+			isMovingToStart = TRUE;
 		}
 #else
+
 		if (TRUE == AppControl_TP_SineWaveJoint(LEFT_ARM, PERIOD_TRAJECTORY_PLANNING))
 		{
 			AppCommUART_SendMsg(UART_NODE_SLAVE_1, UART_MSG_MOTOR_CONTROL_POS);
@@ -221,24 +223,28 @@ PRIVATE void _MasterStateControl(void)
 			AppControl_IK_EE2Joints(LEFT_ARM);
 			AppControl_IK_EE2Joints(RIGHT_ARM);
 
-#if defined (MASTER_CONTROL_POS)
-			AppControl_Pos_FollowTpPos(LEFT_ARM);
-			AppControl_Pos_FollowTpPos(RIGHT_ARM);
-
-			AppCommUART_SendMsg(UART_NODE_SLAVE_1, UART_MSG_MOTOR_CONTROL_POS);
-			AppCommUART_SendMsg(UART_NODE_SLAVE_2, UART_MSG_MOTOR_CONTROL_POS);
+			isSendControl = TRUE;
 		}
 		else	// Finished
 		{
-			// Waiting for next btn press
-		}
-#elif defined (MASTER_CONTROL_TOR)
+			isSendControl = FALSE;
 		}
 
+#if defined (MASTER_CONTROL_POS)
+		if (TRUE == isSendControl)
+		{
+			AppControl_Pos_FollowTpPos(LEFT_ARM);
+			AppControl_Pos_FollowTpPos(RIGHT_ARM);
+			AppCommUART_SendMsg(UART_NODE_SLAVE_1, UART_MSG_MOTOR_CONTROL_POS);
+			AppCommUART_SendMsg(UART_NODE_SLAVE_2, UART_MSG_MOTOR_CONTROL_POS);
+		}
+#endif
+
+#if defined (MASTER_CONTROL_TOR)
 		// It should still update the torque when finished TP
 		if (TRUE == AppControl_Tor_ControlUpdate(RIGHT_ARM, 2))
 		{
-//			AppCommUART_SendMsg(UART_NODE_SLAVE_1, UART_MSG_MOTOR_CONTROL_TOR);
+			AppCommUART_SendMsg(UART_NODE_SLAVE_1, UART_MSG_MOTOR_CONTROL_TOR);
 			AppCommUART_SendMsg(UART_NODE_SLAVE_2, UART_MSG_MOTOR_CONTROL_TOR);
 		}
 #endif	// MASTER_CONTROL_POS

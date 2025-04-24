@@ -200,7 +200,7 @@ PRIVATE void _UpdateMotorRecvData(U08 _motorId, U16 _newEncoderValue)
 	}
 
 	// 4. Apply Butterworth filter
-	_ButterworthFilter_FirstOrder(_motorId, 5.0f, 2.0f);
+	_ButterworthFilter_FirstOrder(_motorId, FREQ_CUT_VEL, FREQ_CUT_ACCEL);
 	return;
 }
 

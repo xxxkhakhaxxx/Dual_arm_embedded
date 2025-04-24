@@ -25,13 +25,13 @@
 //#define MASTER_NO_CONTROL				// Master will not send control command
 //#define MASTER_NO_GUI					// Master will not send data to GUI
 //#define MASTER_GUI_TP_CHECK				// Check TP via GUI
-#define TEST_MOTOR_FILTER
+//#define TEST_MOTOR_FILTER
 
-#define MASTER_CONTROL_POS
+//#define MASTER_CONTROL_POS
 //#define MASTER_CONTROL_VEL
-//#define MASTER_CONTROL_TOR
+#define MASTER_CONTROL_TOR
 
-#define SLAVE_1_ENA		(TRUE)
+//#define SLAVE_1_ENA		(TRUE)
 #define SLAVE_2_ENA		(TRUE)
 
 /* --------------- PROGRAM LOGIC MACRO --------------- */

@@ -251,48 +251,49 @@ GLOBAL BOOL AppControl_TP_JointTrajectoryInit(enTpType _type)
 	switch (_type)
 	{
 	case TP_TYPE_JOINT_SINEWAVE:
-		myTrajectory.JointSpace.SineWave[LEFT_ARM].Joint[0].Setting.Amp      = 20.0f;
-		myTrajectory.JointSpace.SineWave[LEFT_ARM].Joint[0].Setting.Freq     =  0.1f;
+		myTrajectory.JointSpace.SineWave[LEFT_ARM].Joint[0].Setting.Amp      = 30.0f;
+		myTrajectory.JointSpace.SineWave[LEFT_ARM].Joint[0].Setting.Freq     =  0.2f;
 		myTrajectory.JointSpace.SineWave[LEFT_ARM].Joint[0].Setting.Phase    =  0.0f;
 		myTrajectory.JointSpace.SineWave[LEFT_ARM].Joint[0].Setting.Bias     = 90.0f;
 		myTrajectory.JointSpace.SineWave[LEFT_ARM].Joint[0].Ctrl.MovedTime   =  0.0f;
 		myTrajectory.JointSpace.SineWave[LEFT_ARM].Joint[0].Ctrl.TimeStart   =  0.0f;
 		myTrajectory.JointSpace.SineWave[LEFT_ARM].Joint[0].Ctrl.TimeEnd     = 20.0f;
 
-		myTrajectory.JointSpace.SineWave[LEFT_ARM].Joint[1].Setting.Amp      = 20.0f;
-		myTrajectory.JointSpace.SineWave[LEFT_ARM].Joint[1].Setting.Freq     =  0.1f;
-		myTrajectory.JointSpace.SineWave[LEFT_ARM].Joint[1].Setting.Phase    =  0.0f;
+		myTrajectory.JointSpace.SineWave[LEFT_ARM].Joint[1].Setting.Amp      = 30.0f;
+		myTrajectory.JointSpace.SineWave[LEFT_ARM].Joint[1].Setting.Freq     =  0.4f;
+		myTrajectory.JointSpace.SineWave[LEFT_ARM].Joint[1].Setting.Phase    =180.0f;
 		myTrajectory.JointSpace.SineWave[LEFT_ARM].Joint[1].Setting.Bias     =  0.0f;
 		myTrajectory.JointSpace.SineWave[LEFT_ARM].Joint[1].Ctrl.MovedTime   =  0.0f;
 		myTrajectory.JointSpace.SineWave[LEFT_ARM].Joint[1].Ctrl.TimeStart   =  0.0f;
 		myTrajectory.JointSpace.SineWave[LEFT_ARM].Joint[1].Ctrl.TimeEnd     = 20.0f;
 
-		myTrajectory.JointSpace.SineWave[LEFT_ARM].Joint[2].Setting.Amp      = 30.0f;
-		myTrajectory.JointSpace.SineWave[LEFT_ARM].Joint[2].Setting.Freq     =  0.1f;
+		myTrajectory.JointSpace.SineWave[LEFT_ARM].Joint[2].Setting.Amp      = 50.0f;
+		myTrajectory.JointSpace.SineWave[LEFT_ARM].Joint[2].Setting.Freq     =  0.6f;
 		myTrajectory.JointSpace.SineWave[LEFT_ARM].Joint[2].Setting.Phase    =  0.0f;
 		myTrajectory.JointSpace.SineWave[LEFT_ARM].Joint[2].Setting.Bias     =  0.0f;
 		myTrajectory.JointSpace.SineWave[LEFT_ARM].Joint[2].Ctrl.MovedTime   =  0.0f;
 		myTrajectory.JointSpace.SineWave[LEFT_ARM].Joint[2].Ctrl.TimeStart   =  0.0f;
 		myTrajectory.JointSpace.SineWave[LEFT_ARM].Joint[2].Ctrl.TimeEnd     = 20.0f;
 
-		myTrajectory.JointSpace.SineWave[RIGHT_ARM].Joint[0].Setting.Amp      = 20.0f;
-		myTrajectory.JointSpace.SineWave[RIGHT_ARM].Joint[0].Setting.Freq     =  0.1f;
+
+		myTrajectory.JointSpace.SineWave[RIGHT_ARM].Joint[0].Setting.Amp      = 30.0f;
+		myTrajectory.JointSpace.SineWave[RIGHT_ARM].Joint[0].Setting.Freq     =  0.2f;
 		myTrajectory.JointSpace.SineWave[RIGHT_ARM].Joint[0].Setting.Phase    =180.0f;
 		myTrajectory.JointSpace.SineWave[RIGHT_ARM].Joint[0].Setting.Bias     = 90.0f;
 		myTrajectory.JointSpace.SineWave[RIGHT_ARM].Joint[0].Ctrl.MovedTime   =  0.0f;
 		myTrajectory.JointSpace.SineWave[RIGHT_ARM].Joint[0].Ctrl.TimeStart   =  0.0f;
 		myTrajectory.JointSpace.SineWave[RIGHT_ARM].Joint[0].Ctrl.TimeEnd     = 20.0f;
 
-		myTrajectory.JointSpace.SineWave[RIGHT_ARM].Joint[1].Setting.Amp      = 20.0f;
-		myTrajectory.JointSpace.SineWave[RIGHT_ARM].Joint[1].Setting.Freq     =  0.1f;
-		myTrajectory.JointSpace.SineWave[RIGHT_ARM].Joint[1].Setting.Phase    =180.0f;
+		myTrajectory.JointSpace.SineWave[RIGHT_ARM].Joint[1].Setting.Amp      = 30.0f;
+		myTrajectory.JointSpace.SineWave[RIGHT_ARM].Joint[1].Setting.Freq     =  0.4f;
+		myTrajectory.JointSpace.SineWave[RIGHT_ARM].Joint[1].Setting.Phase    =  0.0f;
 		myTrajectory.JointSpace.SineWave[RIGHT_ARM].Joint[1].Setting.Bias     =  0.0f;
 		myTrajectory.JointSpace.SineWave[RIGHT_ARM].Joint[1].Ctrl.MovedTime   =  0.0f;
 		myTrajectory.JointSpace.SineWave[RIGHT_ARM].Joint[1].Ctrl.TimeStart   =  0.0f;
 		myTrajectory.JointSpace.SineWave[RIGHT_ARM].Joint[1].Ctrl.TimeEnd     = 20.0f;
 
-		myTrajectory.JointSpace.SineWave[RIGHT_ARM].Joint[2].Setting.Amp      = 30.0f;
-		myTrajectory.JointSpace.SineWave[RIGHT_ARM].Joint[2].Setting.Freq     =  0.1f;
+		myTrajectory.JointSpace.SineWave[RIGHT_ARM].Joint[2].Setting.Amp      = 50.0f;
+		myTrajectory.JointSpace.SineWave[RIGHT_ARM].Joint[2].Setting.Freq     =  0.6f;
 		myTrajectory.JointSpace.SineWave[RIGHT_ARM].Joint[2].Setting.Phase    =180.0f;
 		myTrajectory.JointSpace.SineWave[RIGHT_ARM].Joint[2].Setting.Bias     =  0.0f;
 		myTrajectory.JointSpace.SineWave[RIGHT_ARM].Joint[2].Ctrl.MovedTime   =  0.0f;

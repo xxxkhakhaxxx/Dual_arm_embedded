@@ -22,9 +22,9 @@
 #define PROJECT_MCU		STM32F1XX_FW_1_8_6
 
 //#define SLAVE_NO_MOTOR_COMM
-//#define TEST_MOTOR_FILTER
+#define TEST_MOTOR_FILTER
 #define PERIOD_MOTOR_COMM	(0.02f)	// [s]
-#define FREQ_CUT_VEL		(5.0f)	// [Hz]
+#define FREQ_CUT_VEL		(4.0f)	// [Hz]
 #define FREQ_CUT_ACCEL		(2.0f)	// [Hz]
 
 #define DUAL_ARM_LEFT	1

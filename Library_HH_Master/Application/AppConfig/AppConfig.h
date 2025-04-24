@@ -24,8 +24,8 @@
 /* --------------- PROGRAM LOGIC MACRO --------------- */
 //#define MASTER_NO_CONTROL				// Master will not send control command
 //#define MASTER_NO_GUI					// Master will not send data to GUI
-#define MASTER_GUI_TP_CHECK				// Check TP via GUI - only use in Pos control
-//#define TEST_MOTOR_FILTER
+//#define MASTER_GUI_TP_CHECK				// Check TP via GUI - only use in Pos control
+#define TEST_MOTOR_FILTER
 
 #define MASTER_CONTROL_POS
 //#define MASTER_CONTROL_VEL

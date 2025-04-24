@@ -266,8 +266,8 @@ PRIVATE void _MasterStateControl(void)
 		{
 			AppControl_Pos_FollowTpPos(LEFT_ARM);
 			AppControl_Pos_FollowTpPos(RIGHT_ARM);
-//			AppCommUART_SendMsg(UART_NODE_SLAVE_1, UART_MSG_MOTOR_CONTROL_POS);
-//			AppCommUART_SendMsg(UART_NODE_SLAVE_2, UART_MSG_MOTOR_CONTROL_POS);
+			AppCommUART_SendMsg(UART_NODE_SLAVE_1, UART_MSG_MOTOR_CONTROL_POS);
+			AppCommUART_SendMsg(UART_NODE_SLAVE_2, UART_MSG_MOTOR_CONTROL_POS);
 		}
 #endif
 

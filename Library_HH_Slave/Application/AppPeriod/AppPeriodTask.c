@@ -215,6 +215,7 @@ PRIVATE void AppPeriodTask_MotorComm(enCanNode _canNode, enRobotMode _mode)
 	case ROBOT_MODE_POSITION:	_cmdSend = MOTOR_CMD_CONTROL_POSITION_SINGLELOOP_2;	break;
 //	case ROBOT_MODE_VELOCITY:	_cmdSend = MOTOR_CMD_CONTROL_SPEED;					break;
 	case ROBOT_MODE_TORQUE:		_cmdSend = MOTOR_CMD_CONTROL_TORQUE;				break;
+	case ROBOT_MODE_LOST_COMM:	_cmdSend = MOTOR_CMD_SET_STOP;						break;
 	default:	return;		// No CMD support, exit
 	}
 
@@ -242,16 +243,33 @@ GLOBAL void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 		}
 
 		if (
-			(FALSE == _masterInitFlag) && \
-			(TRUE == _slaveInitFlag) && \
-			(SLAVE_STATE_WAIT_MASTER_REQUEST == AppDataGet_SlaveState())
+		(TRUE == _slaveInitFlag) && \
+		(SLAVE_STATE_WAIT_MASTER_REQUEST == AppDataGet_SlaveState())
 		)
 		{
-			if (u32TaskTimerCnt_1ms == 100)	// Every 100ms
+			if (FALSE == _masterInitFlag)	// Waiting for Master init respond
 			{
-				AppDataSet_SlaveState(SLAVE_STATE_INIT);	// Re-send init to master: master takes ~2.1s to init
-				u32TaskTimerCnt_1ms = 0;
+				if (u32TaskTimerCnt_1ms == 100)	// Every 100ms
+				{
+					AppDataSet_SlaveState(SLAVE_STATE_INIT);	// Re-send init to master: master takes ~2.1s to init
+					u32TaskTimerCnt_1ms = 0;
+				}
 			}
+			else // Master inited
+			{
+				if (u32TaskTimerCnt_1ms > 30)	// If wait Master request for more than 30ms -> Lost comm
+				{
+					u32TaskTimerCnt_1ms = 0;
+					_robotMode = ROBOT_MODE_LOST_COMM;		// Stop motor
+					_canNode = CAN_NODE_MOTOR_1;
+					_sequenceEndFlag = FALSE;	
+					AppDataSet_SlaveState(SLAVE_STATE_SEND_MOTOR_SEQUENCE);	// Send motor state
+				}
+			}
+		}
+		else	// If not stuck in WAIT_MASTER_REQUEST, reset the count
+		{
+			u32TaskTimerCnt_1ms = 0;
 		}
 	}
 

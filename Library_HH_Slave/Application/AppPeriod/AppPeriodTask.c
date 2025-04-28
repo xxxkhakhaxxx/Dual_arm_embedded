@@ -65,6 +65,7 @@ PRIVATE void AppPeriodTask_10ms_MotorComm(void);
 PRIVATE void AppPeriodTask_Scheduler(void);
 
 PRIVATE void AppPeriodTask_MotorComm(enCanNode _canNode, enRobotMode _mode);
+PRIVATE BOOL _CheckJointLimit(void);
 /********************************************************************************
  * PRIVATE FUNCTION IMPLEMENTATION
  ********************************************************************************/
@@ -215,7 +216,8 @@ PRIVATE void AppPeriodTask_MotorComm(enCanNode _canNode, enRobotMode _mode)
 	case ROBOT_MODE_POSITION:	_cmdSend = MOTOR_CMD_CONTROL_POSITION_SINGLELOOP_2;	break;
 //	case ROBOT_MODE_VELOCITY:	_cmdSend = MOTOR_CMD_CONTROL_SPEED;					break;
 	case ROBOT_MODE_TORQUE:		_cmdSend = MOTOR_CMD_CONTROL_TORQUE;				break;
-	case ROBOT_MODE_LOST_COMM:	_cmdSend = MOTOR_CMD_SET_STOP;						break;
+	case ROBOT_MODE_ERROR_COMM:	_cmdSend = MOTOR_CMD_SET_STOP;						break;
+	case ROBOT_MODE_ERROR_LIMIT:_cmdSend = MOTOR_CMD_SET_STOP;						break;
 	default:	return;		// No CMD support, exit
 	}
 
@@ -224,6 +226,21 @@ PRIVATE void AppPeriodTask_MotorComm(enCanNode _canNode, enRobotMode _mode)
 
 
 	return;
+}
+
+PRIVATE BOOL _CheckJointLimit(void)
+{
+	BOOL isSafety = FALSE;
+
+	if (
+	(J1_KINE_LOW_LIMIT < myMotorToMaster[0].currPosKine) && (myMotorToMaster[0].currPosKine < J1_KINE_HIGH_LIMIT) && \
+	(J2_KINE_LOW_LIMIT < myMotorToMaster[1].currPosKine) && (myMotorToMaster[1].currPosKine < J2_KINE_HIGH_LIMIT) && \
+	(J3_KINE_LOW_LIMIT < myMotorToMaster[2].currPosKine) && (myMotorToMaster[2].currPosKine < J3_KINE_HIGH_LIMIT))
+	{
+		isSafety = TRUE;
+	}
+
+	return isSafety;
 }
 /********************************************************************************
  * GLOBAL FUNCTION IMPLEMENTATION
@@ -260,7 +277,7 @@ GLOBAL void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 				if (u32TaskTimerCnt_1ms > 30)	// If wait Master request for more than 30ms -> Lost comm
 				{
 					u32TaskTimerCnt_1ms = 0;
-					_robotMode = ROBOT_MODE_LOST_COMM;		// Stop motor
+					_robotMode = ROBOT_MODE_ERROR_COMM;		// Stop motor
 					_canNode = CAN_NODE_MOTOR_1;
 					_sequenceEndFlag = FALSE;	
 					AppDataSet_SlaveState(SLAVE_STATE_SEND_MOTOR_SEQUENCE);	// Send motor state
@@ -444,16 +461,33 @@ GLOBAL void AppPeriodTask_StateMachineProcess(void)
 				}
 				else	// back to wait Master state
 				{
-					if (ROBOT_MODE_READ_DATA == _robotMode)
-					{	// Only feedback when it's read data command
+					switch (_robotMode)
+					{
+					case ROBOT_MODE_ERROR_COMM:
+					case ROBOT_MODE_ERROR_LIMIT:
+						AppDataSet_SlaveState(SLAVE_STATE_ERROR);
+						break;
+					case ROBOT_MODE_READ_DATA:
 						AppCommUART_SendMsg(UART_NODE_MASTER, UART_MSG_MOTOR_DATA);
-					}
-					else
-					{	// Start waiting new request from master
+						if (TRUE == _CheckJointLimit())
+						{
+							AppDataSet_SlaveState(SLAVE_STATE_WAIT_MASTER_REQUEST);		// Safety -> Wait for new request from Master
+						}
+						else // There's a joint excceed its safety limits
+						{
+							_robotMode = ROBOT_MODE_ERROR_LIMIT;	// Stop motor
+							_canNode = CAN_NODE_MOTOR_1;
+							_sequenceEndFlag = FALSE;
+							AppDataSet_SlaveState(SLAVE_STATE_SEND_MOTOR_SEQUENCE);		// To send motor stop command
+						}
+						break;
+					case ROBOT_MODE_POSITION:
+					case ROBOT_MODE_TORQUE:
+					default:
 						AppCommUart_RecvMsgStart(UART_NODE_MASTER);
+						AppDataSet_SlaveState(SLAVE_STATE_WAIT_MASTER_REQUEST);		// Wait for new request from Master
+						break;
 					}
-
-					AppDataSet_SlaveState(SLAVE_STATE_WAIT_MASTER_REQUEST);		// Wait for new request from Master
 				}
 			}
 			else
@@ -466,6 +500,10 @@ GLOBAL void AppPeriodTask_StateMachineProcess(void)
 			// Wait for CAN Rx
 		}
 #endif
+		break;
+
+	case SLAVE_STATE_ERROR:
+		// TODO: implement Slave Error state
 		break;
 
 	default:

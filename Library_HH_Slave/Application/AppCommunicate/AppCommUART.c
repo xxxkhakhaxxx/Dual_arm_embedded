@@ -176,7 +176,6 @@ GLOBAL void AppCommUART_SendMsg(enUartNode _node, enUartMsg _txMsgId)	// TODO: r
 	static U08* sourceTxData;
 	U08 checksum = 0x00;
 	U16 sizeSend = 0;	// if not set value, TxErrCnt++
-	float j_kinematics;	// Calculate J_kinematics for each motor and copy to UART buffer
 
 
 	// 3. Get UART target and data
@@ -243,22 +242,23 @@ GLOBAL void AppCommUART_SendMsg(enUartNode _node, enUartMsg _txMsgId)	// TODO: r
 		sourceTxData[2] = MSG_DATA_RESPOND_F_LENGTH;
 		sizeSend = MSG_DATA_RESPOND_F_LENGTH;
 
-		j_kinematics = (myMotorToMaster[0].currPosition + J1_OFFSET_REAL2KINE) * J1_DIR_REAL2KINE;
-		memcpy(&sourceTxData[4] , &j_kinematics,                     sizeof(float));
+		myMotorToMaster[0].currPosKine = (myMotorToMaster[0].currPosition + J1_OFFSET_REAL2KINE) * J1_DIR_REAL2KINE;
+		myMotorToMaster[1].currPosKine = (myMotorToMaster[1].currPosition + J2_OFFSET_REAL2KINE) * J2_DIR_REAL2KINE;
+		myMotorToMaster[2].currPosKine = (myMotorToMaster[2].currPosition + J3_OFFSET_REAL2KINE) * J3_DIR_REAL2KINE;
+
+		memcpy(&sourceTxData[4] , &myMotorToMaster[0].currPosKine,   sizeof(float));
 		memcpy(&sourceTxData[8] , &myMotorToMaster[0].currSpeed,     sizeof(float));
 		memcpy(&sourceTxData[12], &myMotorToMaster[0].currAccel,     sizeof(float));
 		memcpy(&sourceTxData[16], &myMotorToMaster[0].currFiltSpeed, sizeof(float));
 		memcpy(&sourceTxData[20], &myMotorToMaster[0].currFiltAccel, sizeof(float));
 
-		j_kinematics = (myMotorToMaster[1].currPosition + J2_OFFSET_REAL2KINE) * J2_DIR_REAL2KINE;
-		memcpy(&sourceTxData[24], &j_kinematics,                     sizeof(float));
+		memcpy(&sourceTxData[24], &myMotorToMaster[1].currPosKine,   sizeof(float));
 		memcpy(&sourceTxData[28], &myMotorToMaster[1].currSpeed,     sizeof(float));
 		memcpy(&sourceTxData[32], &myMotorToMaster[1].currAccel,     sizeof(float));
 		memcpy(&sourceTxData[36], &myMotorToMaster[1].currFiltSpeed, sizeof(float));
 		memcpy(&sourceTxData[40], &myMotorToMaster[1].currFiltAccel, sizeof(float));
 
-		j_kinematics = (myMotorToMaster[2].currPosition + J3_OFFSET_REAL2KINE) * J3_DIR_REAL2KINE;
-		memcpy(&sourceTxData[44], &j_kinematics,                     sizeof(float));
+		memcpy(&sourceTxData[44], &myMotorToMaster[2].currPosKine,   sizeof(float));
 		memcpy(&sourceTxData[48], &myMotorToMaster[2].currSpeed,     sizeof(float));
 		memcpy(&sourceTxData[52], &myMotorToMaster[2].currAccel,     sizeof(float));
 		memcpy(&sourceTxData[56], &myMotorToMaster[2].currFiltSpeed, sizeof(float));

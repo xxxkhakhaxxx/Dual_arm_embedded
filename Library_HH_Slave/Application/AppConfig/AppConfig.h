@@ -52,6 +52,13 @@
 	#define J2_OFFSET_KINE2REAL	((I32)(29967))
 	#define J3_OFFSET_KINE2REAL	((I32)(31938))
 
+	#define J1_KINE_LOW_LIMIT	(30.0f)
+	#define J2_KINE_LOW_LIMIT	(-130.0f)
+	#define J3_KINE_LOW_LIMIT	(-179.0f)
+	#define J1_KINE_HIGH_LIMIT	(300.0f)
+	#define J2_KINE_HIGH_LIMIT	(130.0f)
+	#define J3_KINE_HIGH_LIMIT	(179.0f)
+
 #elif defined(THIS_IS_ARM) && (THIS_IS_ARM == DUAL_ARM_RIGHT)
 	// Right arm setting code here
 	#define J1_DIR_KINE2REAL	((I08)(-1))
@@ -67,6 +74,13 @@
 	#define J1_OFFSET_KINE2REAL	((I32)(32897))
 	#define J2_OFFSET_KINE2REAL	((I32)(34185))
 	#define J3_OFFSET_KINE2REAL	((I32)(35779))
+
+	#define J1_KINE_LOW_LIMIT	(30.0f)
+	#define J2_KINE_LOW_LIMIT	(-130.0f)
+	#define J3_KINE_LOW_LIMIT	(-179.0f)
+	#define J1_KINE_HIGH_LIMIT	(300.0f)
+	#define J2_KINE_HIGH_LIMIT	(130.0f)
+	#define J3_KINE_HIGH_LIMIT	(179.0f)
 #else
 	#error "Choose arm: DUAL_ARM_LEFT or DUAL_ARM_RIGHT"
 #endif

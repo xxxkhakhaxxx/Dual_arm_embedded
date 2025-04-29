@@ -507,7 +507,7 @@ GLOBAL void AppCommUART_SendMsg(enUartNode _node, enUartMsg _txMsgId)
 
 	case UART_MSG_GUI_DATA_2_DUAL:
 		sourceTxData[0] = MSG_GUI_DATA_2_DUAL_BYTE_0;
-		sourceTxData[1] = MSG_GUI_DATA_2_DUAL_BYTE_0;
+		sourceTxData[1] = MSG_GUI_DATA_2_DUAL_BYTE_1;
 		sourceTxData[2] = MSG_GUI_DATA_2_DUAL_LENGTH;
 		sizeSend = MSG_GUI_DATA_2_DUAL_LENGTH;
 

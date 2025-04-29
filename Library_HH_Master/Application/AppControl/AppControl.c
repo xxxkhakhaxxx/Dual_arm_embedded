@@ -252,53 +252,53 @@ GLOBAL BOOL AppControl_TP_JointTrajectoryInit(enTpType _type)
 	{
 	case TP_TYPE_JOINT_SINEWAVE:
 		myTrajectory.JointSpace.SineWave[LEFT_ARM].Joint[0].Setting.Amp      = 30.0f;
-		myTrajectory.JointSpace.SineWave[LEFT_ARM].Joint[0].Setting.Freq     =  0.2f;
+		myTrajectory.JointSpace.SineWave[LEFT_ARM].Joint[0].Setting.Freq     =  0.1f;
 		myTrajectory.JointSpace.SineWave[LEFT_ARM].Joint[0].Setting.Phase    =  0.0f;
 		myTrajectory.JointSpace.SineWave[LEFT_ARM].Joint[0].Setting.Bias     = 90.0f;
 		myTrajectory.JointSpace.SineWave[LEFT_ARM].Joint[0].Ctrl.MovedTime   =  0.0f;
 		myTrajectory.JointSpace.SineWave[LEFT_ARM].Joint[0].Ctrl.TimeStart   =  0.0f;
-		myTrajectory.JointSpace.SineWave[LEFT_ARM].Joint[0].Ctrl.TimeEnd     = 20.0f;
+		myTrajectory.JointSpace.SineWave[LEFT_ARM].Joint[0].Ctrl.TimeEnd     = 30.0f;
 
 		myTrajectory.JointSpace.SineWave[LEFT_ARM].Joint[1].Setting.Amp      = 30.0f;
-		myTrajectory.JointSpace.SineWave[LEFT_ARM].Joint[1].Setting.Freq     =  0.4f;
-		myTrajectory.JointSpace.SineWave[LEFT_ARM].Joint[1].Setting.Phase    =180.0f;
+		myTrajectory.JointSpace.SineWave[LEFT_ARM].Joint[1].Setting.Freq     =  0.1f;
+		myTrajectory.JointSpace.SineWave[LEFT_ARM].Joint[1].Setting.Phase    =  0.0f;
 		myTrajectory.JointSpace.SineWave[LEFT_ARM].Joint[1].Setting.Bias     =  0.0f;
 		myTrajectory.JointSpace.SineWave[LEFT_ARM].Joint[1].Ctrl.MovedTime   =  0.0f;
 		myTrajectory.JointSpace.SineWave[LEFT_ARM].Joint[1].Ctrl.TimeStart   =  0.0f;
-		myTrajectory.JointSpace.SineWave[LEFT_ARM].Joint[1].Ctrl.TimeEnd     = 20.0f;
+		myTrajectory.JointSpace.SineWave[LEFT_ARM].Joint[1].Ctrl.TimeEnd     = 30.0f;
 
-		myTrajectory.JointSpace.SineWave[LEFT_ARM].Joint[2].Setting.Amp      = 50.0f;
-		myTrajectory.JointSpace.SineWave[LEFT_ARM].Joint[2].Setting.Freq     =  0.6f;
+		myTrajectory.JointSpace.SineWave[LEFT_ARM].Joint[2].Setting.Amp      = 30.0f;
+		myTrajectory.JointSpace.SineWave[LEFT_ARM].Joint[2].Setting.Freq     =  0.1f;
 		myTrajectory.JointSpace.SineWave[LEFT_ARM].Joint[2].Setting.Phase    =  0.0f;
 		myTrajectory.JointSpace.SineWave[LEFT_ARM].Joint[2].Setting.Bias     =  0.0f;
 		myTrajectory.JointSpace.SineWave[LEFT_ARM].Joint[2].Ctrl.MovedTime   =  0.0f;
 		myTrajectory.JointSpace.SineWave[LEFT_ARM].Joint[2].Ctrl.TimeStart   =  0.0f;
-		myTrajectory.JointSpace.SineWave[LEFT_ARM].Joint[2].Ctrl.TimeEnd     = 20.0f;
+		myTrajectory.JointSpace.SineWave[LEFT_ARM].Joint[2].Ctrl.TimeEnd     = 30.0f;
 
 
 		myTrajectory.JointSpace.SineWave[RIGHT_ARM].Joint[0].Setting.Amp      = 30.0f;
-		myTrajectory.JointSpace.SineWave[RIGHT_ARM].Joint[0].Setting.Freq     =  0.2f;
+		myTrajectory.JointSpace.SineWave[RIGHT_ARM].Joint[0].Setting.Freq     =  0.1f;
 		myTrajectory.JointSpace.SineWave[RIGHT_ARM].Joint[0].Setting.Phase    =180.0f;
 		myTrajectory.JointSpace.SineWave[RIGHT_ARM].Joint[0].Setting.Bias     = 90.0f;
 		myTrajectory.JointSpace.SineWave[RIGHT_ARM].Joint[0].Ctrl.MovedTime   =  0.0f;
 		myTrajectory.JointSpace.SineWave[RIGHT_ARM].Joint[0].Ctrl.TimeStart   =  0.0f;
-		myTrajectory.JointSpace.SineWave[RIGHT_ARM].Joint[0].Ctrl.TimeEnd     = 20.0f;
+		myTrajectory.JointSpace.SineWave[RIGHT_ARM].Joint[0].Ctrl.TimeEnd     = 30.0f;
 
 		myTrajectory.JointSpace.SineWave[RIGHT_ARM].Joint[1].Setting.Amp      = 30.0f;
-		myTrajectory.JointSpace.SineWave[RIGHT_ARM].Joint[1].Setting.Freq     =  0.4f;
-		myTrajectory.JointSpace.SineWave[RIGHT_ARM].Joint[1].Setting.Phase    =  0.0f;
+		myTrajectory.JointSpace.SineWave[RIGHT_ARM].Joint[1].Setting.Freq     =  0.1f;
+		myTrajectory.JointSpace.SineWave[RIGHT_ARM].Joint[1].Setting.Phase    =180.0f;
 		myTrajectory.JointSpace.SineWave[RIGHT_ARM].Joint[1].Setting.Bias     =  0.0f;
 		myTrajectory.JointSpace.SineWave[RIGHT_ARM].Joint[1].Ctrl.MovedTime   =  0.0f;
 		myTrajectory.JointSpace.SineWave[RIGHT_ARM].Joint[1].Ctrl.TimeStart   =  0.0f;
-		myTrajectory.JointSpace.SineWave[RIGHT_ARM].Joint[1].Ctrl.TimeEnd     = 20.0f;
+		myTrajectory.JointSpace.SineWave[RIGHT_ARM].Joint[1].Ctrl.TimeEnd     = 30.0f;
 
-		myTrajectory.JointSpace.SineWave[RIGHT_ARM].Joint[2].Setting.Amp      = 50.0f;
-		myTrajectory.JointSpace.SineWave[RIGHT_ARM].Joint[2].Setting.Freq     =  0.6f;
+		myTrajectory.JointSpace.SineWave[RIGHT_ARM].Joint[2].Setting.Amp      = 30.0f;
+		myTrajectory.JointSpace.SineWave[RIGHT_ARM].Joint[2].Setting.Freq     =  0.1f;
 		myTrajectory.JointSpace.SineWave[RIGHT_ARM].Joint[2].Setting.Phase    =180.0f;
 		myTrajectory.JointSpace.SineWave[RIGHT_ARM].Joint[2].Setting.Bias     =  0.0f;
 		myTrajectory.JointSpace.SineWave[RIGHT_ARM].Joint[2].Ctrl.MovedTime   =  0.0f;
 		myTrajectory.JointSpace.SineWave[RIGHT_ARM].Joint[2].Ctrl.TimeStart   =  0.0f;
-		myTrajectory.JointSpace.SineWave[RIGHT_ARM].Joint[2].Ctrl.TimeEnd     = 20.0f;
+		myTrajectory.JointSpace.SineWave[RIGHT_ARM].Joint[2].Ctrl.TimeEnd     = 30.0f;
 
 		myTrajectory.Type = TP_TYPE_JOINT_SINEWAVE;
 		isSupported = TRUE;
@@ -358,7 +358,7 @@ GLOBAL BOOL AppControl_TP_JointTrajectoryUpdate(float _timeStep)
 			{
 				Tm_i = 0.0f;
 			}
-			else if ((Ts_i <= T_global) && (T_global < Te_i))	// During move time
+			else if ((Ts_i <= T_global) && (T_global <= Te_i))	// During move time
 			{
 				Tm_i = Tm_i + _timeStep;
 			}
@@ -900,13 +900,13 @@ GLOBAL BOOL AppControl_Tor_ControllerInit(enTorController _type)
 	switch (_type)
 	{
 	case TOR_CTRL_PD:
-		myControl.PD.Setting.Kp[0] = 0.0f;
-		myControl.PD.Setting.Kp[1] = 0.0f;
-		myControl.PD.Setting.Kp[2] = 8.0f;
+		myControl.PD.Setting.Kp[0] = 22.0f;
+		myControl.PD.Setting.Kp[1] = 15.0f;
+		myControl.PD.Setting.Kp[2] = 6.0f;
 
-		myControl.PD.Setting.Kd[0] = 0.0f;
-		myControl.PD.Setting.Kd[1] = 0.0f;
-		myControl.PD.Setting.Kd[2] = 0.02f;
+		myControl.PD.Setting.Kd[0] = 0.4f;
+		myControl.PD.Setting.Kd[1] = 0.15f;
+		myControl.PD.Setting.Kd[2] = 0.01f;
 
 		myControl.PD.Setting.Alpha[0] = 0.0f;
 		myControl.PD.Setting.Alpha[1] = 0.0f;
@@ -927,10 +927,9 @@ GLOBAL BOOL AppControl_Tor_ControllerInit(enTorController _type)
 	return isSupported;
 }
 
-GLOBAL BOOL AppControl_Tor_ControlUpdate(U08 _arm, U08 _joint)
+GLOBAL BOOL AppControl_Tor_ControlUpdateJoint(U08 _arm, U08 _joint)
 {
 	static enTorController _type = TOR_CTRL_NONE;
-	static BOOL isControlling = FALSE;
 
 	// Params
 	static float Kp_i, Kd_i, Al_i;
@@ -939,6 +938,7 @@ GLOBAL BOOL AppControl_Tor_ControlUpdate(U08 _arm, U08 _joint)
 	// Outputs
 	static float torque_i;
 
+	// Get control params (1 time only)
 	if (TOR_CTRL_NONE == _type)
 	{
 		_type = myControl.Type;
@@ -948,15 +948,14 @@ GLOBAL BOOL AppControl_Tor_ControlUpdate(U08 _arm, U08 _joint)
 		case TOR_CTRL_PD:
 			Kp_i = myControl.PD.Setting.Kp[_joint];
 			Kd_i = myControl.PD.Setting.Kd[_joint];
-			Al_i = myControl.PD.Setting.Alpha[_joint];
-			isControlling = TRUE;
 			break;
 		case TOR_CTRL_SPD:
 		case TOR_CTRL_SMC:
 		case TOR_CTRL_SSMC:
 		case TOR_CTRL_NONE:
-			isControlling = FALSE;
-			return isControlling;
+		default:
+
+			return FALSE;
 		}
 	}
 
@@ -973,18 +972,81 @@ GLOBAL BOOL AppControl_Tor_ControlUpdate(U08 _arm, U08 _joint)
 
 		torque_i = Kp_i*e_i + Kd_i*de_i;
 
-		myRobotCommand[_arm].JointTor[_joint].Tor = CONSTRAIN(torque_i, -2.0f, 2.0f);
+		myRobotCommand[_arm].JointTor[_joint].Tor = CONSTRAIN(torque_i, -CONTROL_MAX_TORQUE, CONTROL_MAX_TORQUE);
 		break;
 	case TOR_CTRL_SPD:
 	case TOR_CTRL_SMC:
 	case TOR_CTRL_SSMC:
 	case TOR_CTRL_NONE:
+	default:
 
-		break;
+		return FALSE;
 	}
 
 
 
 
-	return isControlling;
+	return TRUE;
+}
+
+GLOBAL BOOL AppControl_Tor_ControlUpdateArm(U08 _arm)
+{
+	static enTorController _type = TOR_CTRL_NONE;
+	static float Kp[3], Kd[3], Al[3];
+	static float Err[3], dErr[3];
+	static float Tor[3];
+	static U08 _idx;
+
+	if ((LEFT_ARM != _arm) && (RIGHT_ARM != _arm))
+	{
+		return FALSE;
+	}
+
+	// Get control params (1 time only)
+	if (TOR_CTRL_NONE == _type)
+	{
+		_type = myControl.Type;
+
+		switch (_type)
+		{
+		case TOR_CTRL_PD:
+			for (_idx = 0 ; _idx < JOINTS_PER_ARM ; _idx++)
+			{
+				Kp[_idx] = myControl.PD.Setting.Kp[_idx];
+				Kd[_idx] = myControl.PD.Setting.Kd[_idx];
+			}
+			break;
+		case TOR_CTRL_SPD:
+		case TOR_CTRL_SMC:
+		case TOR_CTRL_SSMC:
+		case TOR_CTRL_NONE:
+		default:
+			// Not support
+			return FALSE;
+		}
+	}
+
+	switch (_type)
+	{
+	case TOR_CTRL_PD:
+		for (_idx = 0 ; _idx < JOINTS_PER_ARM ; _idx++)
+		{
+			 Err[_idx] = myRobotTrajectory[_arm].Joint[_idx].currPos - DEG2RAD(myRobotFeedback[_arm].Joint[_idx].Position);
+			dErr[_idx] = myRobotTrajectory[_arm].Joint[_idx].currVel - DEG2RAD(myRobotFeedback[_arm].Joint[_idx].Speed);
+
+			Tor[_idx] = Kp[_idx]*Err[_idx] + Kd[_idx]*dErr[_idx];
+
+			myRobotCommand[_arm].JointTor[_idx].Tor = CONSTRAIN(Tor[_idx], -CONTROL_MAX_TORQUE, CONTROL_MAX_TORQUE);
+		}
+		break;
+	case TOR_CTRL_SPD:
+	case TOR_CTRL_SMC:
+	case TOR_CTRL_SSMC:
+	case TOR_CTRL_NONE:
+	default:
+		// Not support
+		return FALSE;
+	}
+
+	return TRUE;
 }

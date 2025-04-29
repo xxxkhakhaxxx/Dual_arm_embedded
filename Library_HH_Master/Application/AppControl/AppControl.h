@@ -243,7 +243,8 @@ GLOBAL void AppControl_Pos_FollowTpPos(U08 _arm);
 
 GLOBAL void AppControl_Tor_TestSequence(U08 _arm, U08 _joint);
 GLOBAL BOOL AppControl_Tor_ControllerInit(enTorController _type);
-GLOBAL BOOL AppControl_Tor_ControlUpdate(U08 _arm, U08 _joint);
+GLOBAL BOOL AppControl_Tor_ControlUpdateJoint(U08 _arm, U08 _joint);
+GLOBAL BOOL AppControl_Tor_ControlUpdateArm(U08 _arm);
 
 
 

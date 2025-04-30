@@ -25,7 +25,7 @@
 //#define MASTER_NO_CONTROL				// Master will not send control command
 //#define MASTER_NO_GUI					// Master will not send data to GUI
 //#define MASTER_GUI_TP_CHECK				// Check TP via GUI - only use in Pos control
-//#define TEST_MOTOR_FILTER
+//#define TEST_MOTOR_FILTER				// Only use in Pos control - Dual arm
 
 //#define MASTER_CONTROL_POS
 //#define MASTER_CONTROL_VEL
@@ -63,10 +63,10 @@
 
 
 /* ----------------- GUI PARAMS MACRO ---------------- */
-#define PERIOD_CONTROL		(20)	// Update this base on your timer 2 [ms]
-#define PERIOD_GUI_SEND		(20)	// [ms]
+#define PERIOD_CONTROL		(0.005f)	// Update this base on your timer 2 [s]
+#define PERIOD_GUI_SEND		(0.005f)	// [s]
 #define GUI_SEND_CNT_MAX	(PERIOD_GUI_SEND/PERIOD_CONTROL - 1)
-#define PERIOD_TRAJECTORY_PLANNING	(0.02f)	// [s]
+#define PERIOD_TRAJECTORY_PLANNING	PERIOD_CONTROL	// [s]
 /********************************************************************************
  * TYPEDEFS AND ENUMS
  ********************************************************************************/

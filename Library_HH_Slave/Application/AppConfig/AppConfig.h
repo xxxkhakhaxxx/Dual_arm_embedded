@@ -24,7 +24,11 @@
 //#define SLAVE_NO_MOTOR_COMM
 //#define TEST_MOTOR_FILTER
 
-#define PERIOD_MOTOR_COMM	(0.02f)	// [s]
+#define PERIOD_MASTER_COMM		(0.005f)				// [s]
+#define PERIOD_MOTOR_COMM		(PERIOD_MASTER_COMM)	// [s]
+#define MASTER_COMM_RE_INIT_CNT	(100)					// [ms]
+#define MASTER_COMM_ERROR_CNT	(30)					// [ms]
+
 #define FREQ_CUT_VEL		(4.0f)	// [Hz]
 #define FREQ_CUT_ACCEL		(2.0f)	// [Hz]
 

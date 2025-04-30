@@ -4,7 +4,7 @@
  ** @author  HH (hunghoang.1806@gmail.com)
  ** @date    Mar 14, 2025 (created)
  ** @brief   [UART GENERAL CONFIG]
- **            - Speed: 115200 Bits/s
+ **            - Speed: 921600 Bits/s
  **            - Words length: 8 Bits
  **            - Parity: none
  **            - Stop bit: 1 Bit

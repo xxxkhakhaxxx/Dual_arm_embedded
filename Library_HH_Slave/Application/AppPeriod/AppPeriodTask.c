@@ -266,7 +266,7 @@ GLOBAL void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 		{
 			if (FALSE == _masterInitFlag)	// Waiting for Master init respond
 			{
-				if (u32TaskTimerCnt_1ms == 100)	// Every 100ms
+				if (u32TaskTimerCnt_1ms == MASTER_COMM_RE_INIT_CNT)	// Every 100ms
 				{
 					AppDataSet_SlaveState(SLAVE_STATE_INIT);	// Re-send init to master: master takes ~2.1s to init
 					u32TaskTimerCnt_1ms = 0;
@@ -274,7 +274,7 @@ GLOBAL void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 			}
 			else // Master inited
 			{
-				if (u32TaskTimerCnt_1ms > 30)	// If wait Master request for more than 30ms -> Lost comm
+				if (u32TaskTimerCnt_1ms > MASTER_COMM_ERROR_CNT)	// If wait Master request for more than 30ms -> Lost comm
 				{
 					u32TaskTimerCnt_1ms = 0;
 					_robotMode = ROBOT_MODE_ERROR_COMM;		// Stop motor

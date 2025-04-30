@@ -335,14 +335,14 @@ GLOBAL void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
 	if (htim->Instance == TIM2)
 	{
-		AppDataCheck_UserButtonState();	// Check user btn every 20ms
+		AppDataCheck_UserButtonState();	// Check user btn every 5ms
 
-		if (FALSE == bNewSequenceFlag)	// Cycle 20ms
+		if (FALSE == bNewSequenceFlag)	// Cycle 5ms
 		{
-			bNewSequenceFlag = TRUE;	// Start new sequence every 20ms
+			bNewSequenceFlag = TRUE;	// Start new sequence every 5ms
 			AppDataSet_LedState(LED_3_ORANGE, FALSE);
 		}
-		else	// All tasks take more 20ms to finished
+		else	// All tasks take more 5ms to finished
 		{
 			if (U16_MAX > debug_cnt_task_override)
 			{
@@ -359,7 +359,7 @@ GLOBAL void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 GLOBAL void AppPeriodTask_StateMachineProcess(void)
 {
 	// Full sequence: Init ➩ wait Slave init ➩ Send init to confirm ➩ ...
-	//            ... ➩ Wait 20ms Flag ➩ Request data ➩ Handle data feedback ➩ Calculate control ➩ Send control
+	//            ... ➩ Wait 5ms Flag ➩ Request data ➩ Handle data feedback ➩ Calculate control ➩ Send control
 	//                          ↖	⇦   ⇦   ⇦   ⇦   ⇦   ⇦   ⇦   ⇦   ⇦   ⇦   ⇦   ⇦   ⇦   ⇦  GUI feedback ↩
 
 	switch (AppDataGet_MasterState())

@@ -46,6 +46,7 @@ GLOBAL U08 TxDataMaster[UART_BUFFER_SIZE] = {0, };
  * PRIVATE FUNCTION DECLARATION
  ********************************************************************************/
 PRIVATE U32 _PosControl_ConvertKineUnit2MotorUnit(float _angleRxFromMaster, I32 _offset, I08 _dir);
+PRIVATE I16 _TorControl_ConvertNewtonUnit2BitUnit(float _torRxFromMaster, float _scale, I08 _dir);
 
 
 /********************************************************************************
@@ -70,6 +71,14 @@ PRIVATE U32 _PosControl_ConvertKineUnit2MotorUnit(float _angleRxFromMaster, I32 
 	// Wrap negative values and clamp to [0, 36000)
 	_angleTxToMotor = (_angleTxToMotor % 36000 + 36000) % 36000;
 	return (U32)_angleTxToMotor;
+}
+
+PRIVATE I16 _TorControl_ConvertNewtonUnit2BitUnit(float _torRxFromMaster, float _scale, I08 _dir)
+{
+	// Tor (Nm) --> Tor Current (A) --> Send value (bit)
+	float torBit = _torRxFromMaster * _scale * _dir;
+	
+	return (I16)roundf(torBit);
 }
 
 
@@ -165,8 +174,8 @@ GLOBAL void AppCommUART_SendMsg(enUartNode _node, enUartMsg _txMsgId)	// TODO: r
 	// 2. Initialize variables
 	static UART_HandleTypeDef* uartGoal;
 	static U08* sourceTxData;
+	U08 checksum = 0x00;
 	U16 sizeSend = 0;	// if not set value, TxErrCnt++
-	float j_kinematics;	// Calculate J_kinematics for each motor and copy to UART buffer
 
 
 	// 3. Get UART target and data
@@ -193,27 +202,75 @@ GLOBAL void AppCommUART_SendMsg(enUartNode _node, enUartMsg _txMsgId)	// TODO: r
 		break;
 
 	case UART_MSG_MOTOR_DATA:
+#ifndef TEST_MOTOR_FILTER
 		sourceTxData[0] = MSG_DATA_RESPOND_BYTE_0;
 		sourceTxData[1] = MSG_DATA_RESPOND_BYTE_1;
 		sourceTxData[2] = MSG_DATA_RESPOND_LENGTH;
+		sizeSend = MSG_DATA_RESPOND_LENGTH;
 
 		// Equation: J_real = J_kine*J_dir + J_offset
 		// Equation: J_kine = (J_real - J_offset)*J_dir
-		j_kinematics = (myMotorToMaster[0].currPosition + J1_OFFSET_REAL2KINE) * J1_DIR_REAL2KINE;
-		memcpy(&sourceTxData[3] ,  &j_kinematics,                   sizeof(float));
-		memcpy(&sourceTxData[7] ,  &myMotorToMaster[0].currSpeed,   sizeof(float));
-		memcpy(&sourceTxData[11],  &myMotorToMaster[0].currAccel,   sizeof(float));
+		myMotorToMaster[0].currPosKine = (myMotorToMaster[0].currPosition + J1_OFFSET_REAL2KINE) * J1_DIR_REAL2KINE;
+		myMotorToMaster[1].currPosKine = (myMotorToMaster[1].currPosition + J2_OFFSET_REAL2KINE) * J2_DIR_REAL2KINE;
+		myMotorToMaster[2].currPosKine = (myMotorToMaster[2].currPosition + J3_OFFSET_REAL2KINE) * J3_DIR_REAL2KINE;
 
-		j_kinematics = (myMotorToMaster[1].currPosition + J2_OFFSET_REAL2KINE) * J2_DIR_REAL2KINE;
-		memcpy(&sourceTxData[15], &j_kinematics,                    sizeof(float));
-		memcpy(&sourceTxData[19], &myMotorToMaster[1].currSpeed,    sizeof(float));
-		memcpy(&sourceTxData[23], &myMotorToMaster[1].currAccel,    sizeof(float));
+		memcpy(&sourceTxData[4] , &myMotorToMaster[0].currPosKine,   sizeof(float));
+//		memcpy(&sourceTxData[8] , &myMotorToMaster[0].currSpeed,     sizeof(float));
+//		memcpy(&sourceTxData[12], myMotorToMaster[0].currAccel,      sizeof(float));
+		memcpy(&sourceTxData[8] , &myMotorToMaster[0].currFiltSpeed, sizeof(float));
+		memcpy(&sourceTxData[12], &myMotorToMaster[0].currFiltAccel, sizeof(float));
 
-		j_kinematics = (myMotorToMaster[2].currPosition + J3_OFFSET_REAL2KINE) * J3_DIR_REAL2KINE;
-		memcpy(&sourceTxData[27], &j_kinematics,                    sizeof(float));
-		memcpy(&sourceTxData[31], &myMotorToMaster[2].currSpeed,    sizeof(float));
-		memcpy(&sourceTxData[35], &myMotorToMaster[2].currAccel,    sizeof(float));
-		sizeSend = MSG_DATA_RESPOND_LENGTH;
+		memcpy(&sourceTxData[16], &myMotorToMaster[1].currPosKine,   sizeof(float));
+//		memcpy(&sourceTxData[20], &myMotorToMaster[1].currSpeed,     sizeof(float));
+//		memcpy(&sourceTxData[24], &myMotorToMaster[1].currAccel,     sizeof(float));
+		memcpy(&sourceTxData[20], &myMotorToMaster[1].currFiltSpeed, sizeof(float));
+		memcpy(&sourceTxData[24], &myMotorToMaster[1].currFiltAccel, sizeof(float));
+
+		memcpy(&sourceTxData[28], &myMotorToMaster[2].currPosKine,   sizeof(float));
+//		memcpy(&sourceTxData[32], &myMotorToMaster[2].currSpeed,     sizeof(float));
+//		memcpy(&sourceTxData[36], &myMotorToMaster[2].currAccel,     sizeof(float));
+		memcpy(&sourceTxData[32], &myMotorToMaster[2].currFiltSpeed, sizeof(float));
+		memcpy(&sourceTxData[36], &myMotorToMaster[2].currFiltAccel, sizeof(float));
+
+		for (int i = 4; i < MSG_DATA_RESPOND_LENGTH; i++)
+		{
+			checksum ^= sourceTxData[i];  // XOR checksum
+		}
+		sourceTxData[3] = checksum;
+#else
+		sourceTxData[0] = MSG_DATA_RESPOND_F_BYTE_0;
+		sourceTxData[1] = MSG_DATA_RESPOND_F_BYTE_1;
+		sourceTxData[2] = MSG_DATA_RESPOND_F_LENGTH;
+		sizeSend = MSG_DATA_RESPOND_F_LENGTH;
+
+		myMotorToMaster[0].currPosKine = (myMotorToMaster[0].currPosition + J1_OFFSET_REAL2KINE) * J1_DIR_REAL2KINE;
+		myMotorToMaster[1].currPosKine = (myMotorToMaster[1].currPosition + J2_OFFSET_REAL2KINE) * J2_DIR_REAL2KINE;
+		myMotorToMaster[2].currPosKine = (myMotorToMaster[2].currPosition + J3_OFFSET_REAL2KINE) * J3_DIR_REAL2KINE;
+
+		memcpy(&sourceTxData[4] , &myMotorToMaster[0].currPosKine,   sizeof(float));
+		memcpy(&sourceTxData[8] , &myMotorToMaster[0].currSpeed,     sizeof(float));
+		memcpy(&sourceTxData[12], &myMotorToMaster[0].currAccel,     sizeof(float));
+		memcpy(&sourceTxData[16], &myMotorToMaster[0].currFiltSpeed, sizeof(float));
+		memcpy(&sourceTxData[20], &myMotorToMaster[0].currFiltAccel, sizeof(float));
+
+		memcpy(&sourceTxData[24], &myMotorToMaster[1].currPosKine,   sizeof(float));
+		memcpy(&sourceTxData[28], &myMotorToMaster[1].currSpeed,     sizeof(float));
+		memcpy(&sourceTxData[32], &myMotorToMaster[1].currAccel,     sizeof(float));
+		memcpy(&sourceTxData[36], &myMotorToMaster[1].currFiltSpeed, sizeof(float));
+		memcpy(&sourceTxData[40], &myMotorToMaster[1].currFiltAccel, sizeof(float));
+
+		memcpy(&sourceTxData[44], &myMotorToMaster[2].currPosKine,   sizeof(float));
+		memcpy(&sourceTxData[48], &myMotorToMaster[2].currSpeed,     sizeof(float));
+		memcpy(&sourceTxData[52], &myMotorToMaster[2].currAccel,     sizeof(float));
+		memcpy(&sourceTxData[56], &myMotorToMaster[2].currFiltSpeed, sizeof(float));
+		memcpy(&sourceTxData[60], &myMotorToMaster[2].currFiltAccel, sizeof(float));
+
+		for (int i = 4; i < MSG_DATA_RESPOND_F_LENGTH; i++)
+		{
+			checksum ^= sourceTxData[i];  // XOR checksum
+		}
+		sourceTxData[3] = checksum;
+#endif
 		break;
 
 	case UART_MSG_MOTOR_CONTROL_POS:
@@ -291,21 +348,26 @@ GLOBAL void AppCommUart_RecvMsgStart(enUartNode _node)
 GLOBAL void AppCommUart_RecvMasterMsg(enUartMsg _rxMsgId)	// TODO: Return recv result
 {
 	// 1. Initialize variables
-	float _angleRx;
-	U32 _angleTx;
-	U16 _speed;
-	U08 _direction;	// 0 = CW, 1 = CCW
-	U08 checksum = 0x00;
+	static float _angleRx[3];
+	static U32 _angleTx[3];
+	static U16 _speed[3];
+	static U08 _direction[3];	// 0 = CW, 1 = CCW
+
+	static float _torqueRx[3];
+	static I16   _torqueTx[3];
+
+	 U08 checksum = 0x00;
 
 	// 2. Check checksum and save data
 	switch (_rxMsgId)
 	{
 	case UART_MSG_MOTOR_CONTROL_POS:
-		 // Check checksum correct or not(payload only: byte 4-24)
+		// Check checksum correct or not(payload only: byte 4-24)
 		for (int i = 4; i < MSG_CONTROL_POS_LENGTH; i++)
 		{
 			checksum ^= RxDataMaster[i];  // XOR checksum
 		}
+
 		if (checksum != RxDataMaster[3])
 		{
 			// Wrong checksum
@@ -313,31 +375,51 @@ GLOBAL void AppCommUart_RecvMasterMsg(enUartMsg _rxMsgId)	// TODO: Return recv r
 		}
 
 		// Payloads: q1-dq1-dir1 - q2-dq2-dir2 - q3-dq3-dir3
-		memcpy(&_angleRx,   &RxDataMaster[4],  sizeof(float));
-		memcpy(&_speed,     &RxDataMaster[8],  sizeof(U16));
-		memcpy(&_direction, &RxDataMaster[10], sizeof(U08));
-		_angleTx = _PosControl_ConvertKineUnit2MotorUnit(_angleRx, J1_OFFSET_KINE2REAL, J1_DIR_KINE2REAL);
-		_direction = CONVERT_DIR_KINE2REAL(_direction, J1_DIR_KINE2REAL);
-		ApiProtocolMotorMG_SetAngleSingle(MOTOR_1_ID, _angleTx, _speed, _direction);
-
-		memcpy(&_angleRx,   &RxDataMaster[11], sizeof(float));
-		memcpy(&_speed,     &RxDataMaster[15], sizeof(U16));
-		memcpy(&_direction, &RxDataMaster[17], sizeof(U08));
-		_angleTx = _PosControl_ConvertKineUnit2MotorUnit(_angleRx, J2_OFFSET_KINE2REAL, J2_DIR_KINE2REAL);
-		_direction = CONVERT_DIR_KINE2REAL(_direction, J2_DIR_KINE2REAL);
-		ApiProtocolMotorMG_SetAngleSingle(MOTOR_2_ID, _angleTx, _speed, _direction);
-
-		memcpy(&_angleRx,   &RxDataMaster[18], sizeof(float));
-		memcpy(&_speed,     &RxDataMaster[22], sizeof(U16));
-		memcpy(&_direction, &RxDataMaster[24], sizeof(U08));
-		_angleTx = _PosControl_ConvertKineUnit2MotorUnit(_angleRx, J3_OFFSET_KINE2REAL, J3_DIR_KINE2REAL);
-		_direction = CONVERT_DIR_KINE2REAL(_direction, J3_DIR_KINE2REAL);
-		ApiProtocolMotorMG_SetAngleSingle(MOTOR_3_ID, _angleTx, _speed, _direction);
+		memcpy(&_angleRx[0],   &RxDataMaster[4],  sizeof(float));
+		memcpy(&_speed[0],     &RxDataMaster[8],  sizeof(U16));
+		memcpy(&_direction[0], &RxDataMaster[10], sizeof(U08));
+		memcpy(&_angleRx[1],   &RxDataMaster[11], sizeof(float));
+		memcpy(&_speed[1],     &RxDataMaster[15], sizeof(U16));
+		memcpy(&_direction[1], &RxDataMaster[17], sizeof(U08));
+		memcpy(&_angleRx[2],   &RxDataMaster[18], sizeof(float));
+		memcpy(&_speed[2],     &RxDataMaster[22], sizeof(U16));
+		memcpy(&_direction[2], &RxDataMaster[24], sizeof(U08));
+		_angleTx[0] = _PosControl_ConvertKineUnit2MotorUnit(_angleRx[0], J1_OFFSET_KINE2REAL, J1_DIR_KINE2REAL); // TODO: Combine all motor setting into 1 structure
+		_angleTx[1] = _PosControl_ConvertKineUnit2MotorUnit(_angleRx[1], J2_OFFSET_KINE2REAL, J2_DIR_KINE2REAL);
+		_angleTx[2] = _PosControl_ConvertKineUnit2MotorUnit(_angleRx[2], J3_OFFSET_KINE2REAL, J3_DIR_KINE2REAL);
+		_direction[0] = CONVERT_DIR_KINE2REAL(_direction[0], J1_DIR_KINE2REAL);
+		_direction[1] = CONVERT_DIR_KINE2REAL(_direction[1], J2_DIR_KINE2REAL);
+		_direction[2] = CONVERT_DIR_KINE2REAL(_direction[2], J3_DIR_KINE2REAL);
+		ApiProtocolMotorMG_SetAngleSingle(MOTOR_1_ID, _angleTx[0], _speed[0], _direction[0]);
+		ApiProtocolMotorMG_SetAngleSingle(MOTOR_2_ID, _angleTx[1], _speed[1], _direction[1]);
+		ApiProtocolMotorMG_SetAngleSingle(MOTOR_3_ID, _angleTx[2], _speed[2], _direction[2]);
 		break;
 
 	case UART_MSG_MOTOR_CONTROL_TOR:
-		// TODO
+		// Check checksum correct or not(payload only: byte 4-15)
+		for (int i = 4; i < MSG_CONTROL_TOR_LENGTH; i++)
+		{
+			checksum ^= RxDataMaster[i];  // XOR checksum
+		}
+
+		if (checksum != RxDataMaster[3])
+		{
+			// Wrong checksum
+			return;
+		}
+
+		// Payloads: t1-t2-t3
+		memcpy(&_torqueRx[0], &RxDataMaster[4],  sizeof(float));
+		memcpy(&_torqueRx[1], &RxDataMaster[8],  sizeof(float));
+		memcpy(&_torqueRx[2], &RxDataMaster[12], sizeof(float));
+		_torqueTx[0] = _TorControl_ConvertNewtonUnit2BitUnit(_torqueRx[0], MOTOR_MG_5010_TOR2BIT, J1_DIR_KINE2REAL);
+		_torqueTx[1] = _TorControl_ConvertNewtonUnit2BitUnit(_torqueRx[1], MOTOR_MG_4010_TOR2BIT, J2_DIR_KINE2REAL);
+		_torqueTx[2] = _TorControl_ConvertNewtonUnit2BitUnit(_torqueRx[2], MOTOR_MG_4010_TOR2BIT, J3_DIR_KINE2REAL);
+		ApiProtocolMotorMG_SetTorque(MOTOR_1_ID, _torqueTx[0]);
+		ApiProtocolMotorMG_SetTorque(MOTOR_2_ID, _torqueTx[1]);
+		ApiProtocolMotorMG_SetTorque(MOTOR_3_ID, _torqueTx[2]);
 		break;
+
 	case UART_MSG_INIT:
 	case UART_MSG_MOTOR_DATA:
 	default:

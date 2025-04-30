@@ -35,8 +35,6 @@
  * GLOBAL FUNCTION DECLARATION
  ********************************************************************************/
 GLOBAL void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim);
-GLOBAL void AppPeriodTask_TaskCall(void);
-
 GLOBAL void AppPeriodTask_StateMachineProcess(void);
 
 

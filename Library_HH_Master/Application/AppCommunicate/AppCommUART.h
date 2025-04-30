@@ -92,6 +92,7 @@ GLOBAL void AppCommUART_SendMsg(enUartNode _node, enUartMsg _txMsgId);				// Fun
 
 GLOBAL void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size);	// Function call back when detect IDLE on Rx
 GLOBAL void AppCommUart_RecvMsgStart(enUartNode _node);								// Start receive Rx message on DMA
+GLOBAL BOOL AppCommUart_RecvSlaveMsg(enUartNode _slaveNode);
 
 GLOBAL void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart);
 

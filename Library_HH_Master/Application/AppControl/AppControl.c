@@ -51,8 +51,9 @@ PRIVATE U08 _btnSequenceTest = 0;
 /********************************************************************************
  * GLOBAL VARIABLES
  ********************************************************************************/
-GLOBAL strTaskSpacePlanning  myTaskTrajectory = { 0, };
+GLOBAL strTrajectoryPlanning  myTrajectory = { 0, };
 GLOBAL strJointSpacePlanning myRobotTrajectory[DUAL_ARM] = { 0, };
+GLOBAL strTorControl myControl = { 0, };
 
 
 /********************************************************************************
@@ -65,7 +66,7 @@ PRIVATE U08 _Pos_CalMoveDirection(float _startAngle, float _goalAngle, float _av
 /********************************************************************************
  * PRIVATE FUNCTION IMPLEMENTATION
  ********************************************************************************/
-PRIVATE void _TP_CalJointRefData(U08 _arm, float _q1, float _q2, float _q3)
+PRIVATE void _TP_CalJointRefData(U08 _arm, float _q1, float _q2, float _q3)	// Update myRobotTrajectory[_arm].Joint
 {
 	if ((LEFT_ARM != _arm) && (RIGHT_ARM != _arm))
 	{
@@ -243,40 +244,66 @@ GLOBAL BOOL AppControl_TP_SineWaveJoint(U08 _arm, float _timeStep)
 	return TRUE;	// Ok
 }
 
-GLOBAL BOOL AppControl_TP_InitWorldTrajectory(enTpType _type)
+GLOBAL BOOL AppControl_TP_JointTrajectoryInit(enTpType _type)
 {
 	U08 isSupported = FALSE;
 
 	switch (_type)
 	{
-	case TP_TYPE_CIRCLE:
-		myTaskTrajectory.Circle.Setting.X_Org  = 0.0f;		// [m]
-		myTaskTrajectory.Circle.Setting.Y_Org  = 0.35f;		// [m]
-		myTaskTrajectory.Circle.Setting.Radius = 0.05f;		// [m]
-		myTaskTrajectory.Circle.Setting.Freq   = 0.2f;		// [Hz]
-		myTaskTrajectory.Circle.Setting.Phase  = 0.0f;		// [Deg]
-		myTaskTrajectory.Circle.Setting.Gamma  = 0.0f;		// [Deg]
-		myTaskTrajectory.Circle.Ctrl.TimeEnd   = 10.0f;		// [s]
-		myTaskTrajectory.Type = TP_TYPE_CIRCLE;
+	case TP_TYPE_JOINT_SINEWAVE:
+		myTrajectory.JointSpace.SineWave[LEFT_ARM].Joint[0].Setting.Amp      = 30.0f;
+		myTrajectory.JointSpace.SineWave[LEFT_ARM].Joint[0].Setting.Freq     =  0.1f;
+		myTrajectory.JointSpace.SineWave[LEFT_ARM].Joint[0].Setting.Phase    =  0.0f;
+		myTrajectory.JointSpace.SineWave[LEFT_ARM].Joint[0].Setting.Bias     = 90.0f;
+		myTrajectory.JointSpace.SineWave[LEFT_ARM].Joint[0].Ctrl.MovedTime   =  0.0f;
+		myTrajectory.JointSpace.SineWave[LEFT_ARM].Joint[0].Ctrl.TimeStart   =  0.0f;
+		myTrajectory.JointSpace.SineWave[LEFT_ARM].Joint[0].Ctrl.TimeEnd     = 30.0f;
 
+		myTrajectory.JointSpace.SineWave[LEFT_ARM].Joint[1].Setting.Amp      = 30.0f;
+		myTrajectory.JointSpace.SineWave[LEFT_ARM].Joint[1].Setting.Freq     =  0.1f;
+		myTrajectory.JointSpace.SineWave[LEFT_ARM].Joint[1].Setting.Phase    =  0.0f;
+		myTrajectory.JointSpace.SineWave[LEFT_ARM].Joint[1].Setting.Bias     =  0.0f;
+		myTrajectory.JointSpace.SineWave[LEFT_ARM].Joint[1].Ctrl.MovedTime   =  0.0f;
+		myTrajectory.JointSpace.SineWave[LEFT_ARM].Joint[1].Ctrl.TimeStart   =  0.0f;
+		myTrajectory.JointSpace.SineWave[LEFT_ARM].Joint[1].Ctrl.TimeEnd     = 30.0f;
+
+		myTrajectory.JointSpace.SineWave[LEFT_ARM].Joint[2].Setting.Amp      = 30.0f;
+		myTrajectory.JointSpace.SineWave[LEFT_ARM].Joint[2].Setting.Freq     =  0.1f;
+		myTrajectory.JointSpace.SineWave[LEFT_ARM].Joint[2].Setting.Phase    =  0.0f;
+		myTrajectory.JointSpace.SineWave[LEFT_ARM].Joint[2].Setting.Bias     =  0.0f;
+		myTrajectory.JointSpace.SineWave[LEFT_ARM].Joint[2].Ctrl.MovedTime   =  0.0f;
+		myTrajectory.JointSpace.SineWave[LEFT_ARM].Joint[2].Ctrl.TimeStart   =  0.0f;
+		myTrajectory.JointSpace.SineWave[LEFT_ARM].Joint[2].Ctrl.TimeEnd     = 30.0f;
+
+
+		myTrajectory.JointSpace.SineWave[RIGHT_ARM].Joint[0].Setting.Amp      = 30.0f;
+		myTrajectory.JointSpace.SineWave[RIGHT_ARM].Joint[0].Setting.Freq     =  0.1f;
+		myTrajectory.JointSpace.SineWave[RIGHT_ARM].Joint[0].Setting.Phase    =180.0f;
+		myTrajectory.JointSpace.SineWave[RIGHT_ARM].Joint[0].Setting.Bias     = 90.0f;
+		myTrajectory.JointSpace.SineWave[RIGHT_ARM].Joint[0].Ctrl.MovedTime   =  0.0f;
+		myTrajectory.JointSpace.SineWave[RIGHT_ARM].Joint[0].Ctrl.TimeStart   =  0.0f;
+		myTrajectory.JointSpace.SineWave[RIGHT_ARM].Joint[0].Ctrl.TimeEnd     = 30.0f;
+
+		myTrajectory.JointSpace.SineWave[RIGHT_ARM].Joint[1].Setting.Amp      = 30.0f;
+		myTrajectory.JointSpace.SineWave[RIGHT_ARM].Joint[1].Setting.Freq     =  0.1f;
+		myTrajectory.JointSpace.SineWave[RIGHT_ARM].Joint[1].Setting.Phase    =180.0f;
+		myTrajectory.JointSpace.SineWave[RIGHT_ARM].Joint[1].Setting.Bias     =  0.0f;
+		myTrajectory.JointSpace.SineWave[RIGHT_ARM].Joint[1].Ctrl.MovedTime   =  0.0f;
+		myTrajectory.JointSpace.SineWave[RIGHT_ARM].Joint[1].Ctrl.TimeStart   =  0.0f;
+		myTrajectory.JointSpace.SineWave[RIGHT_ARM].Joint[1].Ctrl.TimeEnd     = 30.0f;
+
+		myTrajectory.JointSpace.SineWave[RIGHT_ARM].Joint[2].Setting.Amp      = 30.0f;
+		myTrajectory.JointSpace.SineWave[RIGHT_ARM].Joint[2].Setting.Freq     =  0.1f;
+		myTrajectory.JointSpace.SineWave[RIGHT_ARM].Joint[2].Setting.Phase    =180.0f;
+		myTrajectory.JointSpace.SineWave[RIGHT_ARM].Joint[2].Setting.Bias     =  0.0f;
+		myTrajectory.JointSpace.SineWave[RIGHT_ARM].Joint[2].Ctrl.MovedTime   =  0.0f;
+		myTrajectory.JointSpace.SineWave[RIGHT_ARM].Joint[2].Ctrl.TimeStart   =  0.0f;
+		myTrajectory.JointSpace.SineWave[RIGHT_ARM].Joint[2].Ctrl.TimeEnd     = 30.0f;
+
+		myTrajectory.Type = TP_TYPE_JOINT_SINEWAVE;
 		isSupported = TRUE;
 		break;
-	case TP_TYPE_LINE:
-		myTaskTrajectory.Line.Setting.Start_X = 0.0f;
-		myTaskTrajectory.Line.Setting.Start_Y = 0.3f;
-		myTaskTrajectory.Line.Setting.Start_G = 0.0f;
-		myTaskTrajectory.Line.Setting.Goal_X = 0.0f;
-		myTaskTrajectory.Line.Setting.Goal_Y = 0.4f;
-		myTaskTrajectory.Line.Setting.Goal_G = 0.0f;
-		myTaskTrajectory.Line.Ctrl.TimeEnd   = 5.0f;
-		myTaskTrajectory.Type = TP_TYPE_LINE;
 
-		isSupported = TRUE;
-		break;
-
-	case TP_TYPE_LINES:
-	case TP_TYPE_CUBIC:
-	case TP_TYPE_QUINTIC:
 	default:
 		isSupported = FALSE;
 		break;
@@ -285,12 +312,121 @@ GLOBAL BOOL AppControl_TP_InitWorldTrajectory(enTpType _type)
 	return isSupported;
 }
 
-GLOBAL BOOL AppControl_TP_UpdateWorldTrajectory(float _timeStep)
+GLOBAL BOOL AppControl_TP_JointTrajectoryUpdate(float _timeStep)
+{
+	static BOOL isMoving = FALSE;
+	static enTpType _type = TP_TYPE_NONE;
+	static float Amp_i, Freq_i, Phase_i, Bias_i, Ts_i, Te_i, Tm_i;
+	static float T_global = 0.0f;
+	static float Pos[3];
+
+	U08 arm_idx, joint_idx;
+
+	// 1. Check if first time called
+	if (TP_TYPE_NONE == _type)
+	{
+		_type = myTrajectory.Type;	// Get type, remember to use InitWorldTrajectory first
+
+		switch (_type)
+		{
+		case TP_TYPE_JOINT_SINEWAVE:
+			_timeStep = 0.0f;	// Start at 0.0s
+			isMoving = TRUE;
+			break;
+		default:
+			isMoving = FALSE;
+			return isMoving;	// Exit
+		}
+	}
+
+	T_global = T_global + _timeStep;
+
+	for (arm_idx = 0 ; arm_idx < DUAL_ARM ; arm_idx++)
+	{
+		for (joint_idx = 0 ; joint_idx < JOINTS_PER_ARM ; joint_idx++)
+		{
+			Amp_i  = myTrajectory.JointSpace.SineWave[arm_idx].Joint[joint_idx].Setting.Amp*D2R;	// [Rad]
+			Freq_i = myTrajectory.JointSpace.SineWave[arm_idx].Joint[joint_idx].Setting.Freq;
+			Phase_i= myTrajectory.JointSpace.SineWave[arm_idx].Joint[joint_idx].Setting.Phase*D2R;	// [Rad]
+			Bias_i = myTrajectory.JointSpace.SineWave[arm_idx].Joint[joint_idx].Setting.Bias*D2R;	// [Rad]
+			Ts_i   = myTrajectory.JointSpace.SineWave[arm_idx].Joint[joint_idx].Ctrl.TimeStart;
+			Te_i   = myTrajectory.JointSpace.SineWave[arm_idx].Joint[joint_idx].Ctrl.TimeEnd;
+			Tm_i   = myTrajectory.JointSpace.SineWave[arm_idx].Joint[joint_idx].Ctrl.MovedTime;
+
+			// Calculate moved time
+			if (T_global < Ts_i)		// Before start time
+			{
+				Tm_i = 0.0f;
+			}
+			else if ((Ts_i <= T_global) && (T_global <= Te_i))	// During move time
+			{
+				Tm_i = Tm_i + _timeStep;
+			}
+			else	// After end time
+			{
+				Tm_i = Tm_i;	// Keep it
+			}
+
+			Pos[joint_idx] = Amp_i*sinf(2*PI*Freq_i*Tm_i + Phase_i) + Bias_i;					// [Rad]
+			myTrajectory.JointSpace.CurrentPos[arm_idx].Joint[joint_idx].Pos = Pos[joint_idx];	// [Rad]
+			myTrajectory.JointSpace.SineWave[arm_idx].Joint[joint_idx].Ctrl.MovedTime = Tm_i;
+		}
+		_TP_CalJointRefData(arm_idx, Pos[0], Pos[1], Pos[2]);
+	}
+
+
+	return isMoving;
+}
+
+GLOBAL BOOL AppControl_TP_TaskTrajectoryInit(enTpType _type)
+{
+	U08 isSupported = FALSE;
+
+	switch (_type)
+	{
+	case TP_TYPE_TASK_CIRCLE:
+		myTrajectory.TaskSpace.Circle.Setting.X_Org  = 0.0f;		// [m]
+		myTrajectory.TaskSpace.Circle.Setting.Y_Org  = 0.35f;		// [m]
+		myTrajectory.TaskSpace.Circle.Setting.Radius = 0.05f;		// [m]
+		myTrajectory.TaskSpace.Circle.Setting.Freq   = 0.1f;		// [Hz]
+		myTrajectory.TaskSpace.Circle.Setting.Phase  = 0.0f;		// [Deg]
+		myTrajectory.TaskSpace.Circle.Setting.Gamma  = 0.0f;		// [Deg]
+		myTrajectory.TaskSpace.Circle.Ctrl.TimeEnd   = 10.0f;		// [s]
+		myTrajectory.Type = TP_TYPE_TASK_CIRCLE;
+
+		isSupported = TRUE;
+		break;
+	case TP_TYPE_TASK_LINE:
+		myTrajectory.TaskSpace.Line.Setting.Start_X = 0.0f;
+		myTrajectory.TaskSpace.Line.Setting.Start_Y = 0.3f;
+		myTrajectory.TaskSpace.Line.Setting.Start_G = 0.0f;
+		myTrajectory.TaskSpace.Line.Setting.Goal_X = 0.0f;
+		myTrajectory.TaskSpace.Line.Setting.Goal_Y = 0.4f;
+		myTrajectory.TaskSpace.Line.Setting.Goal_G = 0.0f;
+		myTrajectory.TaskSpace.Line.Ctrl.TimeEnd   = 5.0f;
+		myTrajectory.Type = TP_TYPE_TASK_LINE;
+
+		isSupported = TRUE;
+		break;
+
+	case TP_TYPE_TASK_LINES:
+	case TP_TYPE_TASK_CUBIC:
+	case TP_TYPE_TASK_QUINTIC:
+	case TP_TYPE_NONE:
+	default:
+		isSupported = FALSE;
+		break;
+	}
+
+	return isSupported;
+}
+
+GLOBAL BOOL AppControl_TP_TaskTrajectoryUpdate(float _timeStep)
 {
 	static BOOL isMoving = FALSE;
 	static enTpType _type = TP_TYPE_NONE;
 
-	static float Xo, Yo, Ro, Go, Freq, Phase;				// Cicle
+	static float Xo, Yo, Ro, Go, Freq, Phase;			// Cicle
 	static float Xs, Ys, Gs, Xg, Yg, Gg, timePercent;	// Line
 
 	static float _endTime;
@@ -299,31 +435,31 @@ GLOBAL BOOL AppControl_TP_UpdateWorldTrajectory(float _timeStep)
 	// 1. Check if first time called
 	if (TP_TYPE_NONE == _type)
 	{
-		_type = myTaskTrajectory.Type;	// Get type, remember to use InitWorldTrajectory first
+		_type = myTrajectory.Type;	// Get type, remember to use InitWorldTrajectory first
 
 		switch (_type)
 		{
-		case TP_TYPE_CIRCLE:
-			Xo = myTaskTrajectory.Circle.Setting.X_Org;
-			Yo = myTaskTrajectory.Circle.Setting.Y_Org;
-			Ro = myTaskTrajectory.Circle.Setting.Radius;
-			Freq  = myTaskTrajectory.Circle.Setting.Freq;
-			Go    = DEG2RAD(myTaskTrajectory.Circle.Setting.Gamma);
-			Phase = DEG2RAD(myTaskTrajectory.Circle.Setting.Phase);
-			_endTime = myTaskTrajectory.Circle.Ctrl.TimeEnd;
+		case TP_TYPE_TASK_CIRCLE:
+			Xo = myTrajectory.TaskSpace.Circle.Setting.X_Org;
+			Yo = myTrajectory.TaskSpace.Circle.Setting.Y_Org;
+			Ro = myTrajectory.TaskSpace.Circle.Setting.Radius;
+			Freq  = myTrajectory.TaskSpace.Circle.Setting.Freq;
+			Go    = DEG2RAD(myTrajectory.TaskSpace.Circle.Setting.Gamma);
+			Phase = DEG2RAD(myTrajectory.TaskSpace.Circle.Setting.Phase);
+			_endTime = myTrajectory.TaskSpace.Circle.Ctrl.TimeEnd;
 			break;
-		case TP_TYPE_LINE:
-			Xs = myTaskTrajectory.Line.Setting.Start_X;
-			Ys = myTaskTrajectory.Line.Setting.Start_Y;
-			Xg = myTaskTrajectory.Line.Setting.Goal_X;
-			Yg = myTaskTrajectory.Line.Setting.Goal_Y;
-			Gs = DEG2RAD(myTaskTrajectory.Line.Setting.Start_G);
-			Gg = DEG2RAD(myTaskTrajectory.Line.Setting.Goal_G);
-			_endTime = myTaskTrajectory.Line.Ctrl.TimeEnd;
+		case TP_TYPE_TASK_LINE:
+			Xs = myTrajectory.TaskSpace.Line.Setting.Start_X;
+			Ys = myTrajectory.TaskSpace.Line.Setting.Start_Y;
+			Xg = myTrajectory.TaskSpace.Line.Setting.Goal_X;
+			Yg = myTrajectory.TaskSpace.Line.Setting.Goal_Y;
+			Gs = DEG2RAD(myTrajectory.TaskSpace.Line.Setting.Start_G);
+			Gg = DEG2RAD(myTrajectory.TaskSpace.Line.Setting.Goal_G);
+			_endTime = myTrajectory.TaskSpace.Line.Ctrl.TimeEnd;
 			break;
-		case TP_TYPE_LINES:
-		case TP_TYPE_CUBIC:
-		case TP_TYPE_QUINTIC:
+		case TP_TYPE_TASK_LINES:
+		case TP_TYPE_TASK_CUBIC:
+		case TP_TYPE_TASK_QUINTIC:
 		case TP_TYPE_NONE:
 		default:
 			isMoving = FALSE;
@@ -346,20 +482,20 @@ GLOBAL BOOL AppControl_TP_UpdateWorldTrajectory(float _timeStep)
 		// 3. Update trajectory
 		switch (_type)
 		{
-		case TP_TYPE_CIRCLE:
-			myTaskTrajectory.CurrTrajectory.Xm_t = Ro*sinf(2*PI*Freq*_movedTime + Phase) + Xo;	// xm(t) = Ro*cos(2πft + φ) + Xo
-			myTaskTrajectory.CurrTrajectory.Ym_t = Ro*cosf(2*PI*Freq*_movedTime + Phase) + Yo;	// ym(t) = Ro*sin(2πft + φ) + Yo
-			myTaskTrajectory.CurrTrajectory.Gm_t = Go;	// Currently, keep it constant [Rad]
+		case TP_TYPE_TASK_CIRCLE:
+			myTrajectory.TaskSpace.CurrentPos.Xm_t = Ro*sinf(2*PI*Freq*_movedTime + Phase) + Xo;	// xm(t) = Ro*cos(2πft + φ) + Xo
+			myTrajectory.TaskSpace.CurrentPos.Ym_t = Ro*cosf(2*PI*Freq*_movedTime + Phase) + Yo;	// ym(t) = Ro*sin(2πft + φ) + Yo
+			myTrajectory.TaskSpace.CurrentPos.Gm_t = Go;	// Currently, keep it constant [Rad]
 			break;
-		case TP_TYPE_LINE:
-			timePercent = _movedTime / myTaskTrajectory.Line.Ctrl.TimeEnd;
-			myTaskTrajectory.CurrTrajectory.Xm_t = Xs + timePercent*(Xg - Xs);
-			myTaskTrajectory.CurrTrajectory.Ym_t = Ys + timePercent*(Yg - Ys);
-			myTaskTrajectory.CurrTrajectory.Gm_t = Gs + timePercent*(Gg - Gs);
+		case TP_TYPE_TASK_LINE:
+			timePercent = _movedTime / myTrajectory.TaskSpace.Line.Ctrl.TimeEnd;
+			myTrajectory.TaskSpace.CurrentPos.Xm_t = Xs + timePercent*(Xg - Xs);
+			myTrajectory.TaskSpace.CurrentPos.Ym_t = Ys + timePercent*(Yg - Ys);
+			myTrajectory.TaskSpace.CurrentPos.Gm_t = Gs + timePercent*(Gg - Gs);
 			break;
-		case TP_TYPE_LINES:
-		case TP_TYPE_CUBIC:
-		case TP_TYPE_QUINTIC:
+		case TP_TYPE_TASK_LINES:
+		case TP_TYPE_TASK_CUBIC:
+		case TP_TYPE_TASK_QUINTIC:
 		default:
 
 			break;;
@@ -376,9 +512,9 @@ GLOBAL void AppControl_IK_World2EE(U08 _arm)
 		return;
 	}
 
-	float Xm = myTaskTrajectory.CurrTrajectory.Xm_t;
-	float Ym = myTaskTrajectory.CurrTrajectory.Ym_t;
-	float Gm = myTaskTrajectory.CurrTrajectory.Gm_t;	// [Rad]
+	float Xm = myTrajectory.TaskSpace.CurrentPos.Xm_t;
+	float Ym = myTrajectory.TaskSpace.CurrentPos.Ym_t;
+	float Gm = myTrajectory.TaskSpace.CurrentPos.Gm_t;	// [Rad]
 
 	switch (_arm)
 	{
@@ -436,7 +572,7 @@ GLOBAL void AppControl_IK_EE2Joints(U08 _arm)
 	{	// Stop continue TP
 		invalidTrajectory = TRUE;
 		AppDataSet_TPCalculated(FALSE);
-//		AppDataSet_MasterState(MASTER_STATE_ERROR);	// TODO
+//		AppDataSet_MasterState(MASTER_STATE_ERROR);	// TODO Create error state
 		return;
 	}
 	q2 = atan2f(s2, c2);
@@ -459,14 +595,9 @@ GLOBAL void AppControl_IK_EE2Joints(U08 _arm)
 }
 
 
-GLOBAL void AppControl_Pos_TestSquence(U08 _arm, U16 _speed)
-{	// 1. Safety check
-	if ((LEFT_ARM != _arm) && (RIGHT_ARM != _arm))
-	{
-		return;
-	}
-
-	// 2. Test Speed constraints
+GLOBAL void AppControl_Pos_TestSequence(U16 _speed)
+{
+	// 1. Test Speed constraints
 	if (_speed > TEST_SPEED_MAX)	// For safety
 	{
 		_speed = TEST_SPEED_MAX;
@@ -588,7 +719,7 @@ GLOBAL void AppControl_Pos_MoveToHome(U08 _arm, U16 _speed)
 	return;
 }
 
-GLOBAL void AppControl_Pos_MoveToTpStart(U08 _arm, U16 _speed)
+GLOBAL void AppControl_Pos_MoveToTpStart(U08 _arm, U16 _speed)	// Trajectory -> Command
 {
 	static float q1, q2, q3;
 
@@ -686,3 +817,236 @@ GLOBAL void AppControl_Pos_FollowTpPos(U08 _arm)
 	return;
 }
 
+GLOBAL void AppControl_Tor_TestSequence(U08 _arm, U08 _joint)
+{
+	// 1. Safety check
+	if (
+	(LEFT_ARM != _arm) && (RIGHT_ARM != _arm) && \
+	(0 != _joint) && (1 != _joint) && (2 !=_joint))
+	{
+		return;
+	}
+
+	switch (_btnSequenceTest)
+	{
+	case 0:
+		myRobotCommand[_arm].JointTor[_joint].Tor = 0.1f;
+		AppDataSet_LedState(LED_3_ORANGE, TRUE);
+		AppDataSet_LedState(LED_4_GREEN, FALSE);
+		AppDataSet_LedState(LED_6_BLUE, FALSE);
+		_btnSequenceTest = 1;
+		break;
+	case 1:
+		myRobotCommand[_arm].JointTor[_joint].Tor = 0.2f;
+		AppDataSet_LedState(LED_3_ORANGE, FALSE);
+		AppDataSet_LedState(LED_4_GREEN, TRUE);
+		AppDataSet_LedState(LED_6_BLUE, FALSE);
+		_btnSequenceTest = 2;
+		break;
+	case 2:
+		myRobotCommand[_arm].JointTor[_joint].Tor = 0.3f;
+		AppDataSet_LedState(LED_3_ORANGE, TRUE);
+		AppDataSet_LedState(LED_4_GREEN, TRUE);
+		AppDataSet_LedState(LED_6_BLUE, FALSE);
+		_btnSequenceTest = 3;
+		break;
+	case 3:
+		myRobotCommand[_arm].JointTor[_joint].Tor = 0.4f;
+		AppDataSet_LedState(LED_3_ORANGE, FALSE);
+		AppDataSet_LedState(LED_4_GREEN, FALSE);
+		AppDataSet_LedState(LED_6_BLUE, TRUE);
+		_btnSequenceTest = 4;
+		break;
+	case 4:
+		myRobotCommand[_arm].JointTor[_joint].Tor = 0.5f;
+		AppDataSet_LedState(LED_3_ORANGE, TRUE);
+		AppDataSet_LedState(LED_4_GREEN, FALSE);
+		AppDataSet_LedState(LED_6_BLUE, TRUE);
+		_btnSequenceTest = 5;
+		break;
+	case 5:
+		myRobotCommand[_arm].JointTor[_joint].Tor = 0.6f;
+		AppDataSet_LedState(LED_3_ORANGE, FALSE);
+		AppDataSet_LedState(LED_4_GREEN, TRUE);
+		AppDataSet_LedState(LED_6_BLUE, TRUE);
+		_btnSequenceTest = 6;
+		break;
+	case 6:
+		myRobotCommand[_arm].JointTor[_joint].Tor = 0.7f;
+		AppDataSet_LedState(LED_3_ORANGE, TRUE);
+		AppDataSet_LedState(LED_4_GREEN, TRUE);
+		AppDataSet_LedState(LED_6_BLUE, TRUE);
+		_btnSequenceTest = 7;
+		break;
+	case 7:
+		myRobotCommand[_arm].JointTor[_joint].Tor = 0.8f;
+		AppDataSet_LedState(LED_3_ORANGE, FALSE);
+		AppDataSet_LedState(LED_4_GREEN, FALSE);
+		AppDataSet_LedState(LED_6_BLUE, FALSE);
+		_btnSequenceTest = 0;
+		break;
+	default:
+		_btnSequenceTest = 0;
+		break;
+	}
+
+	return;
+}
+
+GLOBAL BOOL AppControl_Tor_ControllerInit(enTorController _type)
+{
+	U08 isSupported = FALSE;
+
+	switch (_type)
+	{
+	case TOR_CTRL_PD:
+		myControl.PD.Setting.Kp[0] = 22.0f;
+		myControl.PD.Setting.Kp[1] = 15.0f;
+		myControl.PD.Setting.Kp[2] = 6.0f;
+
+		myControl.PD.Setting.Kd[0] = 0.4f;
+		myControl.PD.Setting.Kd[1] = 0.15f;
+		myControl.PD.Setting.Kd[2] = 0.01f;
+
+		myControl.PD.Setting.Alpha[0] = 0.0f;
+		myControl.PD.Setting.Alpha[1] = 0.0f;
+		myControl.PD.Setting.Alpha[2] = 0.0f;
+		myControl.Type = TOR_CTRL_PD;
+
+		isSupported = TRUE;
+		break;
+	case TOR_CTRL_SPD:
+	case TOR_CTRL_SMC:
+	case TOR_CTRL_SSMC:
+	case TOR_CTRL_NONE:
+	default:
+		isSupported = FALSE;
+		break;
+	}
+
+	return isSupported;
+}
+
+GLOBAL BOOL AppControl_Tor_ControlUpdateJoint(U08 _arm, U08 _joint)
+{
+	static enTorController _type = TOR_CTRL_NONE;
+
+	// Params
+	static float Kp_i, Kd_i, Al_i;
+	// Inputs
+	static float q_r_i, dq_r_i, q_i, dq_i, e_i, de_i;
+	// Outputs
+	static float torque_i;
+
+	// Get control params (1 time only)
+	if (TOR_CTRL_NONE == _type)
+	{
+		_type = myControl.Type;
+
+		switch (_type)
+		{
+		case TOR_CTRL_PD:
+			Kp_i = myControl.PD.Setting.Kp[_joint];
+			Kd_i = myControl.PD.Setting.Kd[_joint];
+			break;
+		case TOR_CTRL_SPD:
+		case TOR_CTRL_SMC:
+		case TOR_CTRL_SSMC:
+		case TOR_CTRL_NONE:
+		default:
+
+			return FALSE;
+		}
+	}
+
+	switch (_type)
+	{
+	case TOR_CTRL_PD:
+		 q_r_i = myRobotTrajectory[_arm].Joint[_joint].currPos;
+		dq_r_i = myRobotTrajectory[_arm].Joint[_joint].currVel;
+		 q_i = DEG2RAD(myRobotFeedback[_arm].Joint[_joint].Position);
+		dq_i = DEG2RAD(myRobotFeedback[_arm].Joint[_joint].Speed);
+
+		 e_i =  q_r_i -  q_i;
+		de_i = dq_r_i - dq_i;
+
+		torque_i = Kp_i*e_i + Kd_i*de_i;
+
+		myRobotCommand[_arm].JointTor[_joint].Tor = CONSTRAIN(torque_i, -CONTROL_MAX_TORQUE, CONTROL_MAX_TORQUE);
+		break;
+	case TOR_CTRL_SPD:
+	case TOR_CTRL_SMC:
+	case TOR_CTRL_SSMC:
+	case TOR_CTRL_NONE:
+	default:
+
+		return FALSE;
+	}
+
+
+
+
+	return TRUE;
+}
+
+GLOBAL BOOL AppControl_Tor_ControlUpdateArm(U08 _arm)
+{
+	static enTorController _type = TOR_CTRL_NONE;
+	static float Kp[3], Kd[3], Al[3];
+	static float Err[3], dErr[3];
+	static float Tor[3];
+	static U08 _idx;
+
+	if ((LEFT_ARM != _arm) && (RIGHT_ARM != _arm))
+	{
+		return FALSE;
+	}
+
+	// Get control params (1 time only)
+	if (TOR_CTRL_NONE == _type)
+	{
+		_type = myControl.Type;
+
+		switch (_type)
+		{
+		case TOR_CTRL_PD:
+			for (_idx = 0 ; _idx < JOINTS_PER_ARM ; _idx++)
+			{
+				Kp[_idx] = myControl.PD.Setting.Kp[_idx];
+				Kd[_idx] = myControl.PD.Setting.Kd[_idx];
+			}
+			break;
+		case TOR_CTRL_SPD:
+		case TOR_CTRL_SMC:
+		case TOR_CTRL_SSMC:
+		case TOR_CTRL_NONE:
+		default:
+			// Not support
+			return FALSE;
+		}
+	}
+
+	switch (_type)
+	{
+	case TOR_CTRL_PD:
+		for (_idx = 0 ; _idx < JOINTS_PER_ARM ; _idx++)
+		{
+			 Err[_idx] = myRobotTrajectory[_arm].Joint[_idx].currPos - DEG2RAD(myRobotFeedback[_arm].Joint[_idx].Position);
+			dErr[_idx] = myRobotTrajectory[_arm].Joint[_idx].currVel - DEG2RAD(myRobotFeedback[_arm].Joint[_idx].Speed);
+
+			Tor[_idx] = Kp[_idx]*Err[_idx] + Kd[_idx]*dErr[_idx];
+
+			myRobotCommand[_arm].JointTor[_idx].Tor = CONSTRAIN(Tor[_idx], -CONTROL_MAX_TORQUE, CONTROL_MAX_TORQUE);
+		}
+		break;
+	case TOR_CTRL_SPD:
+	case TOR_CTRL_SMC:
+	case TOR_CTRL_SSMC:
+	case TOR_CTRL_NONE:
+	default:
+		// Not support
+		return FALSE;
+	}
+
+	return TRUE;
+}

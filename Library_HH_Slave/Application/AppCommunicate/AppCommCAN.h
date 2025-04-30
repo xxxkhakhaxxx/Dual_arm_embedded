@@ -27,13 +27,18 @@
  ********************************************************************************/
 typedef struct	STRUCT_MOTOR_DATA
 {
-	U32 prevTime;		// Previous time - ms
-	U32 currTime;		// Current time - ms
-	float currPosition;		// Current position
-	float prevPosition;		// Previous position
-	float currSpeed;		// Current speed
-	float prevSpeed;		// Previous speed
-	float currAccel;		// Current acceleration
+	float currPosKine;		// Kinematics position send to Master	[Deg]
+
+	float currPosition;		// Current position		[Deg]
+	float prevPosition;		// Previous position	[Deg]
+	float currSpeed;		// Current speed		[Deg/s]
+	float prevSpeed;		// Previous speed		[Deg/s]
+	float currAccel;		// Current acceleration	[Deg/s2]
+
+	float currFiltSpeed;	// Filtered speed			[Deg/s]
+	float prevFiltSpeed;	// Previous filtered speed	[Deg/s2]
+	float currFiltAccel;	// Filtered acceleration
+	float prevFiltAccel;	// Previous filtered acceleration
 } strMotorData;
 
 typedef struct STRUCT_MOTOR_COMMAND
@@ -55,30 +60,6 @@ typedef struct STRUCT_MOTOR_COMMAND
 		I16 CurrentTor;
 	} Tor;
 } strMotorCmd;
-/****************** Torque Current calculate ******************
- * I16 range: -2048 ~ +2048 == -33A ~ +33A
- * - FOR MG4010-i10V3:
- *      + max Curr = max Power / Voltage
- *                 = 140W / 24V
- *                 =   35/6 (A)
- *      + max Torque = 4.5 Nm
- *      --> I16 range for MG4010-i10V3: -362  ~ +362  (bit)
- *                                    = -35/6 ~ +35/6 (A)
- *                                    = -4.5  ~ +4.5  (Nm)
- *      --> Torque constant MG4010-i10V3 = 0.771 (Nm/A) (after gearbox)
- *                                       = 0.077 (Nm/A) (before gearbox)
- * - FOR MG5010-i10V3:
- *      + max Curr = max Power / Voltage
- *                 = 160 / 24V
- *                 =  20/3 (A)
- *      + max Torque = 7.0 Nm
- *      --> I16 range for MG5010-i10V3: -413  ~ +413  (bit)
- *                                    = -20/3 ~ +20/3 (A)
- *                                    = -7.0  ~ +7.0  (Nm)
- *      --> Torque constant MG5010-i10V3 = 1.05  (Nm/A) (after gearbox)
- *                                       = 0.105 (Nm/A) (before gearbox)
- **************************************************************/
-
 
 typedef enum ENUM_CAN_NODE
 {

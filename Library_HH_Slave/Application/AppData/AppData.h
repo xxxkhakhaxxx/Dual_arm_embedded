@@ -38,6 +38,10 @@
 #define MSG_DATA_RESPOND_BYTE_1	(0x02)
 #define MSG_DATA_RESPOND_LENGTH	(40)	// 3 header + 1 checksum + 3*(4+4+4) payloads
 
+#define MSG_DATA_RESPOND_F_BYTE_0 (0xB3) // Check 1st order filter effect
+#define MSG_DATA_RESPOND_F_BYTE_1 (0x02)
+#define MSG_DATA_RESPOND_F_LENGTH (64)	// 3 header + 1 checksum + 3*(4+4+4+4+4) payloads: pos-vel-velf-accel-accelf
+
 #define MSG_CONTROL_POS_BYTE_0	(0xC3)
 #define MSG_CONTROL_POS_BYTE_1	(0x03)
 #define MSG_CONTROL_POS_LENGTH	(25)	// 3 header + 1 checksum + 3*(4+2+1) payloads
@@ -57,12 +61,12 @@
 typedef enum ENUM_SLAVE_STATE_LIST
 {
 	SLAVE_STATE_INIT = 0,
-//	SLAVE_STATE_WAIT_MASTER_INIT,
 	SLAVE_STATE_WAIT_MASTER_REQUEST,
 
-	SLAVE_STATE_WAIT_MOTOR_FEEDBACK,
 	SLAVE_STATE_SEND_MOTOR_SEQUENCE,
+	SLAVE_STATE_WAIT_MOTOR_FEEDBACK,
 
+	SLAVE_STATE_ERROR,
 	SLAVE_STATE_MAX
 } enSlaveStateList;
 
@@ -73,6 +77,9 @@ typedef enum ENUM_ROBOT_MODE
 	ROBOT_MODE_POSITION,
 //	ROBOT_MODE_VELOCITY,
 	ROBOT_MODE_TORQUE,
+
+	ROBOT_MODE_ERROR_COMM,
+	ROBOT_MODE_ERROR_LIMIT,
 
 	ROBOT_MODE_MAX
 } enRobotMode;

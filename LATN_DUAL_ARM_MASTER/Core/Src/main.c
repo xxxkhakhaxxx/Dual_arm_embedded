@@ -127,7 +127,6 @@ int main(void)
   HAL_TIM_Base_Start_IT(&htim2);	// Cycle 10ms
   while (1)
   {
-//	AppPeriodTask_TaskCall();
 	AppPeriodTask_StateMachineProcess();
 
     /* USER CODE END WHILE */

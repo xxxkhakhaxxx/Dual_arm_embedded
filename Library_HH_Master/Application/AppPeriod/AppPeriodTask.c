@@ -521,10 +521,23 @@ GLOBAL void AppPeriodTask_StateMachineProcess(void)
 
 	case MASTER_STATE_SEND_GUI:
 #ifndef MASTER_NO_GUI
-		_MasterStateGUIComm();
-#endif
+		if (
+		(FALSE == AppDataGet_UartTxWaitFlag(UART_NODE_SLAVE_1)) && \
+		(FALSE == AppDataGet_UartTxWaitFlag(UART_NODE_SLAVE_2)))
+		{
+			_MasterStateGUIComm();
+
+			bNewSequenceFlag = FALSE;	// Sequence end
+			AppDataSet_MasterState(MASTER_STATE_WAIT_NEW_SEQUENCE);
+		}
+		else
+		{
+			// Waiting DMA finished sending msg to 2 Slave
+		}
+#else
 		bNewSequenceFlag = FALSE;	// Sequence end
 		AppDataSet_MasterState(MASTER_STATE_WAIT_NEW_SEQUENCE);
+#endif
 		break;
 
 	default:

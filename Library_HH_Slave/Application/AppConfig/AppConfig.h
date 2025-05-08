@@ -24,7 +24,7 @@
 //#define SLAVE_NO_MOTOR_COMM
 //#define TEST_MOTOR_FILTER
 
-#define PERIOD_MASTER_COMM		(0.005f)				// [s]
+#define PERIOD_MASTER_COMM		(0.01f)				// [s]
 #define PERIOD_MOTOR_COMM		(PERIOD_MASTER_COMM)	// [s]
 #define MASTER_COMM_RE_INIT_CNT	(100)					// [ms]
 #define MASTER_COMM_ERROR_CNT	(30)					// [ms]
@@ -34,7 +34,7 @@
 
 #define DUAL_ARM_LEFT	1
 #define DUAL_ARM_RIGHT	2
-#define THIS_IS_ARM 	DUAL_ARM_LEFT
+#define THIS_IS_ARM 	DUAL_ARM_RIGHT
 
 #define JOINT_DIR_Z_POS		TRUE	// Positive direction in kinematics
 #define JOINT_DIR_Z_NEG		FALSE	// Negative direction in kinematics

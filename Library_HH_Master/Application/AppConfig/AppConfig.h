@@ -63,8 +63,8 @@
 
 
 /* ----------------- GUI PARAMS MACRO ---------------- */
-#define PERIOD_CONTROL		(0.005f)	// Update this base on your timer 2 [s]
-#define PERIOD_GUI_SEND		(0.005f)	// [s]
+#define PERIOD_CONTROL		(0.01f)	// Update this base on your timer 2 [s]
+#define PERIOD_GUI_SEND		(0.02f)	// [s]
 #define GUI_SEND_CNT_MAX	(PERIOD_GUI_SEND/PERIOD_CONTROL - 1)
 #define PERIOD_TRAJECTORY_PLANNING	PERIOD_CONTROL	// [s]
 /********************************************************************************

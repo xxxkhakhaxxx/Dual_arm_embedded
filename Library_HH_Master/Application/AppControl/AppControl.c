@@ -916,6 +916,21 @@ GLOBAL BOOL AppControl_Tor_ControllerInit(enTorController _type)
 		isSupported = TRUE;
 		break;
 	case TOR_CTRL_SPD:
+		myControl.PD.Setting.Kp[0] = 22.0f;
+		myControl.PD.Setting.Kp[1] = 15.0f;
+		myControl.PD.Setting.Kp[2] = 6.0f;
+
+		myControl.PD.Setting.Kd[0] = 0.4f;
+		myControl.PD.Setting.Kd[1] = 0.15f;
+		myControl.PD.Setting.Kd[2] = 0.01f;
+
+		myControl.PD.Setting.Alpha[0] = 0.3f;
+		myControl.PD.Setting.Alpha[1] = 0.3f;
+		myControl.PD.Setting.Alpha[2] = 0.3f;
+		myControl.Type = TOR_CTRL_SPD;
+
+		isSupported = TRUE;
+		break;
 	case TOR_CTRL_SMC:
 	case TOR_CTRL_SSMC:
 	case TOR_CTRL_NONE:
@@ -932,7 +947,7 @@ GLOBAL BOOL AppControl_Tor_ControlUpdateJoint(U08 _arm, U08 _joint)
 	static enTorController _type = TOR_CTRL_NONE;
 
 	// Params
-	static float Kp_i, Kd_i, Al_i;
+	static float Kp_i, Kd_i;
 	// Inputs
 	static float q_r_i, dq_r_i, q_i, dq_i, e_i, de_i;
 	// Outputs
@@ -983,16 +998,13 @@ GLOBAL BOOL AppControl_Tor_ControlUpdateJoint(U08 _arm, U08 _joint)
 		return FALSE;
 	}
 
-
-
-
 	return TRUE;
 }
 
-GLOBAL BOOL AppControl_Tor_ControlUpdateArm(U08 _arm)
+GLOBAL BOOL AppControl_Tor_ControlUpdateSingleArm(U08 _arm)
 {
 	static enTorController _type = TOR_CTRL_NONE;
-	static float Kp[3], Kd[3], Al[3];
+	static float Kp[3], Kd[3];
 	static float Err[3], dErr[3];
 	static float Tor[3];
 	static U08 _idx;
@@ -1016,16 +1028,14 @@ GLOBAL BOOL AppControl_Tor_ControlUpdateArm(U08 _arm)
 				Kd[_idx] = myControl.PD.Setting.Kd[_idx];
 			}
 			break;
-		case TOR_CTRL_SPD:
 		case TOR_CTRL_SMC:
-		case TOR_CTRL_SSMC:
-		case TOR_CTRL_NONE:
 		default:
 			// Not support
 			return FALSE;
 		}
 	}
 
+	// Calculate control signal
 	switch (_type)
 	{
 	case TOR_CTRL_PD:
@@ -1039,10 +1049,115 @@ GLOBAL BOOL AppControl_Tor_ControlUpdateArm(U08 _arm)
 			myRobotCommand[_arm].JointTor[_idx].Tor = CONSTRAIN(Tor[_idx], -CONTROL_MAX_TORQUE, CONTROL_MAX_TORQUE);
 		}
 		break;
-	case TOR_CTRL_SPD:
 	case TOR_CTRL_SMC:
+	default:
+		// Not support
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+GLOBAL BOOL AppControl_Tor_ControlUpdateDualArm(U08 _arm)
+{
+	static enTorController _type = TOR_CTRL_NONE;
+	static float Kp[3], Kd[3], Al[3];
+	static float Err[6], dErr[6], ErrSync[6], dErrSync[6], ErrCC[6], dErrCC[6];
+	static float Tor[6];
+	static U08 _idx;
+
+	if (DUAL_ARM != _arm)
+	{
+		return FALSE;
+	}
+
+	// Get control params (1 time only)
+	if (TOR_CTRL_NONE == _type)
+	{
+		_type = myControl.Type;
+
+		switch (_type)
+		{
+		case TOR_CTRL_SPD:
+			for (_idx = 0 ; _idx < JOINTS_PER_ARM ; _idx++)
+			{
+				Kp[_idx] = myControl.PD.Setting.Kp[_idx];
+				Kd[_idx] = myControl.PD.Setting.Kd[_idx];
+				Al[_idx] = myControl.PD.Setting.Alpha[_idx];
+			}
+			break;
+		case TOR_CTRL_SSMC:
+		default:
+			// Not support
+			return FALSE;
+		}
+	}
+
+	// Calculate control signal
+	switch (_type)
+	{
+	case TOR_CTRL_SPD:
+		// Calculate error
+		Err[0] = myRobotTrajectory[LEFT_ARM].Joint[0].currPos - DEG2RAD(myRobotFeedback[LEFT_ARM].Joint[0].Position);
+		Err[1] = myRobotTrajectory[LEFT_ARM].Joint[1].currPos - DEG2RAD(myRobotFeedback[LEFT_ARM].Joint[1].Position);
+		Err[2] = myRobotTrajectory[LEFT_ARM].Joint[2].currPos - DEG2RAD(myRobotFeedback[LEFT_ARM].Joint[2].Position);
+		Err[3] = myRobotTrajectory[RIGHT_ARM].Joint[0].currPos - DEG2RAD(myRobotFeedback[RIGHT_ARM].Joint[0].Position);
+		Err[4] = myRobotTrajectory[RIGHT_ARM].Joint[1].currPos - DEG2RAD(myRobotFeedback[RIGHT_ARM].Joint[1].Position);
+		Err[5] = myRobotTrajectory[RIGHT_ARM].Joint[2].currPos - DEG2RAD(myRobotFeedback[RIGHT_ARM].Joint[2].Position);
+
+		dErr[0] = myRobotTrajectory[LEFT_ARM].Joint[0].currVel - DEG2RAD(myRobotFeedback[LEFT_ARM].Joint[0].Speed);
+		dErr[1] = myRobotTrajectory[LEFT_ARM].Joint[1].currVel - DEG2RAD(myRobotFeedback[LEFT_ARM].Joint[1].Speed);
+		dErr[2] = myRobotTrajectory[LEFT_ARM].Joint[2].currVel - DEG2RAD(myRobotFeedback[LEFT_ARM].Joint[2].Speed);
+		dErr[3] = myRobotTrajectory[RIGHT_ARM].Joint[0].currVel - DEG2RAD(myRobotFeedback[RIGHT_ARM].Joint[0].Speed);
+		dErr[4] = myRobotTrajectory[RIGHT_ARM].Joint[1].currVel - DEG2RAD(myRobotFeedback[RIGHT_ARM].Joint[1].Speed);
+		dErr[5] = myRobotTrajectory[RIGHT_ARM].Joint[2].currVel - DEG2RAD(myRobotFeedback[RIGHT_ARM].Joint[2].Speed);
+
+		// Calculate synschronous error
+		ErrSync[0] = Err[0] - Err[3];
+		ErrSync[1] = Err[1] - Err[4];
+		ErrSync[2] = Err[2] - Err[5];
+		ErrSync[3] = -ErrSync[0];
+		ErrSync[4] = -ErrSync[1];
+		ErrSync[5] = -ErrSync[2];
+
+		dErrSync[0] = dErr[0] - dErr[3];
+		dErrSync[1] = dErr[1] - dErr[4];
+		dErrSync[2] = dErr[2] - dErr[5];
+		dErrSync[3] = -dErrSync[0];
+		dErrSync[4] = -dErrSync[1];
+		dErrSync[5] = -dErrSync[2];
+
+		// Calculate cross-coupling error
+		ErrCC[0] = Err[0] + Al[0]*ErrSync[0];
+		ErrCC[1] = Err[1] + Al[1]*ErrSync[1];
+		ErrCC[2] = Err[2] + Al[2]*ErrSync[2];
+		ErrCC[3] = Err[3] + Al[0]*ErrSync[3];
+		ErrCC[4] = Err[4] + Al[1]*ErrSync[4];
+		ErrCC[5] = Err[5] + Al[2]*ErrSync[5];
+
+		dErrCC[0] = dErr[0] + Al[0]*dErrSync[0];
+		dErrCC[1] = dErr[1] + Al[1]*dErrSync[1];
+		dErrCC[2] = dErr[2] + Al[2]*dErrSync[2];
+		dErrCC[3] = dErr[3] + Al[0]*dErrSync[3];
+		dErrCC[4] = dErr[4] + Al[1]*dErrSync[4];
+		dErrCC[5] = dErr[5] + Al[2]*dErrSync[5];
+
+		// Calculate Torque
+		Tor[0] = Kp[0]*ErrCC[0] + Kd[0]*dErrCC[0];
+		Tor[1] = Kp[1]*ErrCC[1] + Kd[1]*dErrCC[1];
+		Tor[2] = Kp[2]*ErrCC[2] + Kd[2]*dErrCC[2];
+		Tor[3] = Kp[0]*ErrCC[3] + Kd[0]*dErrCC[3];
+		Tor[4] = Kp[1]*ErrCC[4] + Kd[1]*dErrCC[4];
+		Tor[5] = Kp[2]*ErrCC[5] + Kd[2]*dErrCC[5];
+
+		myRobotCommand[LEFT_ARM].JointTor[0].Tor = CONSTRAIN(Tor[0], -CONTROL_MAX_TORQUE, CONTROL_MAX_TORQUE);
+		myRobotCommand[LEFT_ARM].JointTor[1].Tor = CONSTRAIN(Tor[1], -CONTROL_MAX_TORQUE, CONTROL_MAX_TORQUE);
+		myRobotCommand[LEFT_ARM].JointTor[2].Tor = CONSTRAIN(Tor[2], -CONTROL_MAX_TORQUE, CONTROL_MAX_TORQUE);
+		myRobotCommand[RIGHT_ARM].JointTor[0].Tor = CONSTRAIN(Tor[3], -CONTROL_MAX_TORQUE, CONTROL_MAX_TORQUE);
+		myRobotCommand[RIGHT_ARM].JointTor[1].Tor = CONSTRAIN(Tor[4], -CONTROL_MAX_TORQUE, CONTROL_MAX_TORQUE);
+		myRobotCommand[RIGHT_ARM].JointTor[2].Tor = CONSTRAIN(Tor[5], -CONTROL_MAX_TORQUE, CONTROL_MAX_TORQUE);
+		break;
 	case TOR_CTRL_SSMC:
-	case TOR_CTRL_NONE:
 	default:
 		// Not support
 		return FALSE;

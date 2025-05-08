@@ -235,7 +235,7 @@ PRIVATE void _MasterStateControl(void)
 
 			// If using Tor, init the selected controller
 	#if defined (MASTER_CONTROL_TOR)
-			AppControl_Tor_ControllerInit(TOR_CTRL_PD);
+			AppControl_Tor_ControllerInit(TOR_CTRL_SPD);
 	#endif
 		}
 #endif
@@ -274,7 +274,8 @@ PRIVATE void _MasterStateControl(void)
 #if defined (MASTER_CONTROL_TOR)
 		// It should still update the torque when finished TP
 //		if (TRUE == AppControl_Tor_ControlUpdateJoint(RIGHT_ARM, 0))
-		if ((TRUE == AppControl_Tor_ControlUpdateArm(RIGHT_ARM)) && (TRUE == AppControl_Tor_ControlUpdateArm(LEFT_ARM)))
+//		if ((TRUE == AppControl_Tor_ControlUpdateSingleArm(RIGHT_ARM)) && (TRUE == AppControl_Tor_ControlUpdateSingleArm(LEFT_ARM)))
+		if (TRUE == AppControl_Tor_ControlUpdateDualArm(DUAL_ARM))
 		{
 			AppCommUART_SendMsg(UART_NODE_SLAVE_1, UART_MSG_MOTOR_CONTROL_TOR);
 			AppCommUART_SendMsg(UART_NODE_SLAVE_2, UART_MSG_MOTOR_CONTROL_TOR);

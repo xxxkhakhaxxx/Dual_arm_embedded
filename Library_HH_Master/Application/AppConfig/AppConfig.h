@@ -31,7 +31,7 @@
 //#define MASTER_CONTROL_VEL
 #define MASTER_CONTROL_TOR
 
-#define SLAVE_1_ENA		(TRUE)
+//#define SLAVE_1_ENA		(TRUE)
 #define SLAVE_2_ENA		(TRUE)
 
 /* --------------- ROBOT PARAMS MACRO --------------- */
@@ -51,18 +51,28 @@
 #define L1				(0.233f)	// [m]	20 + 180 + 33
 #define L2				(0.233f)	// [m]	20 + 180 + 33
 #define L3				(0.138f)	// [m]  20 + 100 + 18
-#define M11				(0.368f)	// [Kg]
-#define M21				(0.356f)	// [Kg]
-#define M31				(0.040f)	// [Kg]
-#define M12				(0.368f)	// [Kg]
-#define M22				(0.330f)	// [Kg]
-#define M32				(0.042f)	// [Kg]
+
+#define M1				(0.368f)	// [Kg]
+#define M2				(0.356f)	// [Kg]
+#define M3				(0.040f)	// [Kg]
+//#define M12				(0.368f)	// [Kg]
+//#define M22				(0.330f)	// [Kg]
+//#define M32				(0.042f)	// [Kg]
+
+#define L1_L2_M2		(L1*L2*M2)
+#define L1_L2_M3		(L1*L2*M3)
+#define L1_L3_M2		(L1*L3*M2)
+#define L1_L3_M3		(L1*L3*M3)
+#define L2_L3_M2		(L2*L3*M2)
+#define L2_L3_M3		(L2*L3*M3)
+#define M1_M2_M3		(M1+M2+M3)
+#define M2_M3			(M2+M3)
 
 /* --------------- CONTROL PARAMS MACRO -------------- */
 #define CONTROL_MAX_TORQUE	(3.0f)	// [Nm]
 
 
-/* ----------------- GUI PARAMS MACRO ---------------- */
+/* ----------------- TIME PARAMS MACRO ---------------- */
 #define PERIOD_CONTROL		(0.01f)	// Update this base on your timer 2 [s]
 #define PERIOD_GUI_SEND		(0.02f)	// [s]
 #define GUI_SEND_CNT_MAX	(PERIOD_GUI_SEND/PERIOD_CONTROL - 1)

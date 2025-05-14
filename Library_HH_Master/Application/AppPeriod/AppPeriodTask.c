@@ -316,6 +316,8 @@ PRIVATE void _MasterStateGUIComm(void)
 		AppCommUART_SendMsg(UART_NODE_GUI, UART_MSG_GUI_DATA_1_RIGHT);
 	#endif
 #elif defined (MASTER_CONTROL_TOR)
+#if defined (MASTER_CONTROLLER_PD_SPD)
+	// Send Ref-Pos-Tor
 	#if defined(SLAVE_1_ENA) && defined(SLAVE_2_ENA)
 		AppCommUART_SendMsg(UART_NODE_GUI, UART_MSG_GUI_DATA_2_DUAL);
 	#elif defined(SLAVE_1_ENA)
@@ -323,6 +325,16 @@ PRIVATE void _MasterStateGUIComm(void)
 	#elif defined(SLAVE_2_ENA)
 		AppCommUART_SendMsg(UART_NODE_GUI, UART_MSG_GUI_DATA_2_RIGHT);
 	#endif
+#elif defined (MASTER_CONTROLLER_SMC_SSMC)
+	// Send Ref-Pos-Tor-Sliding
+	#if defined(SLAVE_1_ENA) && defined(SLAVE_2_ENA)
+		AppCommUART_SendMsg(UART_NODE_GUI, UART_MSG_GUI_DATA_4_DUAL);
+	#elif defined(SLAVE_1_ENA)
+		AppCommUART_SendMsg(UART_NODE_GUI, UART_MSG_GUI_DATA_4_LEFT);
+	#elif defined(SLAVE_2_ENA)
+		AppCommUART_SendMsg(UART_NODE_GUI, UART_MSG_GUI_DATA_4_RIGHT);
+	#endif
+#endif
 #endif
 	}
 

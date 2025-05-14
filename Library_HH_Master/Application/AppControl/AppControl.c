@@ -1174,12 +1174,14 @@ GLOBAL BOOL AppControl_Tor_ControlUpdateSingleArm(U08 _arm)
 	return TRUE;
 }
 
+GLOBAL float S[6] = {0, };
+
 GLOBAL BOOL AppControl_Tor_ControlUpdateDualArm(U08 _arm)
 {
 	static enTorController _type = TOR_CTRL_NONE;
 	static float Kp[3], Kd[3], Al[3];
 	static float Lamda[3], K[3], Eta[3];
-	static float S[6], ddq_r_Lamda_dErr[6];
+	static float ddq_r_Lamda_dErr[6];
 	static float Err[6], dErr[6], ErrSync[6], dErrSync[6], ErrCC[6], dErrCC[6];
 	static float Tor[6], Tor_eq[6], Tor_r[6];
 

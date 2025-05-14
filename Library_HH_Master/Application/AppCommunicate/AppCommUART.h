@@ -67,12 +67,15 @@ typedef enum ENUM_UART_MSG
 //	UART_MSG_MOTOR_CONTROL_VEL,
 	UART_MSG_MOTOR_CONTROL_TOR,
 
-	UART_MSG_GUI_DATA_1_LEFT,			// Pos-Vel-Accel
+	UART_MSG_GUI_DATA_1_LEFT,	// Pos-Vel-Accel
 	UART_MSG_GUI_DATA_1_RIGHT,
 	UART_MSG_GUI_DATA_1_DUAL,
-	UART_MSG_GUI_DATA_2_LEFT,			// Ref-pos-Tor-Sliding
+	UART_MSG_GUI_DATA_2_LEFT,	// Ref-pos-Tor
 	UART_MSG_GUI_DATA_2_RIGHT,
-	UART_MSG_GUI_DATA_2_DUAL
+	UART_MSG_GUI_DATA_2_DUAL,
+	UART_MSG_GUI_DATA_4_LEFT,	// Ref-pos-Tor-Sliding
+	UART_MSG_GUI_DATA_4_RIGHT,
+	UART_MSG_GUI_DATA_4_DUAL
 } enUartMsg;
 
 /********************************************************************************

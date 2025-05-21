@@ -275,8 +275,8 @@ PRIVATE void _MasterStateControl(void)
 		// It should still update the torque when finished TP
 //		if (TRUE == AppControl_Tor_ControlUpdateJoint(RIGHT_ARM, 0))
 //		if ((TRUE == AppControl_Tor_ControlUpdateSingleArm(RIGHT_ARM)) && (TRUE == AppControl_Tor_ControlUpdateSingleArm(LEFT_ARM)))
-//		if (TRUE == AppControl_Tor_ControlUpdateDualArm(DUAL_ARM))
-		if (TRUE == AppControl_Tor_ControlUpdateSingleArm(RIGHT_ARM))
+//		if (TRUE == AppControl_Tor_ControlUpdateDualArm(DUAL_ARM))		// SPD vs SSMC
+		if (TRUE == AppControl_Tor_ControlUpdateSingleArm(RIGHT_ARM))	// PD vs SMC
 		{
 			AppCommUART_SendMsg(UART_NODE_SLAVE_1, UART_MSG_MOTOR_CONTROL_TOR);
 			AppCommUART_SendMsg(UART_NODE_SLAVE_2, UART_MSG_MOTOR_CONTROL_TOR);

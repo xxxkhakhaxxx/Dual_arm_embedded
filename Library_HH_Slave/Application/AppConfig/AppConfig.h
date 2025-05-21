@@ -29,12 +29,12 @@
 #define MASTER_COMM_RE_INIT_CNT	(100)					// [ms]
 #define MASTER_COMM_ERROR_CNT	(30)					// [ms]
 
-#define FREQ_CUT_VEL		(4.0f)	// [Hz]
+#define FREQ_CUT_VEL		(6.0f)	// [Hz]
 #define FREQ_CUT_ACCEL		(2.0f)	// [Hz]
 
 #define DUAL_ARM_LEFT	1
 #define DUAL_ARM_RIGHT	2
-#define THIS_IS_ARM 	DUAL_ARM_RIGHT
+#define THIS_IS_ARM 	DUAL_ARM_LEFT
 
 #define JOINT_DIR_Z_POS		TRUE	// Positive direction in kinematics
 #define JOINT_DIR_Z_NEG		FALSE	// Negative direction in kinematics
@@ -59,10 +59,10 @@
 
 	#define J1_KINE_LOW_LIMIT	(30.0f)
 	#define J2_KINE_LOW_LIMIT	(-130.0f)
-	#define J3_KINE_LOW_LIMIT	(-179.0f)
+	#define J3_KINE_LOW_LIMIT	(-170.0f)
 	#define J1_KINE_HIGH_LIMIT	(300.0f)
 	#define J2_KINE_HIGH_LIMIT	(130.0f)
-	#define J3_KINE_HIGH_LIMIT	(179.0f)
+	#define J3_KINE_HIGH_LIMIT	(170.0f)
 
 #elif defined(THIS_IS_ARM) && (THIS_IS_ARM == DUAL_ARM_RIGHT)
 	// Right arm setting code here
@@ -82,10 +82,10 @@
 
 	#define J1_KINE_LOW_LIMIT	(30.0f)
 	#define J2_KINE_LOW_LIMIT	(-130.0f)
-	#define J3_KINE_LOW_LIMIT	(-179.0f)
+	#define J3_KINE_LOW_LIMIT	(-170.0f)
 	#define J1_KINE_HIGH_LIMIT	(300.0f)
 	#define J2_KINE_HIGH_LIMIT	(130.0f)
-	#define J3_KINE_HIGH_LIMIT	(179.0f)
+	#define J3_KINE_HIGH_LIMIT	(170.0f)
 #else
 	#error "Choose arm: DUAL_ARM_LEFT or DUAL_ARM_RIGHT"
 #endif

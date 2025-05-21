@@ -911,7 +911,7 @@ GLOBAL BOOL AppControl_Tor_ControllerInit(enTorController _type)
 
 		myControl.PD.Setting.Kd[0] = 0.4f;
 		myControl.PD.Setting.Kd[1] = 0.15f;
-		myControl.PD.Setting.Kd[2] = 0.01f;
+		myControl.PD.Setting.Kd[2] = 0.05f;
 
 		myControl.PD.Setting.Alpha[0] = 0.0f;
 		myControl.PD.Setting.Alpha[1] = 0.0f;
@@ -927,7 +927,7 @@ GLOBAL BOOL AppControl_Tor_ControllerInit(enTorController _type)
 
 		myControl.PD.Setting.Kd[0] = 0.4f;
 		myControl.PD.Setting.Kd[1] = 0.15f;
-		myControl.PD.Setting.Kd[2] = 0.01f;
+		myControl.PD.Setting.Kd[2] = 0.05f;
 
 		myControl.PD.Setting.Alpha[0] = 0.7f;
 		myControl.PD.Setting.Alpha[1] = 0.7f;
@@ -937,17 +937,17 @@ GLOBAL BOOL AppControl_Tor_ControllerInit(enTorController _type)
 		isSupported = TRUE;
 		break;
 	case TOR_CTRL_SMC:
-		myControl.SMC.Setting.Lamda[0] = 0.0f;
-		myControl.SMC.Setting.Lamda[1] = 0.0f;
-		myControl.SMC.Setting.Lamda[2] = 0.0f;
+		myControl.SMC.Setting.Lamda[0] = 1.8f;
+		myControl.SMC.Setting.Lamda[1] = 3.0f;
+		myControl.SMC.Setting.Lamda[2] = 32.0f;
 
-		myControl.SMC.Setting.K[0] = 0.0f;
-		myControl.SMC.Setting.K[1] = 0.0f;
-		myControl.SMC.Setting.K[2] = 0.0f;
+		myControl.SMC.Setting.K[0] = 0.2f;
+		myControl.SMC.Setting.K[1] = 0.075f;
+		myControl.SMC.Setting.K[2] = 0.025f;
 
-		myControl.SMC.Setting.Eta[0] = 0.0f;
-		myControl.SMC.Setting.Eta[1] = 0.0f;
-		myControl.SMC.Setting.Eta[2] = 0.0f;
+		myControl.SMC.Setting.Eta[0] = 0.1f;
+		myControl.SMC.Setting.Eta[1] = 0.1f;
+		myControl.SMC.Setting.Eta[2] = 0.1f;
 
 		myControl.SMC.Setting.Alpha[0] = 0.0f;
 		myControl.SMC.Setting.Alpha[1] = 0.0f;
@@ -1046,13 +1046,15 @@ GLOBAL BOOL AppControl_Tor_ControlUpdateJoint(U08 _arm, U08 _joint)
 	return TRUE;
 }
 
+
+GLOBAL float S_single[DUAL_ARM][3] = {0, };;
 GLOBAL BOOL AppControl_Tor_ControlUpdateSingleArm(U08 _arm)
 {
 	static enTorController _type = TOR_CTRL_NONE;
 	static float Kp[3], Kd[3];
 	static float Err[3], dErr[3];
 	static float Lamda[3], K[3], Eta[3];
-	static float S[3], ddq_r_Lamda_dErr[3];
+	static float ddq_r_Lamda_dErr[3];
 	static float Tor[3], Tor_eq[3], Tor_r[3];
 	static U08 _idx;
 
@@ -1118,9 +1120,9 @@ GLOBAL BOOL AppControl_Tor_ControlUpdateSingleArm(U08 _arm)
 		dErr[2] = DEG2RAD(myRobotFeedback[_arm].Joint[2].Speed)   - myRobotTrajectory[_arm].Joint[2].currVel;
 
 		// S = de + λ*e
-		S[0] = dErr[0] + Lamda[0]*Err[0];
-		S[1] = dErr[1] + Lamda[1]*Err[1];
-		S[2] = dErr[2] + Lamda[2]*Err[2];
+		S_single[_arm][0] = dErr[0] + Lamda[0]*Err[0];
+		S_single[_arm][1] = dErr[1] + Lamda[1]*Err[1];
+		S_single[_arm][2] = dErr[2] + Lamda[2]*Err[2];
 
 		// (ddq_r - λ*de)                                      ddq_r       λ        de
 		ddq_r_Lamda_dErr[0] = myRobotTrajectory[_arm].Joint[0].currAccel - Lamda[0]*dErr[0];
@@ -1134,26 +1136,26 @@ GLOBAL BOOL AppControl_Tor_ControlUpdateSingleArm(U08 _arm)
 				  + myRobotDynamics[_arm].C.c11*DEG2RAD(myRobotFeedback[_arm].Joint[0].Speed) \
 				  + myRobotDynamics[_arm].C.c12*DEG2RAD(myRobotFeedback[_arm].Joint[1].Speed) \
 				  + myRobotDynamics[_arm].C.c13*DEG2RAD(myRobotFeedback[_arm].Joint[2].Speed) \
-				  - K[0]*S[0];
+				  - K[0]*S_single[_arm][0];
 		Tor_eq[1] = myRobotDynamics[_arm].M.m21*ddq_r_Lamda_dErr[0] \
 				  + myRobotDynamics[_arm].M.m22*ddq_r_Lamda_dErr[1] \
 				  + myRobotDynamics[_arm].M.m23*ddq_r_Lamda_dErr[2] \
 				  + myRobotDynamics[_arm].C.c21*DEG2RAD(myRobotFeedback[_arm].Joint[0].Speed) \
 				  + myRobotDynamics[_arm].C.c22*DEG2RAD(myRobotFeedback[_arm].Joint[1].Speed) \
 				  + myRobotDynamics[_arm].C.c23*DEG2RAD(myRobotFeedback[_arm].Joint[2].Speed) \
-				  - K[1]*S[1];
+				  - K[1]*S_single[_arm][1];
 		Tor_eq[2] = myRobotDynamics[_arm].M.m31*ddq_r_Lamda_dErr[0] \
 				  + myRobotDynamics[_arm].M.m32*ddq_r_Lamda_dErr[1] \
 				  + myRobotDynamics[_arm].M.m33*ddq_r_Lamda_dErr[2] \
 				  + myRobotDynamics[_arm].C.c31*DEG2RAD(myRobotFeedback[_arm].Joint[0].Speed) \
 				  + myRobotDynamics[_arm].C.c32*DEG2RAD(myRobotFeedback[_arm].Joint[1].Speed) \
 				  + myRobotDynamics[_arm].C.c33*DEG2RAD(myRobotFeedback[_arm].Joint[2].Speed) \
-				  - K[2]*S[2];
+				  - K[2]*S_single[_arm][2];
 
 		// T_r = -η*sign(S)
-		Tor_r[0] = -Eta[0]*SIGN(S[0]);
-		Tor_r[1] = -Eta[1]*SIGN(S[1]);
-		Tor_r[2] = -Eta[2]*SIGN(S[2]);
+		Tor_r[0] = -Eta[0]*SIGN(S_single[_arm][0]);
+		Tor_r[1] = -Eta[1]*SIGN(S_single[_arm][1]);
+		Tor_r[2] = -Eta[2]*SIGN(S_single[_arm][2]);
 
 		// T = T_eq + T_r
 		Tor[0] = Tor_eq[0] + Tor_r[0];
@@ -1161,8 +1163,8 @@ GLOBAL BOOL AppControl_Tor_ControlUpdateSingleArm(U08 _arm)
 		Tor[2] = Tor_eq[2] + Tor_r[2];
 
 		// Set output with constraint
-		myRobotCommand[_arm].JointTor[0].Tor = CONSTRAIN(Tor[0], -CONTROL_MAX_TORQUE, CONTROL_MAX_TORQUE);
-		myRobotCommand[_arm].JointTor[1].Tor = CONSTRAIN(Tor[1], -CONTROL_MAX_TORQUE, CONTROL_MAX_TORQUE);
+		myRobotCommand[_arm].JointTor[0].Tor = CONSTRAIN(Tor[0], -4.0f, 4.0f);
+		myRobotCommand[_arm].JointTor[1].Tor = CONSTRAIN(Tor[1], -4.0f, 4.0f);
 		myRobotCommand[_arm].JointTor[2].Tor = CONSTRAIN(Tor[2], -CONTROL_MAX_TORQUE, CONTROL_MAX_TORQUE);
 
 		break;
@@ -1174,7 +1176,7 @@ GLOBAL BOOL AppControl_Tor_ControlUpdateSingleArm(U08 _arm)
 	return TRUE;
 }
 
-GLOBAL float S[6] = {0, };
+GLOBAL float S_dual[6] = {0, };
 
 GLOBAL BOOL AppControl_Tor_ControlUpdateDualArm(U08 _arm)
 {
@@ -1340,12 +1342,12 @@ GLOBAL BOOL AppControl_Tor_ControlUpdateDualArm(U08 _arm)
 		dErrCC[5] = dErr[5] + Al[2]*dErrSync[5];
 
 		// S = de_cc + λ*e_cc
-		S[0] = dErrCC[0] + Lamda[0]*ErrCC[0];
-		S[1] = dErrCC[1] + Lamda[1]*ErrCC[1];
-		S[2] = dErrCC[2] + Lamda[2]*ErrCC[2];
-		S[3] = dErrCC[3] + Lamda[0]*ErrCC[3];
-		S[4] = dErrCC[4] + Lamda[1]*ErrCC[4];
-		S[5] = dErrCC[5] + Lamda[2]*ErrCC[5];
+		S_dual[0] = dErrCC[0] + Lamda[0]*ErrCC[0];
+		S_dual[1] = dErrCC[1] + Lamda[1]*ErrCC[1];
+		S_dual[2] = dErrCC[2] + Lamda[2]*ErrCC[2];
+		S_dual[3] = dErrCC[3] + Lamda[0]*ErrCC[3];
+		S_dual[4] = dErrCC[4] + Lamda[1]*ErrCC[4];
+		S_dual[5] = dErrCC[5] + Lamda[2]*ErrCC[5];
 
 		// (ddq_r - λ*de)                                          ddq_r        λ        de
 		ddq_r_Lamda_dErr[0] = myRobotTrajectory[LEFT_ARM].Joint[0].currAccel  - Lamda[0]*dErr[0];
@@ -1362,50 +1364,50 @@ GLOBAL BOOL AppControl_Tor_ControlUpdateDualArm(U08 _arm)
 				  + myRobotDynamics[LEFT_ARM].C.c11*DEG2RAD(myRobotFeedback[LEFT_ARM].Joint[0].Speed) \
 				  + myRobotDynamics[LEFT_ARM].C.c12*DEG2RAD(myRobotFeedback[LEFT_ARM].Joint[1].Speed) \
 				  + myRobotDynamics[LEFT_ARM].C.c13*DEG2RAD(myRobotFeedback[LEFT_ARM].Joint[2].Speed) \
-				  - K[0]*S[0];
+				  - K[0]*S_dual[0];
 		Tor_eq[1] = myRobotDynamics[LEFT_ARM].M.m21*ddq_r_Lamda_dErr[0] \
 				  + myRobotDynamics[LEFT_ARM].M.m22*ddq_r_Lamda_dErr[1] \
 				  + myRobotDynamics[LEFT_ARM].M.m23*ddq_r_Lamda_dErr[2] \
 				  + myRobotDynamics[LEFT_ARM].C.c21*DEG2RAD(myRobotFeedback[LEFT_ARM].Joint[0].Speed) \
 				  + myRobotDynamics[LEFT_ARM].C.c22*DEG2RAD(myRobotFeedback[LEFT_ARM].Joint[1].Speed) \
 				  + myRobotDynamics[LEFT_ARM].C.c23*DEG2RAD(myRobotFeedback[LEFT_ARM].Joint[2].Speed) \
-				  - K[1]*S[1];
+				  - K[1]*S_dual[1];
 		Tor_eq[2] = myRobotDynamics[LEFT_ARM].M.m31*ddq_r_Lamda_dErr[0] \
 				  + myRobotDynamics[LEFT_ARM].M.m32*ddq_r_Lamda_dErr[1] \
 				  + myRobotDynamics[LEFT_ARM].M.m33*ddq_r_Lamda_dErr[2] \
 				  + myRobotDynamics[LEFT_ARM].C.c31*DEG2RAD(myRobotFeedback[LEFT_ARM].Joint[0].Speed) \
 				  + myRobotDynamics[LEFT_ARM].C.c32*DEG2RAD(myRobotFeedback[LEFT_ARM].Joint[1].Speed) \
 				  + myRobotDynamics[LEFT_ARM].C.c33*DEG2RAD(myRobotFeedback[LEFT_ARM].Joint[2].Speed) \
-				  - K[2]*S[2];
+				  - K[2]*S_dual[2];
 		Tor_eq[3] = myRobotDynamics[RIGHT_ARM].M.m11*ddq_r_Lamda_dErr[3] \
 				  + myRobotDynamics[RIGHT_ARM].M.m12*ddq_r_Lamda_dErr[4] \
 				  + myRobotDynamics[RIGHT_ARM].M.m13*ddq_r_Lamda_dErr[5] \
 				  + myRobotDynamics[RIGHT_ARM].C.c11*DEG2RAD(myRobotFeedback[RIGHT_ARM].Joint[0].Speed) \
 				  + myRobotDynamics[RIGHT_ARM].C.c12*DEG2RAD(myRobotFeedback[RIGHT_ARM].Joint[1].Speed) \
 				  + myRobotDynamics[RIGHT_ARM].C.c13*DEG2RAD(myRobotFeedback[RIGHT_ARM].Joint[2].Speed) \
-				  - K[0]*S[3];
+				  - K[0]*S_dual[3];
 		Tor_eq[4] = myRobotDynamics[RIGHT_ARM].M.m21*ddq_r_Lamda_dErr[3] \
 				  + myRobotDynamics[RIGHT_ARM].M.m22*ddq_r_Lamda_dErr[4] \
 				  + myRobotDynamics[RIGHT_ARM].M.m23*ddq_r_Lamda_dErr[5] \
 				  + myRobotDynamics[RIGHT_ARM].C.c21*DEG2RAD(myRobotFeedback[RIGHT_ARM].Joint[0].Speed) \
 				  + myRobotDynamics[RIGHT_ARM].C.c22*DEG2RAD(myRobotFeedback[RIGHT_ARM].Joint[1].Speed) \
 				  + myRobotDynamics[RIGHT_ARM].C.c23*DEG2RAD(myRobotFeedback[RIGHT_ARM].Joint[2].Speed) \
-				  - K[1]*S[4];
+				  - K[1]*S_dual[4];
 		Tor_eq[5] = myRobotDynamics[RIGHT_ARM].M.m31*ddq_r_Lamda_dErr[3] \
 				  + myRobotDynamics[RIGHT_ARM].M.m32*ddq_r_Lamda_dErr[4] \
 				  + myRobotDynamics[RIGHT_ARM].M.m33*ddq_r_Lamda_dErr[5] \
 				  + myRobotDynamics[RIGHT_ARM].C.c31*DEG2RAD(myRobotFeedback[RIGHT_ARM].Joint[0].Speed) \
 				  + myRobotDynamics[RIGHT_ARM].C.c32*DEG2RAD(myRobotFeedback[RIGHT_ARM].Joint[1].Speed) \
 				  + myRobotDynamics[RIGHT_ARM].C.c33*DEG2RAD(myRobotFeedback[RIGHT_ARM].Joint[2].Speed) \
-				  - K[2]*S[5];
+				  - K[2]*S_dual[5];
 
 		// T_r = -η*sign(S)
-		Tor_r[0] = -Eta[0]*SIGN(S[0]);
-		Tor_r[1] = -Eta[1]*SIGN(S[1]);
-		Tor_r[2] = -Eta[2]*SIGN(S[2]);
-		Tor_r[3] = -Eta[0]*SIGN(S[3]);
-		Tor_r[4] = -Eta[1]*SIGN(S[4]);
-		Tor_r[5] = -Eta[2]*SIGN(S[5]);
+		Tor_r[0] = -Eta[0]*SIGN(S_dual[0]);
+		Tor_r[1] = -Eta[1]*SIGN(S_dual[1]);
+		Tor_r[2] = -Eta[2]*SIGN(S_dual[2]);
+		Tor_r[3] = -Eta[0]*SIGN(S_dual[3]);
+		Tor_r[4] = -Eta[1]*SIGN(S_dual[4]);
+		Tor_r[5] = -Eta[2]*SIGN(S_dual[5]);
 
 		// T = T_eq + T_r
 		Tor[0] = Tor_eq[0] + Tor_r[0];

@@ -255,7 +255,8 @@ GLOBAL extern strTrajectoryPlanning myTrajectory;
 GLOBAL extern strJointSpacePlanning myRobotTrajectory[DUAL_ARM];
 GLOBAL extern strTorControl myControl;
 GLOBAL extern strDynamics3DofPlanar myRobotDynamics[DUAL_ARM];
-GLOBAL extern float S[6];	// For UART
+GLOBAL extern float S_single[DUAL_ARM][3];
+GLOBAL extern float S_dual[6];	// For UART
 
 
 /********************************************************************************

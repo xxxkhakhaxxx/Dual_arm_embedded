@@ -64,7 +64,9 @@ typedef enum ENUM_TOR_CONTROLLER
 	TOR_CTRL_PD,
 	TOR_CTRL_SPD,
 	TOR_CTRL_SMC,
-	TOR_CTRL_SSMC
+	TOR_CTRL_SSMC,
+	TOR_CTRL_SMC_FREE,
+	TOR_CTRL_SSMC_FREE
 } enTorController;
 
 typedef struct

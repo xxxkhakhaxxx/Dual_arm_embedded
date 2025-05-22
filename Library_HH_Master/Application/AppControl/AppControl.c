@@ -976,6 +976,46 @@ GLOBAL BOOL AppControl_Tor_ControllerInit(enTorController _type)
 		myControl.Type = TOR_CTRL_SSMC;
 		isSupported = TRUE;
 		break;
+	case TOR_CTRL_SMC_FREE:
+		myControl.SMC.Setting.Lamda[0] = 55.0f;
+		myControl.SMC.Setting.Lamda[1] = 100.0f;
+		myControl.SMC.Setting.Lamda[2] = 120.0f;
+
+		myControl.SMC.Setting.K[0] = 0.4f;
+		myControl.SMC.Setting.K[1] = 0.15f;
+		myControl.SMC.Setting.K[2] = 0.05f;
+
+		myControl.SMC.Setting.Eta[0] = 0.1f;
+		myControl.SMC.Setting.Eta[1] = 0.1f;
+		myControl.SMC.Setting.Eta[2] = 0.1f;
+
+		myControl.SMC.Setting.Alpha[0] = 0.0f;
+		myControl.SMC.Setting.Alpha[1] = 0.0f;
+		myControl.SMC.Setting.Alpha[2] = 0.0f;
+
+		myControl.Type = TOR_CTRL_SMC_FREE;
+		isSupported = TRUE;
+		break;
+	case TOR_CTRL_SSMC_FREE:
+		myControl.SMC.Setting.Lamda[0] = 0.0f;
+		myControl.SMC.Setting.Lamda[1] = 0.0f;
+		myControl.SMC.Setting.Lamda[2] = 0.0f;
+
+		myControl.SMC.Setting.K[0] = 0.0f;
+		myControl.SMC.Setting.K[1] = 0.0f;
+		myControl.SMC.Setting.K[2] = 0.0f;
+
+		myControl.SMC.Setting.Eta[0] = 0.0f;
+		myControl.SMC.Setting.Eta[1] = 0.0f;
+		myControl.SMC.Setting.Eta[2] = 0.0f;
+
+		myControl.SMC.Setting.Alpha[0] = 0.1f;
+		myControl.SMC.Setting.Alpha[1] = 0.1f;
+		myControl.SMC.Setting.Alpha[2] = 0.1f;
+
+		myControl.Type = TOR_CTRL_SSMC_FREE;
+		isSupported = TRUE;
+		break;
 	case TOR_CTRL_NONE:
 	default:
 		isSupported = FALSE;
@@ -1013,6 +1053,8 @@ GLOBAL BOOL AppControl_Tor_ControlUpdateJoint(U08 _arm, U08 _joint)
 		case TOR_CTRL_SMC:
 		case TOR_CTRL_SSMC:
 		case TOR_CTRL_NONE:
+		case TOR_CTRL_SMC_FREE:
+		case TOR_CTRL_SSMC_FREE:
 		default:
 
 			return FALSE;
@@ -1037,6 +1079,8 @@ GLOBAL BOOL AppControl_Tor_ControlUpdateJoint(U08 _arm, U08 _joint)
 	case TOR_CTRL_SPD:
 	case TOR_CTRL_SMC:
 	case TOR_CTRL_SSMC:
+	case TOR_CTRL_SMC_FREE:
+	case TOR_CTRL_SSMC_FREE:
 	case TOR_CTRL_NONE:
 	default:
 
@@ -1078,6 +1122,7 @@ GLOBAL BOOL AppControl_Tor_ControlUpdateSingleArm(U08 _arm)
 			}
 			break;
 		case TOR_CTRL_SMC:
+		case TOR_CTRL_SMC_FREE:
 			for (_idx = 0 ; _idx < JOINTS_PER_ARM ; _idx++)
 			{
 				Lamda[_idx] = myControl.SMC.Setting.Lamda[_idx];
@@ -1168,6 +1213,48 @@ GLOBAL BOOL AppControl_Tor_ControlUpdateSingleArm(U08 _arm)
 		myRobotCommand[_arm].JointTor[2].Tor = CONSTRAIN(Tor[2], -CONTROL_MAX_TORQUE, CONTROL_MAX_TORQUE);
 
 		break;
+	case TOR_CTRL_SMC_FREE:
+		// e = q - q_r
+		 Err[0] = DEG2RAD(myRobotFeedback[_arm].Joint[0].Position) - myRobotTrajectory[_arm].Joint[0].currPos;
+		 Err[1] = DEG2RAD(myRobotFeedback[_arm].Joint[1].Position) - myRobotTrajectory[_arm].Joint[1].currPos;
+		 Err[2] = DEG2RAD(myRobotFeedback[_arm].Joint[2].Position) - myRobotTrajectory[_arm].Joint[2].currPos;
+
+		// de = dq - dq_r
+		dErr[0] = DEG2RAD(myRobotFeedback[_arm].Joint[0].Speed)   - myRobotTrajectory[_arm].Joint[0].currVel;
+		dErr[1] = DEG2RAD(myRobotFeedback[_arm].Joint[1].Speed)   - myRobotTrajectory[_arm].Joint[1].currVel;
+		dErr[2] = DEG2RAD(myRobotFeedback[_arm].Joint[2].Speed)   - myRobotTrajectory[_arm].Joint[2].currVel;
+
+		// S = de + λ*e
+		S_single[_arm][0] = dErr[0] + Lamda[0]*Err[0];
+		S_single[_arm][1] = dErr[1] + Lamda[1]*Err[1];
+		S_single[_arm][2] = dErr[2] + Lamda[2]*Err[2];
+
+		// (ddq_r - λ*de)                                      ddq_r       λ        de
+		ddq_r_Lamda_dErr[0] = myRobotTrajectory[_arm].Joint[0].currAccel - Lamda[0]*dErr[0];
+		ddq_r_Lamda_dErr[1] = myRobotTrajectory[_arm].Joint[1].currAccel - Lamda[1]*dErr[1];
+		ddq_r_Lamda_dErr[2] = myRobotTrajectory[_arm].Joint[2].currAccel - Lamda[2]*dErr[2];
+
+		// T_eq = ddq_r - λ*de - K*S
+		Tor_eq[0] = ddq_r_Lamda_dErr[0] - K[0]*S_single[_arm][0];
+		Tor_eq[1] = ddq_r_Lamda_dErr[1] - K[1]*S_single[_arm][1];
+		Tor_eq[2] = ddq_r_Lamda_dErr[2] - K[2]*S_single[_arm][2];
+
+		// T_r = -η*sign(S)
+		Tor_r[0] = -Eta[0]*SIGN(S_single[_arm][0]);
+		Tor_r[1] = -Eta[1]*SIGN(S_single[_arm][1]);
+		Tor_r[2] = -Eta[2]*SIGN(S_single[_arm][2]);
+
+		// T = T_eq + T_r
+		Tor[0] = Tor_eq[0] + Tor_r[0];
+		Tor[1] = Tor_eq[1] + Tor_r[1];
+		Tor[2] = Tor_eq[2] + Tor_r[2];
+
+		// Set output with constraint
+		myRobotCommand[_arm].JointTor[0].Tor = CONSTRAIN(Tor[0], -4.0f, 4.0f);
+		myRobotCommand[_arm].JointTor[1].Tor = CONSTRAIN(Tor[1], -4.0f, 4.0f);
+		myRobotCommand[_arm].JointTor[2].Tor = CONSTRAIN(Tor[2], -CONTROL_MAX_TORQUE, CONTROL_MAX_TORQUE);
+
+		break;
 	default:
 		// Not support
 		return FALSE;
@@ -1211,6 +1298,7 @@ GLOBAL BOOL AppControl_Tor_ControlUpdateDualArm(U08 _arm)
 			}
 			break;
 		case TOR_CTRL_SSMC:
+		case TOR_CTRL_SSMC_FREE:
 			for (_idx = 0 ; _idx < JOINTS_PER_ARM ; _idx++)
 			{
 				Lamda[_idx] = myControl.SMC.Setting.Lamda[_idx];
@@ -1400,6 +1488,103 @@ GLOBAL BOOL AppControl_Tor_ControlUpdateDualArm(U08 _arm)
 				  + myRobotDynamics[RIGHT_ARM].C.c32*DEG2RAD(myRobotFeedback[RIGHT_ARM].Joint[1].Speed) \
 				  + myRobotDynamics[RIGHT_ARM].C.c33*DEG2RAD(myRobotFeedback[RIGHT_ARM].Joint[2].Speed) \
 				  - K[2]*S_dual[5];
+
+		// T_r = -η*sign(S)
+		Tor_r[0] = -Eta[0]*SIGN(S_dual[0]);
+		Tor_r[1] = -Eta[1]*SIGN(S_dual[1]);
+		Tor_r[2] = -Eta[2]*SIGN(S_dual[2]);
+		Tor_r[3] = -Eta[0]*SIGN(S_dual[3]);
+		Tor_r[4] = -Eta[1]*SIGN(S_dual[4]);
+		Tor_r[5] = -Eta[2]*SIGN(S_dual[5]);
+
+		// T = T_eq + T_r
+		Tor[0] = Tor_eq[0] + Tor_r[0];
+		Tor[1] = Tor_eq[1] + Tor_r[1];
+		Tor[2] = Tor_eq[2] + Tor_r[2];
+		Tor[3] = Tor_eq[3] + Tor_r[3];
+		Tor[4] = Tor_eq[4] + Tor_r[4];
+		Tor[5] = Tor_eq[5] + Tor_r[5];
+
+		// Set output with constraint
+		myRobotCommand[LEFT_ARM].JointTor[0].Tor  = CONSTRAIN(Tor[0], -CONTROL_MAX_TORQUE, CONTROL_MAX_TORQUE);
+		myRobotCommand[LEFT_ARM].JointTor[1].Tor  = CONSTRAIN(Tor[1], -CONTROL_MAX_TORQUE, CONTROL_MAX_TORQUE);
+		myRobotCommand[LEFT_ARM].JointTor[2].Tor  = CONSTRAIN(Tor[2], -CONTROL_MAX_TORQUE, CONTROL_MAX_TORQUE);
+		myRobotCommand[RIGHT_ARM].JointTor[0].Tor = CONSTRAIN(Tor[3], -CONTROL_MAX_TORQUE, CONTROL_MAX_TORQUE);
+		myRobotCommand[RIGHT_ARM].JointTor[1].Tor = CONSTRAIN(Tor[4], -CONTROL_MAX_TORQUE, CONTROL_MAX_TORQUE);
+		myRobotCommand[RIGHT_ARM].JointTor[2].Tor = CONSTRAIN(Tor[5], -CONTROL_MAX_TORQUE, CONTROL_MAX_TORQUE);
+
+		break;
+
+	case TOR_CTRL_SSMC_FREE:
+		// e = q - q_r
+		 Err[0] = DEG2RAD(myRobotFeedback[LEFT_ARM].Joint[0].Position)  - myRobotTrajectory[LEFT_ARM].Joint[0].currPos;
+		 Err[1] = DEG2RAD(myRobotFeedback[LEFT_ARM].Joint[1].Position)  - myRobotTrajectory[LEFT_ARM].Joint[1].currPos;
+		 Err[2] = DEG2RAD(myRobotFeedback[LEFT_ARM].Joint[2].Position)  - myRobotTrajectory[LEFT_ARM].Joint[2].currPos;
+		 Err[3] = DEG2RAD(myRobotFeedback[RIGHT_ARM].Joint[0].Position) - myRobotTrajectory[RIGHT_ARM].Joint[0].currPos;
+		 Err[4] = DEG2RAD(myRobotFeedback[RIGHT_ARM].Joint[1].Position) - myRobotTrajectory[RIGHT_ARM].Joint[1].currPos;
+		 Err[5] = DEG2RAD(myRobotFeedback[RIGHT_ARM].Joint[2].Position) - myRobotTrajectory[RIGHT_ARM].Joint[2].currPos;
+
+		// de = dq - dq_r
+		dErr[0] = DEG2RAD(myRobotFeedback[LEFT_ARM].Joint[0].Speed)  - myRobotTrajectory[LEFT_ARM].Joint[0].currVel;
+		dErr[1] = DEG2RAD(myRobotFeedback[LEFT_ARM].Joint[1].Speed)  - myRobotTrajectory[LEFT_ARM].Joint[1].currVel;
+		dErr[2] = DEG2RAD(myRobotFeedback[LEFT_ARM].Joint[2].Speed)  - myRobotTrajectory[LEFT_ARM].Joint[2].currVel;
+		dErr[3] = DEG2RAD(myRobotFeedback[RIGHT_ARM].Joint[0].Speed) - myRobotTrajectory[RIGHT_ARM].Joint[0].currVel;
+		dErr[4] = DEG2RAD(myRobotFeedback[RIGHT_ARM].Joint[1].Speed) - myRobotTrajectory[RIGHT_ARM].Joint[1].currVel;
+		dErr[5] = DEG2RAD(myRobotFeedback[RIGHT_ARM].Joint[2].Speed) - myRobotTrajectory[RIGHT_ARM].Joint[2].currVel;
+
+		// Calculate synschronous error
+		ErrSync[0] = Err[0] - Err[3];
+		ErrSync[1] = Err[1] - Err[4];
+		ErrSync[2] = Err[2] - Err[5];
+		ErrSync[3] = -ErrSync[0];
+		ErrSync[4] = -ErrSync[1];
+		ErrSync[5] = -ErrSync[2];
+
+		dErrSync[0] = dErr[0] - dErr[3];
+		dErrSync[1] = dErr[1] - dErr[4];
+		dErrSync[2] = dErr[2] - dErr[5];
+		dErrSync[3] = -dErrSync[0];
+		dErrSync[4] = -dErrSync[1];
+		dErrSync[5] = -dErrSync[2];
+
+		// Calculate cross-coupling error: e_cc = e + alpha * e_sync
+		ErrCC[0] = Err[0] + Al[0]*ErrSync[0];
+		ErrCC[1] = Err[1] + Al[1]*ErrSync[1];
+		ErrCC[2] = Err[2] + Al[2]*ErrSync[2];
+		ErrCC[3] = Err[3] + Al[0]*ErrSync[3];
+		ErrCC[4] = Err[4] + Al[1]*ErrSync[4];
+		ErrCC[5] = Err[5] + Al[2]*ErrSync[5];
+
+		dErrCC[0] = dErr[0] + Al[0]*dErrSync[0];
+		dErrCC[1] = dErr[1] + Al[1]*dErrSync[1];
+		dErrCC[2] = dErr[2] + Al[2]*dErrSync[2];
+		dErrCC[3] = dErr[3] + Al[0]*dErrSync[3];
+		dErrCC[4] = dErr[4] + Al[1]*dErrSync[4];
+		dErrCC[5] = dErr[5] + Al[2]*dErrSync[5];
+
+		// S = de_cc + λ*e_cc
+		S_dual[0] = dErrCC[0] + Lamda[0]*ErrCC[0];
+		S_dual[1] = dErrCC[1] + Lamda[1]*ErrCC[1];
+		S_dual[2] = dErrCC[2] + Lamda[2]*ErrCC[2];
+		S_dual[3] = dErrCC[3] + Lamda[0]*ErrCC[3];
+		S_dual[4] = dErrCC[4] + Lamda[1]*ErrCC[4];
+		S_dual[5] = dErrCC[5] + Lamda[2]*ErrCC[5];
+
+		// (ddq_r - λ*de)                                          ddq_r        λ        de
+		ddq_r_Lamda_dErr[0] = myRobotTrajectory[LEFT_ARM].Joint[0].currAccel  - Lamda[0]*dErr[0];
+		ddq_r_Lamda_dErr[1] = myRobotTrajectory[LEFT_ARM].Joint[1].currAccel  - Lamda[1]*dErr[1];
+		ddq_r_Lamda_dErr[2] = myRobotTrajectory[LEFT_ARM].Joint[2].currAccel  - Lamda[2]*dErr[2];
+		ddq_r_Lamda_dErr[3] = myRobotTrajectory[RIGHT_ARM].Joint[0].currAccel - Lamda[0]*dErr[3];
+		ddq_r_Lamda_dErr[4] = myRobotTrajectory[RIGHT_ARM].Joint[1].currAccel - Lamda[1]*dErr[4];
+		ddq_r_Lamda_dErr[5] = myRobotTrajectory[RIGHT_ARM].Joint[2].currAccel - Lamda[2]*dErr[5];
+
+		// T_eq = ddq_r - λ*de - K*S
+		Tor_eq[0] = ddq_r_Lamda_dErr[0] - K[0]*S_dual[0];
+		Tor_eq[1] = ddq_r_Lamda_dErr[1] - K[1]*S_dual[1];
+		Tor_eq[2] = ddq_r_Lamda_dErr[2] - K[2]*S_dual[2];
+		Tor_eq[3] = ddq_r_Lamda_dErr[3] - K[0]*S_dual[3];
+		Tor_eq[4] = ddq_r_Lamda_dErr[4] - K[1]*S_dual[4];
+		Tor_eq[5] = ddq_r_Lamda_dErr[5] - K[2]*S_dual[5];
 
 		// T_r = -η*sign(S)
 		Tor_r[0] = -Eta[0]*SIGN(S_dual[0]);

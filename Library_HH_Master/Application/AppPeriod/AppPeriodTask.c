@@ -235,7 +235,7 @@ PRIVATE void _MasterStateControl(void)
 
 			// If using Tor, init the selected controller
 	#if defined (MASTER_CONTROL_TOR)
-			AppControl_Tor_ControllerInit(TOR_CTRL_SMC);
+			AppControl_Tor_ControllerInit(TOR_CTRL_SMC_FREE);
 	#endif
 		}
 #endif

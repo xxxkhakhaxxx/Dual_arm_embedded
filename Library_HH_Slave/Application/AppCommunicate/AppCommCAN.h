@@ -28,6 +28,8 @@
 typedef struct	STRUCT_MOTOR_DATA
 {
 	float currPosKine;		// Kinematics position send to Master	[Deg]
+	float currVelKine;		// Kinematics velocity send to Master	[Deg/s]
+	float currAccKine;		// Kinematics acceleration				[Deg/s^2]
 
 	float currPosition;		// Current position		[Deg]
 	float prevPosition;		// Previous position	[Deg]

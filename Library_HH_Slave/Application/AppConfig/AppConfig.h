@@ -34,7 +34,7 @@
 
 #define DUAL_ARM_LEFT	1
 #define DUAL_ARM_RIGHT	2
-#define THIS_IS_ARM 	DUAL_ARM_LEFT
+#define THIS_IS_ARM 	DUAL_ARM_RIGHT
 
 #define JOINT_DIR_Z_POS		TRUE	// Positive direction in kinematics
 #define JOINT_DIR_Z_NEG		FALSE	// Negative direction in kinematics
@@ -51,11 +51,11 @@
 
 	// Joint calibration: J_real = J_kinematics*J_dir + J_offset
 	#define J1_OFFSET_REAL2KINE	(253.33f)
-	#define J2_OFFSET_REAL2KINE	(60.33f)
-	#define J3_OFFSET_REAL2KINE	(40.62f)
+	#define J2_OFFSET_REAL2KINE	(3.50f)
+	#define J3_OFFSET_REAL2KINE	(14.20f)
 	#define J1_OFFSET_KINE2REAL	((I32)(10667))
-	#define J2_OFFSET_KINE2REAL	((I32)(29967))
-	#define J3_OFFSET_KINE2REAL	((I32)(31938))
+	#define J2_OFFSET_KINE2REAL	((I32)(35650))
+	#define J3_OFFSET_KINE2REAL	((I32)(34580))
 
 	#define J1_KINE_LOW_LIMIT	(30.0f)
 	#define J2_KINE_LOW_LIMIT	(-130.0f)
@@ -73,10 +73,10 @@
 	#define J2_DIR_REAL2KINE	((I08)(1))
 	#define J3_DIR_REAL2KINE	((I08)(-1))
 
-	#define J1_OFFSET_REAL2KINE	(31.09f)
+	#define J1_OFFSET_REAL2KINE	(33.00f)
 	#define J2_OFFSET_REAL2KINE	(18.15f)
 	#define J3_OFFSET_REAL2KINE	(2.21f)
-	#define J1_OFFSET_KINE2REAL	((I32)(32897))
+	#define J1_OFFSET_KINE2REAL	((I32)(32700))
 	#define J2_OFFSET_KINE2REAL	((I32)(34185))
 	#define J3_OFFSET_KINE2REAL	((I32)(35779))
 

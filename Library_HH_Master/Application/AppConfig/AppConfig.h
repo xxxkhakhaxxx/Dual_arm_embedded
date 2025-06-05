@@ -30,8 +30,16 @@
 //#define MASTER_CONTROL_POS
 //#define MASTER_CONTROL_VEL
 #define MASTER_CONTROL_TOR
-//#define MASTER_CONTROLLER_PD_SPD
-#define MASTER_CONTROLLER_SMC_SSMC
+
+#ifdef MASTER_CONTROL_TOR
+	#define CTRL_ALGORITHM_PD	1
+	#define CTRL_ALGORITHM_SPD	2
+	#define CTRL_ALGORITHM_SMC	3
+	#define CTRL_ALGORITHM_SSMC	4
+
+	// Select the controller
+	#define MASTER_SELECTED_CONTROLLER CTRL_ALGORITHM_SSMC
+#endif
 
 #define SLAVE_1_ENA		(TRUE)
 #define SLAVE_2_ENA		(TRUE)
@@ -79,19 +87,6 @@
 #define PERIOD_GUI_SEND		(0.02f)	// [s]
 #define GUI_SEND_CNT_MAX	(PERIOD_GUI_SEND/PERIOD_CONTROL - 1)
 #define PERIOD_TRAJECTORY_PLANNING	PERIOD_CONTROL	// [s]
-/********************************************************************************
- * TYPEDEFS AND ENUMS
- ********************************************************************************/
-
-
-/********************************************************************************
- * GLOBAL VARIABLES
- ********************************************************************************/
-
-
-/********************************************************************************
- * GLOBAL FUNCTION DECLARATION
- ********************************************************************************/
 
 
 

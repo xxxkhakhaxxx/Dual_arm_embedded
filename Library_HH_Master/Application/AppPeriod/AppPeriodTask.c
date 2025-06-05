@@ -66,8 +66,15 @@ volatile static U32 debug_cnt_task_override = 0;
  ********************************************************************************/
 PRIVATE BOOL _CheckAllSlaveInit(void);
 PRIVATE BOOL _CheckAllSlaveFeedback(void);
+
+#ifdef MASTER_SELECTED_CONTROLLER
+PRIVATE void _TorControlInit(void);
+PRIVATE BOOL _TorControlUpdate(void);
+#endif
+
 PRIVATE void _MasterStateControl(void);
 PRIVATE void _MasterStateGUIComm(void);
+
 
 
 /********************************************************************************
@@ -118,6 +125,83 @@ PRIVATE BOOL _CheckAllSlaveFeedback(void)
 #endif
 	return FALSE;
 }
+
+#ifdef MASTER_SELECTED_CONTROLLER
+PRIVATE void _TorControlInit(void)
+{
+#if MASTER_SELECTED_CONTROLLER == CTRL_ALGORITHM_PD
+	AppControl_Tor_ControllerInit(TOR_CTRL_PD);
+#elif MASTER_SELECTED_CONTROLLER == CTRL_ALGORITHM_SPD
+	AppControl_Tor_ControllerInit(TOR_CTRL_SPD);
+#elif MASTER_SELECTED_CONTROLLER == CTRL_ALGORITHM_SMC
+	AppControl_Tor_ControllerInit(TOR_CTRL_SMC);
+#elif MASTER_SELECTED_CONTROLLER == CTRL_ALGORITHM_SSMC
+	AppControl_Tor_ControllerInit(TOR_CTRL_SSMC);
+#else
+	#error [USER] Please select a controller algorithm in AppConfig.h
+#endif
+	return;
+}
+
+PRIVATE BOOL _TorControlUpdate(void)
+{
+#if defined(SLAVE_1_ENA) && defined(SLAVE_2_ENA)	// Both arm
+	#if (MASTER_SELECTED_CONTROLLER == CTRL_ALGORITHM_PD || \
+		 MASTER_SELECTED_CONTROLLER == CTRL_ALGORITHM_SMC)
+	if ((TRUE == AppControl_Tor_ControlUpdateSingleArm(RIGHT_ARM)) && (TRUE == AppControl_Tor_ControlUpdateSingleArm(LEFT_ARM)))
+	{
+		return TRUE;
+	}
+	else
+	{
+		return FALSE;
+	}
+
+	#elif (MASTER_SELECTED_CONTROLLER == CTRL_ALGORITHM_SPD || \
+		   MASTER_SELECTED_CONTROLLER == CTRL_ALGORITHM_SSMC)
+	if (TRUE == AppControl_Tor_ControlUpdateDualArm(DUAL_ARM))
+	{
+		return TRUE;
+	}
+	else
+	{
+		return FALSE;
+	}
+	#endif
+#elif defined(SLAVE_1_ENA)
+	#if (MASTER_SELECTED_CONTROLLER == CTRL_ALGORITHM_PD || \
+		 MASTER_SELECTED_CONTROLLER == CTRL_ALGORITHM_SMC)
+	if (TRUE == AppControl_Tor_ControlUpdateSingleArm(LEFT_ARM))
+	{
+		return TRUE;
+	}
+	else
+	{
+		return FALSE;
+	}
+	#else
+		#error [USER] To use SPD or SSMC, enable both Slave 1 and 2
+	#endif
+#elif defined(SLAVE_2_ENA)
+	#if (MASTER_SELECTED_CONTROLLER == CTRL_ALGORITHM_PD || \
+		 MASTER_SELECTED_CONTROLLER == CTRL_ALGORITHM_SMC)
+	if (TRUE == AppControl_Tor_ControlUpdateSingleArm(RIGHT_ARM))
+	{
+		return TRUE;
+	}
+	else
+	{
+		return FALSE;
+	}
+	#else
+		#error [USER] To use SPD or SSMC, enable both Slave 1 and 2
+	#endif
+#endif
+
+//		if (TRUE == AppControl_Tor_ControlUpdateJoint(RIGHT_ARM, 0))
+
+}
+#endif
 
 PRIVATE void _MasterStateControl(void)
 {
@@ -235,7 +319,7 @@ PRIVATE void _MasterStateControl(void)
 
 			// If using Tor, init the selected controller
 	#if defined (MASTER_CONTROL_TOR)
-			AppControl_Tor_ControllerInit(TOR_CTRL_SSMC);
+			_TorControlInit();
 	#endif
 		}
 #endif
@@ -273,10 +357,7 @@ PRIVATE void _MasterStateControl(void)
 
 #if defined (MASTER_CONTROL_TOR)
 		// It should still update the torque when finished TP
-//		if (TRUE == AppControl_Tor_ControlUpdateJoint(RIGHT_ARM, 0))
-//		if ((TRUE == AppControl_Tor_ControlUpdateSingleArm(RIGHT_ARM)) && (TRUE == AppControl_Tor_ControlUpdateSingleArm(LEFT_ARM)))	// PD vs SMC for both arm
-		if (TRUE == AppControl_Tor_ControlUpdateDualArm(DUAL_ARM))		// SPD vs SSMC
-//		if (TRUE == AppControl_Tor_ControlUpdateSingleArm(RIGHT_ARM))	// PD vs SMC single arm
+		if (TRUE == _TorControlUpdate())
 		{
 			AppCommUART_SendMsg(UART_NODE_SLAVE_1, UART_MSG_MOTOR_CONTROL_TOR);
 			AppCommUART_SendMsg(UART_NODE_SLAVE_2, UART_MSG_MOTOR_CONTROL_TOR);
@@ -308,6 +389,7 @@ PRIVATE void _MasterStateGUIComm(void)
 	{
 		_guiSendCnt = 0;
 #if defined (MASTER_NO_CONTROL) || defined (MASTER_CONTROL_POS)
+
 	#if defined(SLAVE_1_ENA) && defined(SLAVE_2_ENA)
 		AppCommUART_SendMsg(UART_NODE_GUI, UART_MSG_GUI_DATA_1_DUAL);
 	#elif defined(SLAVE_1_ENA)
@@ -315,26 +397,37 @@ PRIVATE void _MasterStateGUIComm(void)
 	#elif defined(SLAVE_2_ENA)
 		AppCommUART_SendMsg(UART_NODE_GUI, UART_MSG_GUI_DATA_1_RIGHT);
 	#endif
+
 #elif defined (MASTER_CONTROL_TOR)
-#if defined (MASTER_CONTROLLER_PD_SPD)
-	// Send Ref-Pos-Tor
-	#if defined(SLAVE_1_ENA) && defined(SLAVE_2_ENA)
-		AppCommUART_SendMsg(UART_NODE_GUI, UART_MSG_GUI_DATA_2_DUAL);
-	#elif defined(SLAVE_1_ENA)
-		AppCommUART_SendMsg(UART_NODE_GUI, UART_MSG_GUI_DATA_2_LEFT);
-	#elif defined(SLAVE_2_ENA)
-		AppCommUART_SendMsg(UART_NODE_GUI, UART_MSG_GUI_DATA_2_RIGHT);
-	#endif
-#elif defined (MASTER_CONTROLLER_SMC_SSMC)
-	// Send Ref-Pos-Tor-Sliding
-	#if defined(SLAVE_1_ENA) && defined(SLAVE_2_ENA)
-		AppCommUART_SendMsg(UART_NODE_GUI, UART_MSG_GUI_DATA_4_DUAL);
-	#elif defined(SLAVE_1_ENA)
-		AppCommUART_SendMsg(UART_NODE_GUI, UART_MSG_GUI_DATA_4_LEFT);
-	#elif defined(SLAVE_2_ENA)
-		AppCommUART_SendMsg(UART_NODE_GUI, UART_MSG_GUI_DATA_4_RIGHT);
-	#endif
-#endif
+
+	#if (MASTER_SELECTED_CONTROLLER == CTRL_ALGORITHM_PD || \
+		 MASTER_SELECTED_CONTROLLER == CTRL_ALGORITHM_SPD)
+
+		// Send Ref-Pos-Tor
+		#if defined(SLAVE_1_ENA) && defined(SLAVE_2_ENA)
+			AppCommUART_SendMsg(UART_NODE_GUI, UART_MSG_GUI_DATA_2_DUAL);
+		#elif defined(SLAVE_1_ENA)
+			AppCommUART_SendMsg(UART_NODE_GUI, UART_MSG_GUI_DATA_2_LEFT);
+		#elif defined(SLAVE_2_ENA)
+			AppCommUART_SendMsg(UART_NODE_GUI, UART_MSG_GUI_DATA_2_RIGHT);
+		#endif
+
+	#elif (MASTER_SELECTED_CONTROLLER == CTRL_ALGORITHM_SMC || \
+		   MASTER_SELECTED_CONTROLLER == CTRL_ALGORITHM_SSMC)
+
+		// Send Ref-Pos-Tor-Sliding
+		#if defined(SLAVE_1_ENA) && defined(SLAVE_2_ENA)
+			AppCommUART_SendMsg(UART_NODE_GUI, UART_MSG_GUI_DATA_4_DUAL);
+		#elif defined(SLAVE_1_ENA)
+			AppCommUART_SendMsg(UART_NODE_GUI, UART_MSG_GUI_DATA_4_LEFT);
+		#elif defined(SLAVE_2_ENA)
+			AppCommUART_SendMsg(UART_NODE_GUI, UART_MSG_GUI_DATA_4_RIGHT);
+		#endif
+
+    #else
+		#error [USER] Please select a controller algorithm in AppConfig.h
+    #endif
+
 #endif
 	}
 

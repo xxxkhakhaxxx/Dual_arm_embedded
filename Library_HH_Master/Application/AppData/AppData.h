@@ -80,11 +80,11 @@
 
 #define MSG_GUI_DATA_4_SING_BYTE_0	(0xFB)  // Single SMC data
 #define MSG_GUI_DATA_4_SING_BYTE_1	(0x11)
-#define MSG_GUI_DATA_4_SING_LENGTH	(52)	// 3 header + 1 checksum + 3*(4+4+4+4+4) payloads
+#define MSG_GUI_DATA_4_SING_LENGTH	(64)	// 3 header + 1 checksum + 3*(4+4+4+4+4) payloads
 
 #define MSG_GUI_DATA_4_DUAL_BYTE_0	(0xFC)  // Single SMC data
 #define MSG_GUI_DATA_4_DUAL_BYTE_1	(0x12)
-#define MSG_GUI_DATA_4_DUAL_LENGTH	(100)	// 3 header + 1 checksum + 3*(4+4+4+4+4) payloads
+#define MSG_GUI_DATA_4_DUAL_LENGTH	(124)	// 3 header + 1 checksum + 2*3*(4+4+4+4+4) payloads
 
 
 #define CURR_POS_J11	((float)myRobotFeedback[LEFT_ARM].Joint[0].Position)

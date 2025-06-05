@@ -33,7 +33,7 @@
 //#define MASTER_CONTROLLER_PD_SPD
 #define MASTER_CONTROLLER_SMC_SSMC
 
-//#define SLAVE_1_ENA		(TRUE)
+#define SLAVE_1_ENA		(TRUE)
 #define SLAVE_2_ENA		(TRUE)
 
 /* --------------- ROBOT PARAMS MACRO --------------- */

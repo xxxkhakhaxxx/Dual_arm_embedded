@@ -173,7 +173,7 @@ PRIVATE void _MasterStateControl(void)
 		// If not moving to start, successfully init the selected trajectory type
 		if (
 		(FALSE == isMovingToStart) && \
-		(TRUE == AppControl_TP_InitWorldTrajectory(TP_TYPE_TASK_CIRCLE)) && \
+		(TRUE == AppControl_TP_TaskTrajectoryInit(TP_TYPE_TASK_CIRCLE)) && \
 		(TRUE == AppControl_TP_TaskTrajectoryUpdate(PERIOD_TRAJECTORY_PLANNING)))
 		{
 			AppControl_IK_World2EE(LEFT_ARM);
@@ -235,7 +235,7 @@ PRIVATE void _MasterStateControl(void)
 
 			// If using Tor, init the selected controller
 	#if defined (MASTER_CONTROL_TOR)
-			AppControl_Tor_ControllerInit(TOR_CTRL_SMC_FREE);
+			AppControl_Tor_ControllerInit(TOR_CTRL_SSMC);
 	#endif
 		}
 #endif
@@ -274,9 +274,9 @@ PRIVATE void _MasterStateControl(void)
 #if defined (MASTER_CONTROL_TOR)
 		// It should still update the torque when finished TP
 //		if (TRUE == AppControl_Tor_ControlUpdateJoint(RIGHT_ARM, 0))
-//		if ((TRUE == AppControl_Tor_ControlUpdateSingleArm(RIGHT_ARM)) && (TRUE == AppControl_Tor_ControlUpdateSingleArm(LEFT_ARM)))
-//		if (TRUE == AppControl_Tor_ControlUpdateDualArm(DUAL_ARM))		// SPD vs SSMC
-		if (TRUE == AppControl_Tor_ControlUpdateSingleArm(RIGHT_ARM))	// PD vs SMC
+//		if ((TRUE == AppControl_Tor_ControlUpdateSingleArm(RIGHT_ARM)) && (TRUE == AppControl_Tor_ControlUpdateSingleArm(LEFT_ARM)))	// PD vs SMC for both arm
+		if (TRUE == AppControl_Tor_ControlUpdateDualArm(DUAL_ARM))		// SPD vs SSMC
+//		if (TRUE == AppControl_Tor_ControlUpdateSingleArm(RIGHT_ARM))	// PD vs SMC single arm
 		{
 			AppCommUART_SendMsg(UART_NODE_SLAVE_1, UART_MSG_MOTOR_CONTROL_TOR);
 			AppCommUART_SendMsg(UART_NODE_SLAVE_2, UART_MSG_MOTOR_CONTROL_TOR);

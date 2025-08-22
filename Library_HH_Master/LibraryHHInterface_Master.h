@@ -1,0 +1,43 @@
+/**
+ ********************************************************************************
+ ** @file    LibraryHHInterface.h
+ ** @author  HH (hunghoang.1806@gmail.com)
+ ** @date    Oct 30, 2024 (created)
+ ** @brief   Add all necessary header files here
+ ********************************************************************************
+ **/
+
+#ifndef LIBRARYHHINTERFACE_MASTER_H_
+#define LIBRARYHHINTERFACE_MASTER_H_
+
+
+/********************************************************************************
+ *									INCLUDES
+ ********************************************************************************/
+//  Basic C library
+//#include "stdio.h"
+//#include "stdlib.h"
+//#include "stdint.h"
+#include "math.h"
+#include "string.h"
+
+#include "stm32f4xx_hal.h"
+
+// Must add "Library_HH" as a source folder
+#include "./Middleware/ApiMacro/ApiMacro.h"
+
+#include "./Application/AppConfig/AppConfig.h"
+#include "./Application/AppData/AppData.h"
+#include "./Application/AppCommunicate/AppCommUART.h"
+#include "./Application/AppControl/AppControl.h"
+#include "./Application/AppPeriod/AppPeriodTask.h"
+
+
+/********************************************************************************
+ * MACROS AND DEFINES
+ ********************************************************************************/
+
+
+
+
+#endif /* LIBRARYHHINTERFACE_MASTER_H_ */

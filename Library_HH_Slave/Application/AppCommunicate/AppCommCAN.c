@@ -207,14 +207,12 @@ PRIVATE void _UpdateMotorRecvData(U08 _motorId, U16 _newEncoderValue)
 PRIVATE void _ButterworthFilter_FirstOrder(U08 _motorId, float _velCutOffFreq, float _accelCutOffFreq)
 {
 	static BOOL isInit = FALSE;
-	static float Ts;
+	static float Ts = PERIOD_MOTOR_COMM;
 	static float v_omega_c, v_alpha, v_inputGain;
 	static float a_omega_c, a_alpha, a_inputGain;
-	// Sampling period (20ms = 0.02s)
+
 	if (FALSE == isInit)
 	{
-		Ts = 0.02f;
-
 		v_omega_c   = 2.0f*PI*_velCutOffFreq;	// Angular cutoff frequency [rad/s]
 		v_alpha     = expf(-v_omega_c*Ts);		// Filter coefficient
 		v_inputGain = 1.0f - v_alpha;			// Gain for input

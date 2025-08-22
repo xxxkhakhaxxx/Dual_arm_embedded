@@ -66,8 +66,15 @@ volatile static U32 debug_cnt_task_override = 0;
  ********************************************************************************/
 PRIVATE BOOL _CheckAllSlaveInit(void);
 PRIVATE BOOL _CheckAllSlaveFeedback(void);
+
+#ifdef MASTER_SELECTED_CONTROLLER
+PRIVATE void _TorControlInit(void);
+PRIVATE BOOL _TorControlUpdate(void);
+#endif
+
 PRIVATE void _MasterStateControl(void);
 PRIVATE void _MasterStateGUIComm(void);
+
 
 
 /********************************************************************************
@@ -118,6 +125,84 @@ PRIVATE BOOL _CheckAllSlaveFeedback(void)
 #endif
 	return FALSE;
 }
+
+#ifdef MASTER_SELECTED_CONTROLLER
+PRIVATE void _TorControlInit(void)
+{
+#if defined(CTRL_ALGORITHM_PD)
+	#pragma message("[USER] Selected PD Controller")
+	AppControl_Tor_ControllerInit(TOR_CTRL_PD);
+
+#elif defined(CTRL_ALGORITHM_SPD)
+	#pragma message("[USER] Selected SPD Controller")
+	AppControl_Tor_ControllerInit(TOR_CTRL_SPD);
+#elif defined(CTRL_ALGORITHM_SMC)
+	#pragma message("[USER] Selected SMC Controller")
+	AppControl_Tor_ControllerInit(TOR_CTRL_SMC);
+#elif defined(CTRL_ALGORITHM_SSMC)
+	#pragma message("[USER] Selected SSMC Controller")
+	AppControl_Tor_ControllerInit(TOR_CTRL_SSMC);
+#else
+	#error [USER] Please select a controller algorithm in AppConfig.h
+#endif
+	return;
+}
+
+PRIVATE BOOL _TorControlUpdate(void)
+{
+#if defined(SLAVE_1_ENA) && defined(SLAVE_2_ENA)	// Both arm
+	#if (defined(CTRL_ALGORITHM_PD) || defined(CTRL_ALGORITHM_SMC))
+	if ((TRUE == AppControl_Tor_ControlUpdateSingleArm(RIGHT_ARM)) && (TRUE == AppControl_Tor_ControlUpdateSingleArm(LEFT_ARM)))
+	{
+		return TRUE;
+	}
+	else
+	{
+		return FALSE;
+	}
+
+	#elif (defined(CTRL_ALGORITHM_SPD) || defined(CTRL_ALGORITHM_SSMC))
+	if (TRUE == AppControl_Tor_ControlUpdateDualArm(DUAL_ARM))
+	{
+		return TRUE;
+	}
+	else
+	{
+		return FALSE;
+	}
+	#endif
+#elif defined(SLAVE_1_ENA)
+	#if (defined(CTRL_ALGORITHM_PD) || defined(CTRL_ALGORITHM_SMC))
+	if (TRUE == AppControl_Tor_ControlUpdateSingleArm(LEFT_ARM))
+	{
+		return TRUE;
+	}
+	else
+	{
+		return FALSE;
+	}
+	#else
+		#error [USER] To use SPD or SSMC, enable both Slave 1 and 2
+	#endif
+#elif defined(SLAVE_2_ENA)
+	#if (defined(CTRL_ALGORITHM_PD) || defined(CTRL_ALGORITHM_SMC))
+	if (TRUE == AppControl_Tor_ControlUpdateSingleArm(RIGHT_ARM))
+	{
+		return TRUE;
+	}
+	else
+	{
+		return FALSE;
+	}
+	#else
+		#error [USER] To use SPD or SSMC, enable both Slave 1 and 2
+	#endif
+#endif
+
+//		if (TRUE == AppControl_Tor_ControlUpdateJoint(RIGHT_ARM, 0))
+
+}
+#endif
 
 PRIVATE void _MasterStateControl(void)
 {
@@ -173,7 +258,7 @@ PRIVATE void _MasterStateControl(void)
 		// If not moving to start, successfully init the selected trajectory type
 		if (
 		(FALSE == isMovingToStart) && \
-		(TRUE == AppControl_TP_InitWorldTrajectory(TP_TYPE_TASK_CIRCLE)) && \
+		(TRUE == AppControl_TP_TaskTrajectoryInit(TP_TYPE_TASK_CIRCLE)) && \
 		(TRUE == AppControl_TP_TaskTrajectoryUpdate(PERIOD_TRAJECTORY_PLANNING)))
 		{
 			AppControl_IK_World2EE(LEFT_ARM);
@@ -227,16 +312,17 @@ PRIVATE void _MasterStateControl(void)
 
 		if (TRUE == isSendControl)
 		{
-			AppControl_Pos_MoveToTpStart(LEFT_ARM, TP_START_SPEED);
-			AppControl_Pos_MoveToTpStart(RIGHT_ARM, TP_START_SPEED);
-			AppCommUART_SendMsg(UART_NODE_SLAVE_1, UART_MSG_MOTOR_CONTROL_POS);
-			AppCommUART_SendMsg(UART_NODE_SLAVE_2, UART_MSG_MOTOR_CONTROL_POS);
+//			AppControl_Pos_MoveToTpStart(LEFT_ARM, TP_START_SPEED);
+//			AppControl_Pos_MoveToTpStart(RIGHT_ARM, TP_START_SPEED);
+//			AppCommUART_SendMsg(UART_NODE_SLAVE_1, UART_MSG_MOTOR_CONTROL_POS);
+//			AppCommUART_SendMsg(UART_NODE_SLAVE_2, UART_MSG_MOTOR_CONTROL_POS);
 			isMovingToStart = TRUE;
 
 			// If using Tor, init the selected controller
 	#if defined (MASTER_CONTROL_TOR)
-			AppControl_Tor_ControllerInit(TOR_CTRL_PD);
+			_TorControlInit();
 	#endif
+			_btnSequence = BTN_CTRL_PLANNING;
 		}
 #endif
 		break;
@@ -273,8 +359,7 @@ PRIVATE void _MasterStateControl(void)
 
 #if defined (MASTER_CONTROL_TOR)
 		// It should still update the torque when finished TP
-//		if (TRUE == AppControl_Tor_ControlUpdateJoint(RIGHT_ARM, 0))
-		if ((TRUE == AppControl_Tor_ControlUpdateArm(RIGHT_ARM)) && (TRUE == AppControl_Tor_ControlUpdateArm(LEFT_ARM)))
+		if (TRUE == _TorControlUpdate())
 		{
 			AppCommUART_SendMsg(UART_NODE_SLAVE_1, UART_MSG_MOTOR_CONTROL_TOR);
 			AppCommUART_SendMsg(UART_NODE_SLAVE_2, UART_MSG_MOTOR_CONTROL_TOR);
@@ -306,6 +391,7 @@ PRIVATE void _MasterStateGUIComm(void)
 	{
 		_guiSendCnt = 0;
 #if defined (MASTER_NO_CONTROL) || defined (MASTER_CONTROL_POS)
+
 	#if defined(SLAVE_1_ENA) && defined(SLAVE_2_ENA)
 		AppCommUART_SendMsg(UART_NODE_GUI, UART_MSG_GUI_DATA_1_DUAL);
 	#elif defined(SLAVE_1_ENA)
@@ -313,14 +399,35 @@ PRIVATE void _MasterStateGUIComm(void)
 	#elif defined(SLAVE_2_ENA)
 		AppCommUART_SendMsg(UART_NODE_GUI, UART_MSG_GUI_DATA_1_RIGHT);
 	#endif
+
 #elif defined (MASTER_CONTROL_TOR)
-	#if defined(SLAVE_1_ENA) && defined(SLAVE_2_ENA)
-		AppCommUART_SendMsg(UART_NODE_GUI, UART_MSG_GUI_DATA_2_DUAL);
-	#elif defined(SLAVE_1_ENA)
-		AppCommUART_SendMsg(UART_NODE_GUI, UART_MSG_GUI_DATA_2_LEFT);
-	#elif defined(SLAVE_2_ENA)
-		AppCommUART_SendMsg(UART_NODE_GUI, UART_MSG_GUI_DATA_2_RIGHT);
-	#endif
+
+	#if (defined(CTRL_ALGORITHM_PD) || defined(CTRL_ALGORITHM_SPD))
+
+		// Send Ref-Pos-Tor
+		#if defined(SLAVE_1_ENA) && defined(SLAVE_2_ENA)
+			AppCommUART_SendMsg(UART_NODE_GUI, UART_MSG_GUI_DATA_2_DUAL);
+		#elif defined(SLAVE_1_ENA)
+			AppCommUART_SendMsg(UART_NODE_GUI, UART_MSG_GUI_DATA_2_LEFT);
+		#elif defined(SLAVE_2_ENA)
+			AppCommUART_SendMsg(UART_NODE_GUI, UART_MSG_GUI_DATA_2_RIGHT);
+		#endif
+
+	#elif (defined(CTRL_ALGORITHM_SMC) || defined(CTRL_ALGORITHM_SSMC))
+
+		// Send Ref-Pos-Tor-Sliding
+		#if defined(SLAVE_1_ENA) && defined(SLAVE_2_ENA)
+			AppCommUART_SendMsg(UART_NODE_GUI, UART_MSG_GUI_DATA_4_DUAL);
+		#elif defined(SLAVE_1_ENA)
+			AppCommUART_SendMsg(UART_NODE_GUI, UART_MSG_GUI_DATA_4_LEFT);
+		#elif defined(SLAVE_2_ENA)
+			AppCommUART_SendMsg(UART_NODE_GUI, UART_MSG_GUI_DATA_4_RIGHT);
+		#endif
+
+    #else
+		#error [USER] Please select a controller algorithm in AppConfig.h
+    #endif
+
 #endif
 	}
 
@@ -335,14 +442,14 @@ GLOBAL void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
 	if (htim->Instance == TIM2)
 	{
-		AppDataCheck_UserButtonState();	// Check user btn every 20ms
+		AppDataCheck_UserButtonState();	// Check user btn every 5ms
 
-		if (FALSE == bNewSequenceFlag)	// Cycle 20ms
+		if (FALSE == bNewSequenceFlag)	// Cycle 5ms
 		{
-			bNewSequenceFlag = TRUE;	// Start new sequence every 20ms
+			bNewSequenceFlag = TRUE;	// Start new sequence every 5ms
 			AppDataSet_LedState(LED_3_ORANGE, FALSE);
 		}
-		else	// All tasks take more 20ms to finished
+		else	// All tasks take more 5ms to finished
 		{
 			if (U16_MAX > debug_cnt_task_override)
 			{
@@ -359,7 +466,7 @@ GLOBAL void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 GLOBAL void AppPeriodTask_StateMachineProcess(void)
 {
 	// Full sequence: Init ➩ wait Slave init ➩ Send init to confirm ➩ ...
-	//            ... ➩ Wait 20ms Flag ➩ Request data ➩ Handle data feedback ➩ Calculate control ➩ Send control
+	//            ... ➩ Wait 5ms Flag ➩ Request data ➩ Handle data feedback ➩ Calculate control ➩ Send control
 	//                          ↖	⇦   ⇦   ⇦   ⇦   ⇦   ⇦   ⇦   ⇦   ⇦   ⇦   ⇦   ⇦   ⇦   ⇦  GUI feedback ↩
 
 	switch (AppDataGet_MasterState())
@@ -521,10 +628,23 @@ GLOBAL void AppPeriodTask_StateMachineProcess(void)
 
 	case MASTER_STATE_SEND_GUI:
 #ifndef MASTER_NO_GUI
-		_MasterStateGUIComm();
-#endif
+		if (
+		(FALSE == AppDataGet_UartTxWaitFlag(UART_NODE_SLAVE_1)) && \
+		(FALSE == AppDataGet_UartTxWaitFlag(UART_NODE_SLAVE_2)))
+		{
+			_MasterStateGUIComm();
+
+			bNewSequenceFlag = FALSE;	// Sequence end
+			AppDataSet_MasterState(MASTER_STATE_WAIT_NEW_SEQUENCE);
+		}
+		else
+		{
+			// Waiting DMA finished sending msg to 2 Slave
+		}
+#else
 		bNewSequenceFlag = FALSE;	// Sequence end
 		AppDataSet_MasterState(MASTER_STATE_WAIT_NEW_SEQUENCE);
+#endif
 		break;
 
 	default:

@@ -64,7 +64,9 @@ typedef enum ENUM_TOR_CONTROLLER
 	TOR_CTRL_PD,
 	TOR_CTRL_SPD,
 	TOR_CTRL_SMC,
-	TOR_CTRL_SSMC
+	TOR_CTRL_SSMC,
+	TOR_CTRL_SMC_FREE,
+	TOR_CTRL_SSMC_FREE
 } enTorController;
 
 typedef struct
@@ -207,6 +209,7 @@ typedef struct
 			float Eta[3];
 			float Alpha[3];
 		} Setting;
+
 	} SMC;
 
 	struct
@@ -217,12 +220,53 @@ typedef struct
 
 	enTorController Type;
 } strTorControl;
+
+typedef struct
+{
+	float S[3];
+	float dErr[3];	// Rad/s
+	float  Err[3];	// Rad
+} strMonitorSMC;
+
+typedef struct
+{
+
+	//  Quyển - 241205: Phụ Lục B: Động lực học cánh tay 3 bậc tự do
+	struct
+	{
+		float m11;
+		float m12;
+		float m13;
+		float m21;
+		float m22;
+		float m23;
+		float m31;
+		float m32;
+		float m33;
+	} M;
+
+	struct
+	{
+		float c11;
+		float c12;
+		float c13;
+		float c21;
+		float c22;
+		float c23;
+		float c31;
+		float c32;
+		float c33;
+	} C;
+} strDynamics3DofPlanar;
 /********************************************************************************
  * GLOBAL VARIABLES
  ********************************************************************************/
 GLOBAL extern strTrajectoryPlanning myTrajectory;
 GLOBAL extern strJointSpacePlanning myRobotTrajectory[DUAL_ARM];
-GLOBAL extern strTorControl myControl;
+GLOBAL extern strTorControl myControlSetting;
+GLOBAL extern strMonitorSMC myControlState[DUAL_ARM];
+GLOBAL extern strDynamics3DofPlanar myRobotDynamics[DUAL_ARM];
+GLOBAL extern float TorEx[6];
 
 
 /********************************************************************************
@@ -243,9 +287,10 @@ GLOBAL void AppControl_Pos_FollowTpPos(U08 _arm);
 
 GLOBAL void AppControl_Tor_TestSequence(U08 _arm, U08 _joint);
 GLOBAL BOOL AppControl_Tor_ControllerInit(enTorController _type);
-GLOBAL BOOL AppControl_Tor_ControlUpdateJoint(U08 _arm, U08 _joint);
-GLOBAL BOOL AppControl_Tor_ControlUpdateArm(U08 _arm);
+GLOBAL BOOL AppControl_Tor_ControlUpdateJoint(U08 _arm, U08 _joint);	// PD
+GLOBAL BOOL AppControl_Tor_ControlUpdateSingleArm(U08 _arm);			// PD / SMC
+GLOBAL BOOL AppControl_Tor_ControlUpdateDualArm(U08 _arm);				// SPD / SSMC
 
-
+GLOBAL void AppControl_Dynamic_Update(U08 _arm);	// SMC / SSMC
 
 #endif /* APPLICATION_APPCONTROL_APPCONTROL_H_ */

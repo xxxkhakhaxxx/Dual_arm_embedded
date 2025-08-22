@@ -78,6 +78,14 @@
 #define MSG_GUI_DATA_3_DUAL_BYTE_1	(0x10)
 #define MSG_GUI_DATA_3_DUAL_LENGTH	(124)	// 3 header + 1 checksum + 2*3*(4+4+4+4+4) payloads
 
+#define MSG_GUI_DATA_4_SING_BYTE_0	(0xFB)  // Single SMC data
+#define MSG_GUI_DATA_4_SING_BYTE_1	(0x11)
+#define MSG_GUI_DATA_4_SING_LENGTH	(64)	// 3 header + 1 checksum + 3*(4+4+4+4+4) payloads
+
+#define MSG_GUI_DATA_4_DUAL_BYTE_0	(0xFC)  // Single SMC data
+#define MSG_GUI_DATA_4_DUAL_BYTE_1	(0x12)
+#define MSG_GUI_DATA_4_DUAL_LENGTH	(124)	// 3 header + 1 checksum + 2*3*(4+4+4+4+4) payloads
+
 
 #define CURR_POS_J11	((float)myRobotFeedback[LEFT_ARM].Joint[0].Position)
 #define CURR_POS_J21	((float)myRobotFeedback[LEFT_ARM].Joint[1].Position)
@@ -190,6 +198,9 @@ GLOBAL void AppDataCheck_UserButtonState(void);
 
 GLOBAL BOOL AppDataGet_TPCalculated(void);
 GLOBAL void AppDataSet_TPCalculated(BOOL _flag);
+
+GLOBAL BOOL AppDataGet_ExternalTorqueApply(void);
+GLOBAL void AppDataSet_ExternalTorqueApply(BOOL _flag);
 
 /************ UART TX MANAGE FUNCTION  ************/
 GLOBAL BOOL AppDataGet_UartTxWaitFlag(U08 _node);				// if you don't want to use this flag, you should handle Tx success or not

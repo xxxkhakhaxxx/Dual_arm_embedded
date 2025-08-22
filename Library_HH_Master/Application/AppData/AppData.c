@@ -183,6 +183,20 @@ GLOBAL void AppDataSet_TPCalculated(BOOL _flag)
 	return;
 }
 
+PRIVATE BOOL isExternalTorqueApplied = FALSE;
+GLOBAL BOOL AppDataGet_ExternalTorqueApply(void)
+{
+	return isExternalTorqueApplied;
+}
+GLOBAL void AppDataSet_ExternalTorqueApply(BOOL _flag)
+{
+	if (_flag != isExternalTorqueApplied)
+	{
+		isExternalTorqueApplied = _flag;
+	}
+	return;
+}
+
 
 /************ UART TX MANAGE FUNCTION  ************/
 GLOBAL BOOL AppDataGet_UartTxWaitFlag(U08 _node)

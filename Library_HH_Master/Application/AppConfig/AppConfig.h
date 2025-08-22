@@ -32,14 +32,16 @@
 #define MASTER_CONTROL_TOR
 
 #ifdef MASTER_CONTROL_TOR
-	#define CTRL_ALGORITHM_PD	1
-	#define CTRL_ALGORITHM_SPD	2
-	#define CTRL_ALGORITHM_SMC	3
-	#define CTRL_ALGORITHM_SSMC	4
+//	#define CTRL_ALGORITHM_PD	(TRUE)
+//	#define CTRL_ALGORITHM_SPD	(TRUE)
+//	#define CTRL_ALGORITHM_SMC	(TRUE)
+	#define CTRL_ALGORITHM_SSMC	(TRUE)
 
 	// Select the controller
-	#define MASTER_SELECTED_CONTROLLER CTRL_ALGORITHM_SSMC
+	#define MASTER_SELECTED_CONTROLLER
 #endif
+
+#define VIRTUAL_FORCE_ENABLE				// Create a virtual force acting on End-effector
 
 #define SLAVE_1_ENA		(TRUE)
 #define SLAVE_2_ENA		(TRUE)
@@ -64,7 +66,7 @@
 
 #define M1				(0.368f)	// [Kg]
 #define M2				(0.356f)	// [Kg]
-#define M3				(0.040f)	// [Kg]
+#define M3				(0.060f)	// [Kg]
 //#define M12				(0.368f)	// [Kg]
 //#define M22				(0.330f)	// [Kg]
 //#define M32				(0.042f)	// [Kg]
@@ -79,8 +81,11 @@
 #define M2_M3			(M2+M3)
 
 /* --------------- CONTROL PARAMS MACRO -------------- */
-#define CONTROL_MAX_TORQUE	(3.0f)	// [Nm]
-
+#define CONTROL_MAX_TORQUE	(10.0f)	// [Nm]
+#define VIRTUAL_FORCE_TIME_START	(17.0f)	// [s]
+#define VIRTUAL_FORCE_TIME_STOP		(17.2f)	// [s]
+#define VIRTUAL_FORCE_X_AXIS		(-10.0f)	// [Nm]
+#define VIRTUAL_FORCE_Y_AXIS		(0.0f)	// [Nm]
 
 /* ----------------- TIME PARAMS MACRO ---------------- */
 #define PERIOD_CONTROL		(0.01f)	// Update this base on your timer 2 [s]

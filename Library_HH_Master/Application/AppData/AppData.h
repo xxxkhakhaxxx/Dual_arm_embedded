@@ -199,6 +199,9 @@ GLOBAL void AppDataCheck_UserButtonState(void);
 GLOBAL BOOL AppDataGet_TPCalculated(void);
 GLOBAL void AppDataSet_TPCalculated(BOOL _flag);
 
+GLOBAL BOOL AppDataGet_ExternalTorqueApply(void);
+GLOBAL void AppDataSet_ExternalTorqueApply(BOOL _flag);
+
 /************ UART TX MANAGE FUNCTION  ************/
 GLOBAL BOOL AppDataGet_UartTxWaitFlag(U08 _node);				// if you don't want to use this flag, you should handle Tx success or not
 GLOBAL void AppDataSet_UartTxWaitFlag(U08 _node, BOOL _flag);	// Set Tx waiting flag

@@ -129,13 +129,18 @@ PRIVATE BOOL _CheckAllSlaveFeedback(void)
 #ifdef MASTER_SELECTED_CONTROLLER
 PRIVATE void _TorControlInit(void)
 {
-#if MASTER_SELECTED_CONTROLLER == CTRL_ALGORITHM_PD
+#if defined(CTRL_ALGORITHM_PD)
+	#pragma message("[USER] Selected PD Controller")
 	AppControl_Tor_ControllerInit(TOR_CTRL_PD);
-#elif MASTER_SELECTED_CONTROLLER == CTRL_ALGORITHM_SPD
+
+#elif defined(CTRL_ALGORITHM_SPD)
+	#pragma message("[USER] Selected SPD Controller")
 	AppControl_Tor_ControllerInit(TOR_CTRL_SPD);
-#elif MASTER_SELECTED_CONTROLLER == CTRL_ALGORITHM_SMC
+#elif defined(CTRL_ALGORITHM_SMC)
+	#pragma message("[USER] Selected SMC Controller")
 	AppControl_Tor_ControllerInit(TOR_CTRL_SMC);
-#elif MASTER_SELECTED_CONTROLLER == CTRL_ALGORITHM_SSMC
+#elif defined(CTRL_ALGORITHM_SSMC)
+	#pragma message("[USER] Selected SSMC Controller")
 	AppControl_Tor_ControllerInit(TOR_CTRL_SSMC);
 #else
 	#error [USER] Please select a controller algorithm in AppConfig.h
@@ -146,8 +151,7 @@ PRIVATE void _TorControlInit(void)
 PRIVATE BOOL _TorControlUpdate(void)
 {
 #if defined(SLAVE_1_ENA) && defined(SLAVE_2_ENA)	// Both arm
-	#if (MASTER_SELECTED_CONTROLLER == CTRL_ALGORITHM_PD || \
-		 MASTER_SELECTED_CONTROLLER == CTRL_ALGORITHM_SMC)
+	#if (defined(CTRL_ALGORITHM_PD) || defined(CTRL_ALGORITHM_SMC))
 	if ((TRUE == AppControl_Tor_ControlUpdateSingleArm(RIGHT_ARM)) && (TRUE == AppControl_Tor_ControlUpdateSingleArm(LEFT_ARM)))
 	{
 		return TRUE;
@@ -157,8 +161,7 @@ PRIVATE BOOL _TorControlUpdate(void)
 		return FALSE;
 	}
 
-	#elif (MASTER_SELECTED_CONTROLLER == CTRL_ALGORITHM_SPD || \
-		   MASTER_SELECTED_CONTROLLER == CTRL_ALGORITHM_SSMC)
+	#elif (defined(CTRL_ALGORITHM_SPD) || defined(CTRL_ALGORITHM_SSMC))
 	if (TRUE == AppControl_Tor_ControlUpdateDualArm(DUAL_ARM))
 	{
 		return TRUE;
@@ -169,8 +172,7 @@ PRIVATE BOOL _TorControlUpdate(void)
 	}
 	#endif
 #elif defined(SLAVE_1_ENA)
-	#if (MASTER_SELECTED_CONTROLLER == CTRL_ALGORITHM_PD || \
-		 MASTER_SELECTED_CONTROLLER == CTRL_ALGORITHM_SMC)
+	#if (defined(CTRL_ALGORITHM_PD) || defined(CTRL_ALGORITHM_SMC))
 	if (TRUE == AppControl_Tor_ControlUpdateSingleArm(LEFT_ARM))
 	{
 		return TRUE;
@@ -183,8 +185,7 @@ PRIVATE BOOL _TorControlUpdate(void)
 		#error [USER] To use SPD or SSMC, enable both Slave 1 and 2
 	#endif
 #elif defined(SLAVE_2_ENA)
-	#if (MASTER_SELECTED_CONTROLLER == CTRL_ALGORITHM_PD || \
-		 MASTER_SELECTED_CONTROLLER == CTRL_ALGORITHM_SMC)
+	#if (defined(CTRL_ALGORITHM_PD) || defined(CTRL_ALGORITHM_SMC))
 	if (TRUE == AppControl_Tor_ControlUpdateSingleArm(RIGHT_ARM))
 	{
 		return TRUE;
@@ -311,16 +312,17 @@ PRIVATE void _MasterStateControl(void)
 
 		if (TRUE == isSendControl)
 		{
-			AppControl_Pos_MoveToTpStart(LEFT_ARM, TP_START_SPEED);
-			AppControl_Pos_MoveToTpStart(RIGHT_ARM, TP_START_SPEED);
-			AppCommUART_SendMsg(UART_NODE_SLAVE_1, UART_MSG_MOTOR_CONTROL_POS);
-			AppCommUART_SendMsg(UART_NODE_SLAVE_2, UART_MSG_MOTOR_CONTROL_POS);
+//			AppControl_Pos_MoveToTpStart(LEFT_ARM, TP_START_SPEED);
+//			AppControl_Pos_MoveToTpStart(RIGHT_ARM, TP_START_SPEED);
+//			AppCommUART_SendMsg(UART_NODE_SLAVE_1, UART_MSG_MOTOR_CONTROL_POS);
+//			AppCommUART_SendMsg(UART_NODE_SLAVE_2, UART_MSG_MOTOR_CONTROL_POS);
 			isMovingToStart = TRUE;
 
 			// If using Tor, init the selected controller
 	#if defined (MASTER_CONTROL_TOR)
 			_TorControlInit();
 	#endif
+			_btnSequence = BTN_CTRL_PLANNING;
 		}
 #endif
 		break;
@@ -400,8 +402,7 @@ PRIVATE void _MasterStateGUIComm(void)
 
 #elif defined (MASTER_CONTROL_TOR)
 
-	#if (MASTER_SELECTED_CONTROLLER == CTRL_ALGORITHM_PD || \
-		 MASTER_SELECTED_CONTROLLER == CTRL_ALGORITHM_SPD)
+	#if (defined(CTRL_ALGORITHM_PD) || defined(CTRL_ALGORITHM_SPD))
 
 		// Send Ref-Pos-Tor
 		#if defined(SLAVE_1_ENA) && defined(SLAVE_2_ENA)
@@ -412,8 +413,7 @@ PRIVATE void _MasterStateGUIComm(void)
 			AppCommUART_SendMsg(UART_NODE_GUI, UART_MSG_GUI_DATA_2_RIGHT);
 		#endif
 
-	#elif (MASTER_SELECTED_CONTROLLER == CTRL_ALGORITHM_SMC || \
-		   MASTER_SELECTED_CONTROLLER == CTRL_ALGORITHM_SSMC)
+	#elif (defined(CTRL_ALGORITHM_SMC) || defined(CTRL_ALGORITHM_SSMC))
 
 		// Send Ref-Pos-Tor-Sliding
 		#if defined(SLAVE_1_ENA) && defined(SLAVE_2_ENA)

@@ -266,8 +266,7 @@ GLOBAL extern strJointSpacePlanning myRobotTrajectory[DUAL_ARM];
 GLOBAL extern strTorControl myControlSetting;
 GLOBAL extern strMonitorSMC myControlState[DUAL_ARM];
 GLOBAL extern strDynamics3DofPlanar myRobotDynamics[DUAL_ARM];
-//GLOBAL extern float S_single[DUAL_ARM][3];
-//GLOBAL extern float S_dual[6];	// For UART
+GLOBAL extern float TorEx[6];
 
 
 /********************************************************************************
@@ -292,7 +291,6 @@ GLOBAL BOOL AppControl_Tor_ControlUpdateJoint(U08 _arm, U08 _joint);	// PD
 GLOBAL BOOL AppControl_Tor_ControlUpdateSingleArm(U08 _arm);			// PD / SMC
 GLOBAL BOOL AppControl_Tor_ControlUpdateDualArm(U08 _arm);				// SPD / SSMC
 
-//GLOBAL void AppControl_Dynamic_Init(void);
 GLOBAL void AppControl_Dynamic_Update(U08 _arm);	// SMC / SSMC
 
 #endif /* APPLICATION_APPCONTROL_APPCONTROL_H_ */

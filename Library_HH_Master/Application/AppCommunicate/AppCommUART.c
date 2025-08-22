@@ -509,13 +509,28 @@ GLOBAL void AppCommUART_SendMsg(enUartNode _node, enUartMsg _txMsgId)
 		sourceTxData32[9] = *(U32*)&myRobotCommand[LEFT_ARM].JointTor[2].Tor;
 		sourceTxData32[10] = *(U32*)&myRobotTrajectory[RIGHT_ARM].Joint[0].currPos;
 		sourceTxData32[11] = *(U32*)&myRobotFeedback[RIGHT_ARM].Joint[0].Position;
-		sourceTxData32[12] = *(U32*)&myRobotCommand[RIGHT_ARM].JointTor[0].Tor;
+//		sourceTxData32[12] = *(U32*)&myRobotCommand[RIGHT_ARM].JointTor[0].Tor;
 		sourceTxData32[13] = *(U32*)&myRobotTrajectory[RIGHT_ARM].Joint[1].currPos;
 		sourceTxData32[14] = *(U32*)&myRobotFeedback[RIGHT_ARM].Joint[1].Position;
-		sourceTxData32[15] = *(U32*)&myRobotCommand[RIGHT_ARM].JointTor[1].Tor;
+//		sourceTxData32[15] = *(U32*)&myRobotCommand[RIGHT_ARM].JointTor[1].Tor;
 		sourceTxData32[16] = *(U32*)&myRobotTrajectory[RIGHT_ARM].Joint[2].currPos;
 		sourceTxData32[17] = *(U32*)&myRobotFeedback[RIGHT_ARM].Joint[2].Position;
+//		sourceTxData32[18] = *(U32*)&myRobotCommand[RIGHT_ARM].JointTor[2].Tor;
+
+#if defined VIRTUAL_FORCE_ENABLE
+		float tempValue1 = myRobotCommand[RIGHT_ARM].JointTor[0].Tor + TorEx[3];
+		float tempValue2 = myRobotCommand[RIGHT_ARM].JointTor[1].Tor + TorEx[4];
+		float tempValue3 = myRobotCommand[RIGHT_ARM].JointTor[2].Tor + TorEx[5];
+
+		sourceTxData32[12] = *(U32*)&tempValue1;
+		sourceTxData32[15] = *(U32*)&tempValue2;
+		sourceTxData32[18] = *(U32*)&tempValue3;
+
+#else
+		sourceTxData32[12] = *(U32*)&myRobotCommand[RIGHT_ARM].JointTor[0].Tor;
+		sourceTxData32[15] = *(U32*)&myRobotCommand[RIGHT_ARM].JointTor[1].Tor;
 		sourceTxData32[18] = *(U32*)&myRobotCommand[RIGHT_ARM].JointTor[2].Tor;
+#endif
 
 		 // Calculate checksum (payload only: byte 4-39)
 		for (int i = 4; i < MSG_GUI_DATA_2_DUAL_LENGTH; i++)
@@ -615,19 +630,34 @@ GLOBAL void AppCommUART_SendMsg(enUartNode _node, enUartMsg _txMsgId)
 		sourceTxData32[15] = *(U32*)&myControlState[LEFT_ARM].dErr[2];
 		sourceTxData32[16] = *(U32*)&myRobotTrajectory[RIGHT_ARM].Joint[0].currPos;
 		sourceTxData32[17] = *(U32*)&myRobotFeedback[RIGHT_ARM].Joint[0].Position;
-		sourceTxData32[18] = *(U32*)&myRobotCommand[RIGHT_ARM].JointTor[0].Tor;
+//		sourceTxData32[18] = *(U32*)&myRobotCommand[RIGHT_ARM].JointTor[0].Tor;
 		sourceTxData32[19] = *(U32*)&myControlState[RIGHT_ARM].S[0];
 		sourceTxData32[20] = *(U32*)&myControlState[RIGHT_ARM].dErr[0];
 		sourceTxData32[21] = *(U32*)&myRobotTrajectory[RIGHT_ARM].Joint[1].currPos;
 		sourceTxData32[22] = *(U32*)&myRobotFeedback[RIGHT_ARM].Joint[1].Position;
-		sourceTxData32[23] = *(U32*)&myRobotCommand[RIGHT_ARM].JointTor[1].Tor;
+//		sourceTxData32[23] = *(U32*)&myRobotCommand[RIGHT_ARM].JointTor[1].Tor;
 		sourceTxData32[24] = *(U32*)&myControlState[RIGHT_ARM].S[1];
 		sourceTxData32[25] = *(U32*)&myControlState[RIGHT_ARM].dErr[1];
 		sourceTxData32[26] = *(U32*)&myRobotTrajectory[RIGHT_ARM].Joint[2].currPos;
 		sourceTxData32[27] = *(U32*)&myRobotFeedback[RIGHT_ARM].Joint[2].Position;
-		sourceTxData32[28] = *(U32*)&myRobotCommand[RIGHT_ARM].JointTor[2].Tor;
+//		sourceTxData32[28] = *(U32*)&myRobotCommand[RIGHT_ARM].JointTor[2].Tor;
 		sourceTxData32[29] = *(U32*)&myControlState[RIGHT_ARM].S[2];
 		sourceTxData32[30] = *(U32*)&myControlState[RIGHT_ARM].dErr[2];
+
+#if defined VIRTUAL_FORCE_ENABLE
+		float tempValue4 = myRobotCommand[RIGHT_ARM].JointTor[0].Tor + TorEx[3];
+		float tempValue5 = myRobotCommand[RIGHT_ARM].JointTor[1].Tor + TorEx[4];
+		float tempValue6 = myRobotCommand[RIGHT_ARM].JointTor[2].Tor + TorEx[5];
+
+		sourceTxData32[18] = *(U32*)&tempValue4;
+		sourceTxData32[23] = *(U32*)&tempValue5;
+		sourceTxData32[28] = *(U32*)&tempValue6;
+
+#else
+		sourceTxData32[18] = *(U32*)&myRobotCommand[RIGHT_ARM].JointTor[0].Tor;
+		sourceTxData32[23] = *(U32*)&myRobotCommand[RIGHT_ARM].JointTor[1].Tor;
+		sourceTxData32[28] = *(U32*)&myRobotCommand[RIGHT_ARM].JointTor[2].Tor;
+#endif
 
 		// Calculate checksum
 		for (int i = 4; i < MSG_GUI_DATA_4_DUAL_LENGTH; i++)

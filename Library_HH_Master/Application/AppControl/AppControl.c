@@ -56,6 +56,7 @@ GLOBAL strJointSpacePlanning myRobotTrajectory[DUAL_ARM] = { 0, };
 GLOBAL strTorControl myControlSetting = { 0, };
 GLOBAL strMonitorSMC myControlState[DUAL_ARM] = { 0, };
 GLOBAL strDynamics3DofPlanar myRobotDynamics[DUAL_ARM] = { 0, };
+GLOBAL float TorEx[6] = { 0, };		// [Nm]
 
 
 /********************************************************************************
@@ -63,7 +64,7 @@ GLOBAL strDynamics3DofPlanar myRobotDynamics[DUAL_ARM] = { 0, };
  ********************************************************************************/
 PRIVATE void _TP_CalJointRefData(U08 _arm, float _q1, float _q2, float _q3);	// q1/q2/q3 ➡ dq/ddq
 PRIVATE U08 _Pos_CalMoveDirection(float _startAngle, float _goalAngle, float _avoidAngle);
-
+PRIVATE void _Tor_CalExternalForce(U08 _arm, float* _torEx);
 
 /********************************************************************************
  * PRIVATE FUNCTION IMPLEMENTATION
@@ -155,6 +156,44 @@ PRIVATE U08 _Pos_CalMoveDirection(float _startAngle, float _goalAngle, float _av
 	}
 
 	return 0;
+}
+
+PRIVATE void _Tor_CalExternalForce(U08 _arm, float* _torEx)
+{
+	static float q1, q2, q3;
+	static float c1, c12, c123, s1, s12, s123;
+
+	// Get value
+	q1 = DEG2RAD(myRobotFeedback[_arm].Joint[0].Position);
+	q2 = DEG2RAD(myRobotFeedback[_arm].Joint[1].Position);
+	q3 = DEG2RAD(myRobotFeedback[_arm].Joint[2].Position);
+
+	// Calculate Sin, Cos
+	c1   = cosf(q1);
+	c12  = cosf(q1+q2);
+	c123 = cosf(q1+q2+q3);
+	s1   = sinf(q1);
+	s12  = sinf(q1+q2);
+	s123 = sinf(q1+q2+q3);
+
+	if (LEFT_ARM == _arm)
+	{
+		_torEx[0] = -(L1*s1 + L2*s12 + L3*s123)*VIRTUAL_FORCE_X_AXIS + (L1*c1 + L2*c12 + L3*c123)*VIRTUAL_FORCE_Y_AXIS;
+		_torEx[1] = -(		  L2*s12 + L3*s123)*VIRTUAL_FORCE_X_AXIS + (		L2*c12 + L3*c123)*VIRTUAL_FORCE_Y_AXIS;
+		_torEx[2] = -(				   L3*s123)*VIRTUAL_FORCE_X_AXIS + (				 L3*c123)*VIRTUAL_FORCE_Y_AXIS;
+	}
+	else if (RIGHT_ARM == _arm)
+	{
+		_torEx[3] = -(L1*s1 + L2*s12 + L3*s123)*VIRTUAL_FORCE_X_AXIS + (L1*c1 + L2*c12 + L3*c123)*VIRTUAL_FORCE_Y_AXIS;
+		_torEx[4] = -(		  L2*s12 + L3*s123)*VIRTUAL_FORCE_X_AXIS + (		L2*c12 + L3*c123)*VIRTUAL_FORCE_Y_AXIS;
+		_torEx[5] = -(				   L3*s123)*VIRTUAL_FORCE_X_AXIS + (				 L3*c123)*VIRTUAL_FORCE_Y_AXIS;
+	}
+	else
+	{
+		// Do nothing
+	}
+
+	return;
 }
 
 
@@ -353,7 +392,7 @@ GLOBAL BOOL AppControl_TP_JointTrajectoryUpdate(float _timeStep)
 			Bias_i = myTrajectory.JointSpace.SineWave[arm_idx].Joint[joint_idx].Setting.Bias*D2R;	// [Rad]
 			Ts_i   = myTrajectory.JointSpace.SineWave[arm_idx].Joint[joint_idx].Ctrl.TimeStart;
 			Te_i   = myTrajectory.JointSpace.SineWave[arm_idx].Joint[joint_idx].Ctrl.TimeEnd;
-			Tm_i   = myTrajectory.JointSpace.SineWave[arm_idx].Joint[joint_idx].Ctrl.MovedTime;
+			Tm_i   = myTrajectory.JointSpace.SineWave[arm_idx].Joint[joint_idx].Ctrl.MovedTime;		// [s]
 
 			// Calculate moved time
 			if (T_global < Ts_i)		// Before start time
@@ -363,6 +402,18 @@ GLOBAL BOOL AppControl_TP_JointTrajectoryUpdate(float _timeStep)
 			else if ((Ts_i <= T_global) && (T_global <= Te_i))	// During move time
 			{
 				Tm_i = Tm_i + _timeStep;
+
+#if defined VIRTUAL_FORCE_ENABLE
+				// Check when to apply external force
+				if ((VIRTUAL_FORCE_TIME_START <= Tm_i) && (Tm_i <= VIRTUAL_FORCE_TIME_STOP))
+				{
+					AppDataSet_ExternalTorqueApply(TRUE);
+				}
+				else
+				{
+					AppDataSet_ExternalTorqueApply(FALSE);
+				}
+#endif
 			}
 			else	// After end time
 			{
@@ -695,27 +746,27 @@ GLOBAL void AppControl_Pos_MoveToHome(U08 _arm, U16 _speed)
 
 	if (LEFT_ARM == _arm)
 	{
-		myRobotCommand[LEFT_ARM].JointPos[0].Angle = HOME_POS_J11;
+		myRobotCommand[LEFT_ARM].JointPos[0].Angle = 80.f;
 		myRobotCommand[LEFT_ARM].JointPos[0].Speed = _speed;
-		myRobotCommand[LEFT_ARM].JointPos[0].Direction = _Pos_CalMoveDirection(CURR_POS_J11, HOME_POS_J11, SINGULAR_J11);
-		myRobotCommand[LEFT_ARM].JointPos[1].Angle = HOME_POS_J21;
+		myRobotCommand[LEFT_ARM].JointPos[0].Direction = _Pos_CalMoveDirection(CURR_POS_J11, 80.f, SINGULAR_J11);
+		myRobotCommand[LEFT_ARM].JointPos[1].Angle = 10.f;
 		myRobotCommand[LEFT_ARM].JointPos[1].Speed = _speed;
-		myRobotCommand[LEFT_ARM].JointPos[1].Direction = _Pos_CalMoveDirection(CURR_POS_J21, HOME_POS_J21, SINGULAR_J21);
-		myRobotCommand[LEFT_ARM].JointPos[2].Angle = HOME_POS_J31;
+		myRobotCommand[LEFT_ARM].JointPos[1].Direction = _Pos_CalMoveDirection(CURR_POS_J21, 10.f, SINGULAR_J21);
+		myRobotCommand[LEFT_ARM].JointPos[2].Angle = 10.f;
 		myRobotCommand[LEFT_ARM].JointPos[2].Speed = _speed;
-		myRobotCommand[LEFT_ARM].JointPos[2].Direction = _Pos_CalMoveDirection(CURR_POS_J31, HOME_POS_J31, SINGULAR_J31);
+		myRobotCommand[LEFT_ARM].JointPos[2].Direction = _Pos_CalMoveDirection(CURR_POS_J31, 10.f, SINGULAR_J31);
 	}
 	else if (RIGHT_ARM == _arm)
 	{
-		myRobotCommand[RIGHT_ARM].JointPos[0].Angle = HOME_POS_J12;
+		myRobotCommand[RIGHT_ARM].JointPos[0].Angle = 100.f;
 		myRobotCommand[RIGHT_ARM].JointPos[0].Speed = _speed;
-		myRobotCommand[RIGHT_ARM].JointPos[0].Direction = _Pos_CalMoveDirection(CURR_POS_J12, HOME_POS_J12, SINGULAR_J12);
-		myRobotCommand[RIGHT_ARM].JointPos[1].Angle = HOME_POS_J22;
+		myRobotCommand[RIGHT_ARM].JointPos[0].Direction = _Pos_CalMoveDirection(CURR_POS_J12, 100.f, SINGULAR_J12);
+		myRobotCommand[RIGHT_ARM].JointPos[1].Angle = -10.f;
 		myRobotCommand[RIGHT_ARM].JointPos[1].Speed = _speed;
-		myRobotCommand[RIGHT_ARM].JointPos[1].Direction = _Pos_CalMoveDirection(CURR_POS_J22, HOME_POS_J22, SINGULAR_J22);
-		myRobotCommand[RIGHT_ARM].JointPos[2].Angle = HOME_POS_J32;
+		myRobotCommand[RIGHT_ARM].JointPos[1].Direction = _Pos_CalMoveDirection(CURR_POS_J22, -10.f, SINGULAR_J22);
+		myRobotCommand[RIGHT_ARM].JointPos[2].Angle = -10.f;
 		myRobotCommand[RIGHT_ARM].JointPos[2].Speed = _speed;
-		myRobotCommand[RIGHT_ARM].JointPos[2].Direction = _Pos_CalMoveDirection(CURR_POS_J32, HOME_POS_J32, SINGULAR_J32);
+		myRobotCommand[RIGHT_ARM].JointPos[2].Direction = _Pos_CalMoveDirection(CURR_POS_J32, -10.f, SINGULAR_J32);
 	}
 
 	return;
@@ -906,25 +957,25 @@ GLOBAL BOOL AppControl_Tor_ControllerInit(enTorController _type)
 	switch (_type)
 	{
 	case TOR_CTRL_PD:
-		myControlSetting.PD.Setting.Kp[0] = 31.2f;
-		myControlSetting.PD.Setting.Kp[1] = 24.0f;
-		myControlSetting.PD.Setting.Kp[2] = 10.0f;
+		myControlSetting.PD.Setting.Kp[0] = 17.0f;
+		myControlSetting.PD.Setting.Kp[1] = 12.0f;
+		myControlSetting.PD.Setting.Kp[2] = 6.0f;
 
 		myControlSetting.PD.Setting.Kd[0] = 1.2f;
-		myControlSetting.PD.Setting.Kd[1] = 1.0f;
-		myControlSetting.PD.Setting.Kd[2] = 0.5f;
+		myControlSetting.PD.Setting.Kd[1] = 0.8f;
+		myControlSetting.PD.Setting.Kd[2] = 0.4f;
 		
 		myControlSetting.Type = TOR_CTRL_PD;
 		isSupported = TRUE;
 		break;
 	case TOR_CTRL_SPD:
-		myControlSetting.PD.Setting.Kp[0] = 31.2f;
-		myControlSetting.PD.Setting.Kp[1] = 24.0f;
-		myControlSetting.PD.Setting.Kp[2] = 10.0f;
+		myControlSetting.PD.Setting.Kp[0] = 17.0f;
+		myControlSetting.PD.Setting.Kp[1] = 12.0f;
+		myControlSetting.PD.Setting.Kp[2] = 6.0f;
 
 		myControlSetting.PD.Setting.Kd[0] = 1.2f;
-		myControlSetting.PD.Setting.Kd[1] = 1.0f;
-		myControlSetting.PD.Setting.Kd[2] = 0.5f;
+		myControlSetting.PD.Setting.Kd[1] = 0.8f;
+		myControlSetting.PD.Setting.Kd[2] = 0.4f;
 
 		myControlSetting.PD.Setting.Alpha[0] = 0.4f;
 		myControlSetting.PD.Setting.Alpha[1] = 0.4f;
@@ -934,37 +985,37 @@ GLOBAL BOOL AppControl_Tor_ControllerInit(enTorController _type)
 		isSupported = TRUE;
 		break;
 	case TOR_CTRL_SMC:
-		myControlSetting.SMC.Setting.Lamda[0] = 26.0f;
-		myControlSetting.SMC.Setting.Lamda[1] = 24.0f;
-		myControlSetting.SMC.Setting.Lamda[2] = 20.f;
+		myControlSetting.SMC.Setting.Lamda[0] = 14.167f;
+		myControlSetting.SMC.Setting.Lamda[1] = 15.0f;
+		myControlSetting.SMC.Setting.Lamda[2] = 15.f;
 
 		myControlSetting.SMC.Setting.K[0] = 1.2f;
-		myControlSetting.SMC.Setting.K[1] = 1.f;
-		myControlSetting.SMC.Setting.K[2] = 0.5f;
+		myControlSetting.SMC.Setting.K[1] = 0.8f;
+		myControlSetting.SMC.Setting.K[2] = 0.4f;
 
 		myControlSetting.SMC.Setting.Eta[0] = 0.3f;
 		myControlSetting.SMC.Setting.Eta[1] = 0.2f;
-		myControlSetting.SMC.Setting.Eta[2] = 0.1f;
+		myControlSetting.SMC.Setting.Eta[2] = 0.2f;
 
 		myControlSetting.Type = TOR_CTRL_SMC;
 		isSupported = TRUE;
 		break;
 	case TOR_CTRL_SSMC:
-		myControlSetting.SMC.Setting.Lamda[0] = 26.0f;
-		myControlSetting.SMC.Setting.Lamda[1] = 24.0f;
-		myControlSetting.SMC.Setting.Lamda[2] = 20.0f;
+		myControlSetting.SMC.Setting.Lamda[0] = 14.167f;
+		myControlSetting.SMC.Setting.Lamda[1] = 15.0f;
+		myControlSetting.SMC.Setting.Lamda[2] = 15.f;
 
 		myControlSetting.SMC.Setting.K[0] = 1.2f;
-		myControlSetting.SMC.Setting.K[1] = 1.0f;
-		myControlSetting.SMC.Setting.K[2] = 0.5f;
+		myControlSetting.SMC.Setting.K[1] = 0.8f;
+		myControlSetting.SMC.Setting.K[2] = 0.4f;
 
 		myControlSetting.SMC.Setting.Eta[0] = 0.3f;
 		myControlSetting.SMC.Setting.Eta[1] = 0.2f;
-		myControlSetting.SMC.Setting.Eta[2] = 0.1f;
+		myControlSetting.SMC.Setting.Eta[2] = 0.2f;
 
-		myControlSetting.SMC.Setting.Alpha[0] = 1.f;
-		myControlSetting.SMC.Setting.Alpha[1] = 1.f;
-		myControlSetting.SMC.Setting.Alpha[2] = 1.f;
+		myControlSetting.SMC.Setting.Alpha[0] = 0.4f;
+		myControlSetting.SMC.Setting.Alpha[1] = 0.4f;
+		myControlSetting.SMC.Setting.Alpha[2] = 0.4f;
 
 		myControlSetting.Type = TOR_CTRL_SSMC;
 		isSupported = TRUE;
@@ -1140,8 +1191,6 @@ GLOBAL BOOL AppControl_Tor_ControlUpdateSingleArm(U08 _arm)
 			myControlState[_arm].dErr[_idx] = myRobotTrajectory[_arm].Joint[_idx].currVel - DEG2RAD(myRobotFeedback[_arm].Joint[_idx].Speed);
 
 			Tor[_idx] = Kp[_idx]*myControlState[_arm].Err[_idx] + Kd[_idx]*myControlState[_arm].dErr[_idx];
-
-			myRobotCommand[_arm].JointTor[_idx].Tor = CONSTRAIN(Tor[_idx], -CONTROL_MAX_TORQUE, CONTROL_MAX_TORQUE);
 		}
 		break;
 	case TOR_CTRL_SMC:
@@ -1201,11 +1250,6 @@ GLOBAL BOOL AppControl_Tor_ControlUpdateSingleArm(U08 _arm)
 		Tor[1] = Tor_eq[1] + Tor_r[1];
 		Tor[2] = Tor_eq[2] + Tor_r[2];
 
-		// Set output with constraint
-		myRobotCommand[_arm].JointTor[0].Tor = CONSTRAIN(Tor[0], -CONTROL_MAX_TORQUE, CONTROL_MAX_TORQUE);
-		myRobotCommand[_arm].JointTor[1].Tor = CONSTRAIN(Tor[1], -CONTROL_MAX_TORQUE, CONTROL_MAX_TORQUE);
-		myRobotCommand[_arm].JointTor[2].Tor = CONSTRAIN(Tor[2], -CONTROL_MAX_TORQUE, CONTROL_MAX_TORQUE);
-
 		break;
 	case TOR_CTRL_SMC_FREE:
 		// e = q - q_r
@@ -1243,21 +1287,43 @@ GLOBAL BOOL AppControl_Tor_ControlUpdateSingleArm(U08 _arm)
 		Tor[1] = Tor_eq[1] + Tor_r[1];
 		Tor[2] = Tor_eq[2] + Tor_r[2];
 
-		// Set output with constraint
-		myRobotCommand[_arm].JointTor[0].Tor = CONSTRAIN(Tor[0], -2.0f, 2.0f);
-		myRobotCommand[_arm].JointTor[1].Tor = CONSTRAIN(Tor[1], -4.0f, 4.0f);
-		myRobotCommand[_arm].JointTor[2].Tor = CONSTRAIN(Tor[2], -1.0f, 1.0f);
-
 		break;
 	default:
 		// Not support
 		return FALSE;
 	}
 
+#if defined VIRTUAL_FORCE_ENABLE
+	if (TRUE == AppDataGet_ExternalTorqueApply())
+	{
+		if (RIGHT_ARM == _arm)
+		{
+			_Tor_CalExternalForce(RIGHT_ARM, TorEx);
+
+			// Tor_motor = Tor_control - Jt*Tor_external
+			Tor[0] = Tor[0] - TorEx[3];
+			Tor[1] = Tor[1] - TorEx[4];
+			Tor[2] = Tor[2] - TorEx[5];
+		}
+	}
+	else
+	{
+		// No TorEx, keep the Tor as current
+		TorEx[0] = 0.0f;
+		TorEx[1] = 0.0f;
+		TorEx[2] = 0.0f;
+		TorEx[3] = 0.0f;
+		TorEx[4] = 0.0f;
+		TorEx[5] = 0.0f;
+	}
+#endif
+	// Set output with constraint
+	myRobotCommand[_arm].JointTor[0].Tor = CONSTRAIN(Tor[0], -CONTROL_MAX_TORQUE, CONTROL_MAX_TORQUE);
+	myRobotCommand[_arm].JointTor[1].Tor = CONSTRAIN(Tor[1], -CONTROL_MAX_TORQUE, CONTROL_MAX_TORQUE);
+	myRobotCommand[_arm].JointTor[2].Tor = CONSTRAIN(Tor[2], -CONTROL_MAX_TORQUE, CONTROL_MAX_TORQUE);
+
 	return TRUE;
 }
-
-//GLOBAL float S_dual[6] = {0, };
 
 GLOBAL BOOL AppControl_Tor_ControlUpdateDualArm(U08 _arm)
 {
@@ -1298,7 +1364,7 @@ GLOBAL BOOL AppControl_Tor_ControlUpdateDualArm(U08 _arm)
 				Lamda[_idx] = myControlSetting.SMC.Setting.Lamda[_idx];
 				K[_idx]     = myControlSetting.SMC.Setting.K[_idx];
 				Eta[_idx]   = myControlSetting.SMC.Setting.Eta[_idx];
-				Al[_idx]    = myControlSetting.PD.Setting.Alpha[_idx];
+				Al[_idx]    = myControlSetting.SMC.Setting.Alpha[_idx];
 			}
 			break;
 		default:
@@ -1364,12 +1430,6 @@ GLOBAL BOOL AppControl_Tor_ControlUpdateDualArm(U08 _arm)
 		Tor[4] = Kp[1]*ErrCC[4] + Kd[1]*dErrCC[4];
 		Tor[5] = Kp[2]*ErrCC[5] + Kd[2]*dErrCC[5];
 
-		myRobotCommand[LEFT_ARM].JointTor[0].Tor = CONSTRAIN(Tor[0], -CONTROL_MAX_TORQUE, CONTROL_MAX_TORQUE);
-		myRobotCommand[LEFT_ARM].JointTor[1].Tor = CONSTRAIN(Tor[1], -CONTROL_MAX_TORQUE, CONTROL_MAX_TORQUE);
-		myRobotCommand[LEFT_ARM].JointTor[2].Tor = CONSTRAIN(Tor[2], -CONTROL_MAX_TORQUE, CONTROL_MAX_TORQUE);
-		myRobotCommand[RIGHT_ARM].JointTor[0].Tor = CONSTRAIN(Tor[3], -CONTROL_MAX_TORQUE, CONTROL_MAX_TORQUE);
-		myRobotCommand[RIGHT_ARM].JointTor[1].Tor = CONSTRAIN(Tor[4], -CONTROL_MAX_TORQUE, CONTROL_MAX_TORQUE);
-		myRobotCommand[RIGHT_ARM].JointTor[2].Tor = CONSTRAIN(Tor[5], -CONTROL_MAX_TORQUE, CONTROL_MAX_TORQUE);
 		break;
 
 	case TOR_CTRL_SSMC:
@@ -1499,14 +1559,6 @@ GLOBAL BOOL AppControl_Tor_ControlUpdateDualArm(U08 _arm)
 		Tor[4] = Tor_eq[4] + Tor_r[4];
 		Tor[5] = Tor_eq[5] + Tor_r[5];
 
-		// Set output with constraint
-		myRobotCommand[LEFT_ARM].JointTor[0].Tor  = CONSTRAIN(Tor[0], -CONTROL_MAX_TORQUE, CONTROL_MAX_TORQUE);
-		myRobotCommand[LEFT_ARM].JointTor[1].Tor  = CONSTRAIN(Tor[1], -CONTROL_MAX_TORQUE, CONTROL_MAX_TORQUE);
-		myRobotCommand[LEFT_ARM].JointTor[2].Tor  = CONSTRAIN(Tor[2], -CONTROL_MAX_TORQUE, CONTROL_MAX_TORQUE);
-		myRobotCommand[RIGHT_ARM].JointTor[0].Tor = CONSTRAIN(Tor[3], -CONTROL_MAX_TORQUE, CONTROL_MAX_TORQUE);
-		myRobotCommand[RIGHT_ARM].JointTor[1].Tor = CONSTRAIN(Tor[4], -CONTROL_MAX_TORQUE, CONTROL_MAX_TORQUE);
-		myRobotCommand[RIGHT_ARM].JointTor[2].Tor = CONSTRAIN(Tor[5], -CONTROL_MAX_TORQUE, CONTROL_MAX_TORQUE);
-
 		myControlState[LEFT_ARM].dErr[0] = dErr[0];
 		myControlState[LEFT_ARM].dErr[1] = dErr[1];
 		myControlState[LEFT_ARM].dErr[2] = dErr[2];
@@ -1603,14 +1655,6 @@ GLOBAL BOOL AppControl_Tor_ControlUpdateDualArm(U08 _arm)
 		Tor[4] = Tor_eq[4] + Tor_r[4];
 		Tor[5] = Tor_eq[5] + Tor_r[5];
 
-		// Set output with constraint
-		myRobotCommand[LEFT_ARM].JointTor[0].Tor  = CONSTRAIN(Tor[0], -CONTROL_MAX_TORQUE, CONTROL_MAX_TORQUE);
-		myRobotCommand[LEFT_ARM].JointTor[1].Tor  = CONSTRAIN(Tor[1], -CONTROL_MAX_TORQUE, CONTROL_MAX_TORQUE);
-		myRobotCommand[LEFT_ARM].JointTor[2].Tor  = CONSTRAIN(Tor[2], -CONTROL_MAX_TORQUE, CONTROL_MAX_TORQUE);
-		myRobotCommand[RIGHT_ARM].JointTor[0].Tor = CONSTRAIN(Tor[3], -CONTROL_MAX_TORQUE, CONTROL_MAX_TORQUE);
-		myRobotCommand[RIGHT_ARM].JointTor[1].Tor = CONSTRAIN(Tor[4], -CONTROL_MAX_TORQUE, CONTROL_MAX_TORQUE);
-		myRobotCommand[RIGHT_ARM].JointTor[2].Tor = CONSTRAIN(Tor[5], -CONTROL_MAX_TORQUE, CONTROL_MAX_TORQUE);
-
 		break;
 
 	default:
@@ -1618,63 +1662,39 @@ GLOBAL BOOL AppControl_Tor_ControlUpdateDualArm(U08 _arm)
 		return FALSE;
 	}
 
+#if defined VIRTUAL_FORCE_ENABLE
+	if (TRUE == AppDataGet_ExternalTorqueApply())
+	{
+		_Tor_CalExternalForce(RIGHT_ARM, TorEx);
+
+		// Tor_motor = Tor_control - Jt*Tor_external
+		Tor[3] = Tor[3] - TorEx[3];
+		Tor[4] = Tor[4] - TorEx[4];
+		Tor[5] = Tor[5] - TorEx[5];
+	}
+	else
+	{
+		// No TorEx, keep the Tor as current
+		TorEx[0] = 0.0f;
+		TorEx[1] = 0.0f;
+		TorEx[2] = 0.0f;
+		TorEx[3] = 0.0f;
+		TorEx[4] = 0.0f;
+		TorEx[5] = 0.0f;
+	}
+#endif
+
+	// Set output with constraint
+	myRobotCommand[LEFT_ARM].JointTor[0].Tor  = CONSTRAIN(Tor[0], -CONTROL_MAX_TORQUE, CONTROL_MAX_TORQUE);
+	myRobotCommand[LEFT_ARM].JointTor[1].Tor  = CONSTRAIN(Tor[1], -CONTROL_MAX_TORQUE, CONTROL_MAX_TORQUE);
+	myRobotCommand[LEFT_ARM].JointTor[2].Tor  = CONSTRAIN(Tor[2], -CONTROL_MAX_TORQUE, CONTROL_MAX_TORQUE);
+	myRobotCommand[RIGHT_ARM].JointTor[0].Tor = CONSTRAIN(Tor[3], -CONTROL_MAX_TORQUE, CONTROL_MAX_TORQUE);
+	myRobotCommand[RIGHT_ARM].JointTor[1].Tor = CONSTRAIN(Tor[4], -CONTROL_MAX_TORQUE, CONTROL_MAX_TORQUE);
+	myRobotCommand[RIGHT_ARM].JointTor[2].Tor = CONSTRAIN(Tor[5], -CONTROL_MAX_TORQUE, CONTROL_MAX_TORQUE);
+
 	return TRUE;
 }
 
-/*
-GLOBAL void AppControl_Dynamic_Init(void)
-{
-	// Left arm
-	// M[1,1]
-	myRobotDynamics[LEFT_ARM].Params.M11[0] = L1*L1*M1_M2_M3 + L2*L2*M2_M3 + L3*L3*M3;
-	myRobotDynamics[LEFT_ARM].Params.M11[1] = 2*L1_L3_M3;				// *c23
-	myRobotDynamics[LEFT_ARM].Params.M11[2] = 2*L1_L2_M2 + 2*L1_L2_M3;	// *c2
-	myRobotDynamics[LEFT_ARM].Params.M11[3] = 2*L2_L3_M3;				// *c3
-	// M[1,2], M[2,1]
-	myRobotDynamics[LEFT_ARM].Params.M12[0] = L2*L2*M2_M3 + L3*L3*M3;
-	myRobotDynamics[LEFT_ARM].Params.M12[1] = L1_L3_M3;					// *c23
-	myRobotDynamics[LEFT_ARM].Params.M12[2] = L1_L2_M2 + L1_L2_M3;		// *c2
-	myRobotDynamics[LEFT_ARM].Params.M12[3] = 2*L2_L3_M3;				// *c3
-	// M[1,3], M[3,1]
-	myRobotDynamics[LEFT_ARM].Params.M13[0] = L3*L3*M3;
-	myRobotDynamics[LEFT_ARM].Params.M13[1] = L1_L3_M3;					// *c23
-	myRobotDynamics[LEFT_ARM].Params.M13[2] = L2_L3_M3;					// *c3
-	// M[2,2]
-	myRobotDynamics[LEFT_ARM].Params.M22[0] = L2*L2*M2_M3 + L3*L3*M3;
-	myRobotDynamics[LEFT_ARM].Params.M22[1] = 2*L2_L3_M3;				// *c3
-	// M[2,3]
-	myRobotDynamics[LEFT_ARM].Params.M23[0] = L3*L3*M3;
-	myRobotDynamics[LEFT_ARM].Params.M23[1] = L2_L3_M3;					// *c3
-	// M[3,3]
-	myRobotDynamics[LEFT_ARM].Params.M33    = L3*L3*M3;
-
-	// C[1,1];
-	myRobotDynamics[LEFT_ARM].Params.C11[0] = L1_L2_M3 + L1_L2_M2;		// *s2  vs *dq2
-	myRobotDynamics[LEFT_ARM].Params.C11[1] = L1_L3_M3;					// *s23 vs *dq2
-	myRobotDynamics[LEFT_ARM].Params.C11[2] = L2_L3_M3;					// *s3  vs *dq3
-	myRobotDynamics[LEFT_ARM].Params.C11[3] = L1_L3_M3;					// *s23 vs *dq3
-	// C[1,2]
-	myRobotDynamics[LEFT_ARM].Params.C12[0] = L1_L2_M3 + L1_L2_M2;		// *s2  vs *dq1
-	myRobotDynamics[LEFT_ARM].Params.C12[1] = L1_L3_M3;					// *s23 vs *dq1
-	// C[1,3]
-	myRobotDynamics[LEFT_ARM].Params.C13[0] = L2_L3_M3;					// *s3  vs *(dq1+dq2+dq3)
-	myRobotDynamics[LEFT_ARM].Params.C13[1] = L1_L3_M3;					// *s23 vs *(dq1+dq2+dq3)
-	// C[2,1]
-	myRobotDynamics[LEFT_ARM].Params.C21[0] = L1_L2_M3 + L1_L2_M2;		// *s2  vs *dq1
-	myRobotDynamics[LEFT_ARM].Params.C21[1] = L1_L3_M3;					// *s23 vs *dq1
-	myRobotDynamics[LEFT_ARM].Params.C21[2] = L2_L3_M3;					// *s3  vs dq3
-	// C[2,2]
-	myRobotDynamics[LEFT_ARM].Params.C22    = L2_L3_M3;					// *s3*dq3
-	// C[2,3]
-	myRobotDynamics[LEFT_ARM].Params.C23    = L2_L3_M3;					// *s3  vs *(dq1+dq2+dq3)
-	// C[3,1]
-	myRobotDynamics[LEFT_ARM].Params.C31[0] = L2_L3_M3;					// *s3  vs *(dq1+dq2)
-	myRobotDynamics[LEFT_ARM].Params.C31[1] = L1_L3_M3;					// *s23 vs *dq1
-	// C[3,2]
-	myRobotDynamics[LEFT_ARM].Params.C32    = L2_L3_M3;					// *s3  vs *(dq1+dq2)
-
-	return;
-}*/
 
 GLOBAL void AppControl_Dynamic_Update(U08 _arm)
 {
